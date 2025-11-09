@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter des Données - Outil JDLM</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2980b9; 
+            --secondary-color: #2c3e50; 
+            --background-color: #f7f9fb; 
+            --widget-background: #ffffff;
+            --text-color: #34495e; 
+            --light-grey: #bdc3c7;
+            --footer-grey: #95a5a6;
+            --danger-color: #e74c3c;
+            --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+        }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, 'Playfair Display';
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .site-header-container {
+            background-color: var(--widget-background);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); 
+            border-bottom: 1px solid #e0e6eb; 
+            padding: 15px 0; 
+            position: relative; 
+        }
+        
+        .site-header {
+            text-align: center;
+            padding: 0; 
+            margin: 0;
+            color: var(--secondary-color);
+            font-size: 2.2em;
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 0.05em;
+        }
+
+        .content {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+        }
+        .back-arrow {
+            position: absolute;
+            top: 20px; 
+            left: 25px;
+            font-size: 2.2em;
+            color: var(--secondary-color);
+            text-decoration: none;
+            transition: color 0.2s, transform 0.2s;
+            line-height: 1;
+        }
+        .back-arrow:hover {
+            color: var(--primary-color);
+            transform: scale(1.05);
+        }
+        .data-widget {
+            background-color: var(--widget-background);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 650px;
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 350px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            margin-bottom: 30px;
+            box-sizing: border-box;
+            resize: vertical;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
+            outline: none;
+        }
+        
+        .terms-acceptance {
+            font-size: 0.85em;
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--text-color);
+        }
+        .terms-acceptance a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .terms-acceptance a:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            color: white;
+            background-color: var(--primary-color);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn:not(:disabled):hover {
+            background-color: #3498db;
+            transform: translateY(-1px);
+        }
+        .btn:disabled {
+            background-color: var(--light-grey);
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        /* --- MODIFIED STYLE FOR A MORE VISIBLE BUTTON --- */
+        .info-btn {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            width: 50px;
+            height: 50px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+            padding: 0;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(41, 128, 185, 0.4);
+        }
+        .info-btn:hover {
+            background-color: #3498db;
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(41, 128, 185, 0.5);
+        }
+
+        /* --- NEW ANIMATION STYLES --- */
+        @keyframes shake-it {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
+            75% { transform: rotate(-10deg); }
+        }
+
+        .animate-attention {
+            animation: shake-it 0.7s ease-in-out 2;
+        }
+        /* --- END OF NEW STYLES --- */
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            max-width: 90%;
+            width: 450px;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 2em;
+            cursor: pointer;
+            color: var(--light-grey);
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .modal-close:hover {
+            color: var(--danger-color);
+        }
+        .modal-content h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        .modal-content p {
+            line-height: 1.5;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--primary-color);
+            padding-left: 10px;
+        }
+
+        .important-message {
+            background-color: #fceae9;
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            font-size: 0.95em;
+        }
+        .important-message .icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+            line-height: 1;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 0.8em;
+            color: var(--footer-grey);
+            font-style: italic;
+            border-top: 1px solid #eee;
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="site-header-container">
+        <header class="site-header">Outil JDLM*</header>
+    </div>
+
+    <a href="main.html" class="back-arrow" title="Retour">←</a>
+    
+    <button class="info-btn" id="open-modal-btn" title="Ouvrir le tutoriel">?</button>
+
+    <main class="content">
+        <div class="data-widget">
+            <form id="data-form">
+                <textarea id="raw-text" placeholder="Collez les données du portail ici... 
+(Appuyez sur le bouton Aide pour un tutoriel en haut à droite.)"></textarea>
+                
+                <p class="terms-acceptance">
+                    En cliquant sur "Enregistrer et continuer", vous acceptez les <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
+                </p>
+
+                <button type="submit" id="submit-btn" class="btn" disabled>Enregistrer et continuer</button>
+            </form>
+        </div>
+    </main>
+    
+    <div class="modal-overlay" id="tutorial-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="close-modal-btn">&times;</span>
+            <h3>Comment utiliser l'outil</h3>
+            
+            <div class="important-message">
+                <span class="icon">⚠</span>
+                <span>
+                    <strong>Important!</strong> Pour avoir des informations à jour, vous devez refaire les étapes 1 à 5 souvent.
+                </span>
+            </div>
+            
+            <p>1. Allez dans la section "Travaux" du portail.</p>
+            <p>2. Faites les touches <strong>CTRL + A</strong> pour tout sélectionner.</p>
+            <p>3. Faites <strong>CTRL + C</strong> pour copier la sélection.</p>
+            <p>4. Collez le texte dans la zone ci-dessus avec <strong>CTRL + V</strong>.</p>
+            <p>5. Cliquez sur <strong>Enregistrer et continuer</strong>.</p>
+            <p>6. <strong>Répétez les étapes 1 à 5</strong> pour chaque étape (2e, 3e).</p>
+        </div>
+    </div>
+
+    <footer>
+    <p>*jauge de la moyenne</p>
+            <p style="font-style: normal; margin-top: 8px;">
+                Pour toute question, préoccupation ou pour signaler un bogue, veuillez contacter : 
+                <a href="mailto:notabot.chat@gmail.com" style="font-style: normal;">notabot.chat@gmail.com</a>
+            </p>
+        </footer>
+                
+    <script>
+        // --- NEW SCRIPT TO ANIMATE THE BUTTON ON PAGE LOAD ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const infoBtn = document.getElementById('open-modal-btn');
+            if (infoBtn) {
+                // Add the animation class
+                infoBtn.classList.add('animate-attention');
+
+                // Remove the class after 1.4 seconds (0.7s duration * 2 iterations)
+                setTimeout(() => {
+                    infoBtn.classList.remove('animate-attention');
+                }, 1400);
+            }
+        });
+
+        const openModalBtn = document.getElementById('open-modal-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const tutorialModal = document.getElementById('tutorial-modal');
+        
+        const openModal = () => tutorialModal.classList.add('active');
+        const closeModal = () => tutorialModal.classList.remove('active');
+        
+        openModalBtn.addEventListener('click', openModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        tutorialModal.addEventListener('click', (e) => { if (e.target === tutorialModal) closeModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+        const submitBtn = document.getElementById('submit-btn');
+        const dataForm = document.getElementById('data-form');
+        const rawTextArea = document.getElementById('raw-text');
+
+        const checkTextarea = () => {
+            submitBtn.disabled = rawTextArea.value.trim().length === 0;
+        };
+
+        checkTextarea();
+        rawTextArea.addEventListener('input', checkTextarea);
+
+        dataForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const rawText = rawTextArea.value;
+            if (!rawText.trim()) {
+                alert("Veuillez coller des données avant d'enregistrer.");
+                return;
+            }
+            
+            const parsedResult = parsePortalData(rawText);
+            if (!parsedResult.nom || !parsedResult.etapeData) {
+                alert("Erreur lors de l'analyse des données. Le nom ou le numéro d'étape n'a pas pu être trouvé. Vérifiez le texte collé.");
+                return;
+            }
+            const existingData = JSON.parse(localStorage.getItem('jdlmData')) || {};
+            const updatedData = { ...existingData, nom: parsedResult.nom, [parsedResult.etapeKey]: parsedResult.etapeData };
+            localStorage.setItem('jdlmData', JSON.stringify(updatedData));
+            window.location.href = 'main.html';
+        });
+
+        function parsePortalData(text) {
+            const nameMatch = text.match(/Photo\s*\n(.+)/);
+            const semesterMatch = text.match(/Classe\s*\n\s*(\d)/);
+            const nom = nameMatch ? nameMatch[1].trim() : null;
+            const etapeNumber = semesterMatch ? semesterMatch[1].trim() : null;
+            if (!nom || !etapeNumber) return {};
+            const etapeKey = `etape${etapeNumber}`;
+
+            const POND_REGEX = /^\d{1,3}$/;
+            const DATE_REGEX = /^\d{4}-\d{2}-\d{2}/;
+            const RESULT_REGEX = /^(\d{1,3},\d\s\/\s\d{1,3}\s\(.+\)|[A-DF][+-]?)$/;
+            
+            const createNewAssignment = () => ({ textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' });
+
+            const parseAssignments = (lines) => {
+                let assignments = [];
+                if (lines.length === 0) return assignments;
+                let currentAssignment = createNewAssignment();
+
+                const finalizeAssignment = () => {
+                    if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond) return;
+                    const buffer = currentAssignment.textBuffer;
+                    if (buffer.length === 1) {
+                        currentAssignment.work = buffer[0];
+                    } else if (buffer.length > 1) {
+                        currentAssignment.category = buffer[0];
+                        currentAssignment.work = buffer.slice(1).join('<br>');
+                    }
+                    assignments.push(currentAssignment);
+                };
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) continue;
+
+                    if (RESULT_REGEX.test(trimmedLine)) {
+                        currentAssignment.result = trimmedLine;
+                        finalizeAssignment();
+                        currentAssignment = createNewAssignment();
+                    } else if (POND_REGEX.test(trimmedLine)) {
+                        currentAssignment.pond = trimmedLine;
+                    } else if (DATE_REGEX.test(trimmedLine)) {
+                        if (!currentAssignment.assignedDate) {
+                            currentAssignment.assignedDate = trimmedLine.split('à')[0].trim();
+                        }
+                        currentAssignment.dueDate = trimmedLine;
+                    } else { 
+                        if (currentAssignment.pond || currentAssignment.assignedDate) {
+                            finalizeAssignment();
+                            currentAssignment = createNewAssignment();
+                        }
+                        currentAssignment.textBuffer.push(trimmedLine);
+                    }
+                }
+                finalizeAssignment();
+                return assignments;
+            };
+
+            const subjects = [];
+            const subjectRegex = /([A-Z]{3}\d{3}[A-Z]?) - (.+)/g;
+            const subjectsText = text.split(subjectRegex).slice(1);
+
+            for (let i = 0; i < subjectsText.length; i += 3) {
+                const subjectData = { code: subjectsText[i], name: subjectsText[i + 1], competencies: [] };
+                let subjectContent = subjectsText[i + 2] || '';
+                const competencyBlocks = subjectContent.split('Compétence - ').slice(1);
+
+                for (const block of competencyBlocks) {
+                    const blockLines = block.trim().split('\n');
+                    const compName = blockLines.shift();
+                    const cleanLines = blockLines.filter(line => line.trim() && !line.includes('Catégorie\tTravail\tPond.'));
+                    const competencyData = {
+                        name: `Compétence - ${compName.trim()}`,
+                        assignments: parseAssignments(cleanLines)
+                    };
+                    if (competencyData.assignments.length > 0) {
+                        subjectData.competencies.push(competencyData);
+                    }
+                }
+                if (subjectData.competencies.length > 0) {
+                    subjects.push(subjectData);
+                }
+            }
+            return { nom, etapeKey, etapeData: subjects };
+        }
+    </script>
+</body>
+</html>
