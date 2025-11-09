@@ -137,40 +137,28 @@
 
         .info-btn {
             position: absolute;
-            top: 15px;
+            top: 20px; 
             right: 25px;
-            width: 50px;
-            height: 50px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
+            width: 45px;
+            height: 45px;
+            background: none;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+            transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
             padding: 0;
-            font-size: 1.5em;
+            font-size: 1.2em;
             font-weight: bold;
             text-decoration: none;
-            box-shadow: 0 4px 12px rgba(41, 128, 185, 0.4);
         }
         .info-btn:hover {
-            background-color: #3498db;
-            transform: scale(1.05);
-            box-shadow: 0 6px 15px rgba(41, 128, 185, 0.5);
-        }
-
-        @keyframes shake-it {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(-15deg); }
-            50% { transform: rotate(15deg); }
-            75% { transform: rotate(-10deg); }
-        }
-
-        .animate-attention {
-            animation: shake-it 0.7s ease-in-out 2;
+            background-color: var(--primary-color);
+            color: var(--widget-background);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         .modal-overlay {
@@ -232,9 +220,10 @@
             padding-left: 10px;
         }
 
+        /* NOUVEAU STYLE POUR LE MESSAGE IMPORTANT */
         .important-message {
-            background-color: #fceae9;
-            color: var(--danger-color);
+            background-color: #fceae9; /* Fond rouge pâle */
+            color: var(--danger-color); /* Texte rouge */
             border: 1px solid var(--danger-color);
             padding: 15px;
             border-radius: 8px;
@@ -249,6 +238,7 @@
             margin-right: 10px;
             line-height: 1;
         }
+        /* FIN NOUVEAU STYLE */
 
         footer {
             text-align: center;
@@ -275,8 +265,9 @@
         <div class="data-widget">
             <form id="data-form">
                 <textarea id="raw-text" placeholder="Collez les données du portail ici... 
-(Appuyez sur le bouton Aide pour un tutoriel en haut à droite.)"></textarea>
+(Appuyez sur le bouton Aide pour un tutoriel)"></textarea>
                 
+                <!-- Texte d'acceptation implicite -->
                 <p class="terms-acceptance">
                     En cliquant sur "Enregistrer et continuer", vous acceptez les <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
                 </p>
@@ -287,46 +278,31 @@
     </main>
     
     <div class="modal-overlay" id="tutorial-modal">
-        <div class="modal-content">
-            <span class="modal-close" id="close-modal-btn">&times;</span>
-            <h3>Comment utiliser l'outil</h3>
-            
-            <div class="important-message">
-                <span class="icon">⚠</span>
-                <span>
-                    <strong>Important!</strong> Pour avoir des informations à jour, vous devez refaire les étapes 1 à 5 souvent.
-                </span>
-            </div>
-            
-            <p>1. Allez dans la section "Travaux" du portail.</p>
-            <p>2. Faites les touches <strong>CTRL + A</strong> pour tout sélectionner.</p>
-            <p>3. Faites <strong>CTRL + C</strong> pour copier la sélection.</p>
-            <p>4. Collez le texte dans la zone ci-dessus avec <strong>CTRL + V</strong>.</p>
-            <p>5. Cliquez sur <strong>Enregistrer et continuer</strong>.</p>
-            <p>6. <strong>Répétez les étapes 1 à 5</strong> pour chaque étape (2e, 3e).</p>
+    <div class="modal-content">
+        <span class="modal-close" id="close-modal-btn">&times;</span>
+        <h3>Comment utiliser l'outil</h3>
+        
+        <!-- Message important et reformulé -->
+        <div class="important-message">
+            <span class="icon">⚠</span>
+            <span>
+                <strong>Important!</strong> Pour avoir des informations à jour, vous devez refaire les étapes 1 à 5 souvent.
+            </span>
         </div>
+        
+        <p>1. Allez dans la section "Travaux" du portail.</p>
+        <p>2. Faites les touches <strong>CTRL + A</strong> pour tout sélectionner.</p>
+        <p>3. Faites <strong>CTRL + C</strong> pour copier la sélection.</p>
+        <p>4. Collez le texte dans la zone ci-dessus avec <strong>CTRL + V</strong>.</p>
+        <p>5. Cliquez sur <strong>Enregistrer et continuer</strong>.</p>
+        <p>6. <strong>Répétez les étapes 1 à 5</strong> pour chaque étape (2e, 3e).</p>
     </div>
+</div>
 
-    <footer>
-    <p>*jauge de la moyenne</p>
-            <p style="font-style: normal; margin-top: 8px;">
-                Pour toute question, préoccupation ou pour signaler un bogue, veuillez contacter : 
-                <a href="mailto:notabot.chat@gmail.com" style="font-style: normal;">notabot.chat@gmail.com</a>
-            </p>
-        </footer>
+<footer>*jauge de la moyenne</footer>
                 
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const infoBtn = document.getElementById('open-modal-btn');
-            if (infoBtn) {
-                infoBtn.classList.add('animate-attention');
-
-                setTimeout(() => {
-                    infoBtn.classList.remove('animate-attention');
-                }, 14000);
-            }
-        });
-
         const openModalBtn = document.getElementById('open-modal-btn');
         const closeModalBtn = document.getElementById('close-modal-btn');
         const tutorialModal = document.getElementById('tutorial-modal');

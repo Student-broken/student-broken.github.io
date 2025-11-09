@@ -4,22 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de Bord - Outil JDLM</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
         :root {
-            --primary-color: #2980b9;
+            --primary-color: #3498db;
             --secondary-color: #2c3e50;
-            --side-panel-color: #ffffff;
-            --widget-darker-color: #f0f4f7;
-            --background-color: #f7f9fb;
+            --side-panel-color: #ecf0f1;
+            --widget-darker-color: #e1e6e8;
+            --background-color: #f4f7f6;
             --widget-background: #ffffff;
-            --text-color: #34495e;
+            --text-color: #333;
             --light-grey: #bdc3c7;
-            --footer-grey: #95a5a6;
+            --footer-grey: #7f8c8d;
             --danger-color: #e74c3c;
-            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
-            --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
         }
         body {
             margin: 0;
@@ -27,34 +24,20 @@
             background-color: var(--background-color);
             color: var(--text-color);
         }
-
-        .site-header-container {
-            background-color: var(--widget-background);
-            box-shadow: var(--shadow-header);
-            border-bottom: 1px solid #e0e6eb;
-            padding: 15px 0;
-            position: relative;
-            margin-bottom: 20px;
-        }
-
         .site-header {
             text-align: center;
-            padding: 0;
-            margin: 0;
+            padding: 20px 0;
             color: var(--secondary-color);
-            font-size: 2.2em;
-            font-weight: 700;
-            font-family: 'Playfair Display', serif;
-            letter-spacing: 0.05em;
+            font-size: 1.5em;
+            font-weight: bold;
         }
-
         .main-container {
             display: flex;
             max-width: 1600px;
             margin: 0 auto;
             padding: 0 20px;
             align-items: flex-start;
-            gap: 30px;
+            gap: 20px;
         }
         .data-section {
             flex: 3;
@@ -65,31 +48,28 @@
             top: 20px;
             background-color: var(--side-panel-color);
             border-radius: 12px;
-            padding: 25px;
-            box-shadow: var(--shadow-widget);
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
         .moyenne-widgets {
             display: flex;
             gap: 15px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         .moyenne-widget {
             flex: 1;
             background-color: var(--widget-darker-color);
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 15px;
             text-align: center;
-            box-shadow: none;
-            border: 1px solid #e0e6eb;
         }
         .moyenne-widget h4 {
-            margin: 0 0 8px 0;
-            font-size: 0.85em;
+            margin: 0 0 10px 0;
+            font-size: 0.9em;
             color: var(--secondary-color);
-            font-weight: 500;
         }
         .moyenne-value {
-            font-size: 2.2em;
+            font-size: 2em;
             font-weight: bold;
             color: var(--primary-color);
         }
@@ -109,33 +89,19 @@
             width: 100%;
         }
         select {
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--light-grey);
             background-color: white;
-            transition: box-shadow 0.2s, border-color 0.2s;
-            -webkit-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232c3e50%22%20d%3D%22M287%2069.9L146.7%20209.7%206.4%2069.9%2034.6%2041.7l112.1%20112.1L259.9%2041.7z%22%2F%3E%3C%2Fsvg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px top 50%;
-            background-size: 10px auto;
-        }
-        select:focus {
-            box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
-            border-color: var(--primary-color);
-            outline: none;
         }
         .subject-averages {
-            margin-top: 25px;
-            padding-top: 15px;
-            border-top: 1px solid #e0e6eb;
+            margin-top: 20px;
         }
         .subject-averages h4 {
             margin-top: 0;
             color: var(--secondary-color);
-            font-size: 1.1em;
-            margin-bottom: 15px;
+            border-bottom: 1px solid var(--light-grey);
+            padding-bottom: 5px;
         }
         #subject-averages-list {
             list-style: none;
@@ -146,8 +112,8 @@
         #subject-averages-list li {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px dotted #e0e0e0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
         }
         #subject-averages-list li:last-child {
             border-bottom: none;
@@ -155,120 +121,58 @@
         .btn {
             display: block;
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             border: none;
-            border-radius: 10px;
-            font-size: 1.05em;
-            font-weight: 600;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
             cursor: pointer;
             text-decoration: none;
             color: white;
-            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            transition: background-color 0.2s, transform 0.2s;
             text-align: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        .btn-main-action {
+            background-color: var(--secondary-color);
+            margin-top: 20px;
         }
-        
+        .btn-main-action:hover {
+            background-color: #212f3c;
+        }
         .btn-control {
             background-color: var(--primary-color);
         }
-        .btn-control:hover {
-            background-color: #3498db;
-        }
-
-        /* NOUVEAU STYLE POUR LE BOUTON DANS LE HEADER */
-        .btn-header-action {
-            position: absolute;
-            top: 50%;
-            right: 25px;
-            transform: translateY(-50%);
-            display: inline-block;
-            width: auto;
-            min-width: 180px;
-            padding: 12px 20px;
-            font-size: 0.95em;
-            font-weight: 600;
-            background-color: var(--secondary-color);
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            transition: background-color 0.2s, transform 0.1s;
-        }
-        .btn-header-action:hover {
-            background-color: #34495e;
-            transform: translateY(-50%) translateY(-1px);
-        }
-
         .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-size: 1.05em; font-weight: 600; color: var(--light-grey); position: relative; transition: color 0.2s; }
-        .tab-btn:hover { color: var(--secondary-color); }
+        .tab-btn { padding: 10px 20px; cursor: pointer; border: none; background: none; font-size: 1em; font-weight: bold; color: var(--light-grey); position: relative; }
         .tab-btn.active { color: var(--primary-color); }
-        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background-color: var(--primary-color); border-radius: 2px 2px 0 0; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background-color: var(--primary-color); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .subject-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; background: var(--widget-background); box-shadow: var(--shadow-widget); border-radius: 12px; overflow: hidden; }
-        .subject-table th, .subject-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
-        .subject-table thead tr:first-child th { padding: 18px 18px; font-size: 1.1em; background-color: var(--secondary-color); }
-        .subject-table th { background-color: #34495e; color: white; font-size: 14px; }
-        .subject-table tbody tr:hover td { background-color: #f7f9fb; }
+        .subject-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background: var(--widget-background); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
+        .subject-table th, .subject-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
+        .subject-table th { background-color: var(--secondary-color); color: white; font-size: 14px; }
         .subject-table td { font-size: 13px; }
         .subject-table tr:last-child td { border-bottom: none; }
-        .competency-row td { background-color: #eaf2f8; color: var(--secondary-color); font-weight: bold; font-style: italic; border-bottom: 1px solid #d0e0ee; }
-        .competency-row:hover td { background-color: #eaf2f8; }
-        .no-data { color: var(--light-grey); font-style: italic; }
-        .grade-percentage { font-weight: 700; color: #1e8449; }
-        footer { 
-            text-align: center; 
-            padding: 15px; 
-            font-size: 0.8em; 
-            color: var(--footer-grey); 
-            font-style: italic;
-            border-top: 1px solid #eee;
-            margin-top: 20px;
-        }
-        .logout-arrow {
-            position: absolute;
-            top: 50%;
-            left: 25px;
-            transform: translateY(-50%);
-            font-size: 2.2em;
-            color: var(--secondary-color);
-            text-decoration: none;
-            line-height: 1;
-            transition: color 0.2s, transform 0.2s;
-            z-index: 10;
-        }
-        .logout-arrow:hover {
-            color: var(--primary-color);
-            transform: translateY(-50%) scale(1.05);
-        }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .competency-row td { background-color: #eaf2f8; color: var(--secondary-color); font-weight: bold; font-style: italic; }
+        .no-data { color: var(--light-grey); }
+        footer { text-align: center; padding: 15px; font-size: 0.8em; color: var(--footer-grey); font-style: italic; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
         .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal-content { background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; max-width: 90%; width: 450px; transform: translateY(-20px); opacity: 0; transition: transform 0.3s, opacity 0.3s; }
-        .modal-overlay.active .modal-content { transform: translateY(0); opacity: 1; }
-        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); line-height: 1; transition: color 0.2s; }
-        .modal-close:hover { color: var(--danger-color); }
-        #unites-list { max-height: 300px; overflow-y: auto; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
-        .unite-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 6px; }
-        .unite-item:nth-child(even) { background-color: #fcfdfe; }
-        .unite-item label { flex: 1; font-weight: 500; }
-        .unite-item input, .unite-item span { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
-        .unite-item span { background-color: var(--widget-darker-color); font-weight: bold; border: none; }
-        .unite-item input:focus { border-color: var(--primary-color); outline: none; }
+        .modal-content { background-color: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; max-width: 90%; width: 450px; transform: scale(0.9); transition: transform 0.3s; }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.8em; cursor: pointer; color: var(--light-grey); }
+        #unites-list { max-height: 300px; overflow-y: auto; margin-top: 15px; }
+        .unite-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-radius: 4px; }
+        .unite-item:nth-child(even) { background-color: #f8f9f9; }
+        .unite-item label { flex: 1; }
+        .unite-item input { width: 60px; text-align: center; padding: 5px; border: 1px solid var(--light-grey); border-radius: 4px; }
+        .unite-item span { width: 60px; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
-    
-    <div class="site-header-container">
-        <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
-        <header class="site-header">Outil JDLM*</header>
-        <!-- Bouton Ajouter des données déplacé dans le header -->
-        <a href="data.html" class="btn btn-header-action">Ajouter des données</a>
-    </div>
-    
+
+    <header class="site-header">Outil JDLM*</header>
+
     <main class="main-container">
         <section class="data-section">
             <div class="tabs">
@@ -310,7 +214,7 @@
                     <li class="no-data">Aucune donnée</li>
                 </ul>
             </div>
-            <!-- Le bouton a été retiré d'ici -->
+            <a href="data.html" class="btn btn-main-action">Ajouter des données</a>
         </aside>
     </main>
 
@@ -333,49 +237,59 @@
 
     <script>
         const gradeMap = {
-            'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90},
-            'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75},
-            'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60},
-            'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45}
+            'A+': {min: 95, max: 100}, 'A': {min: 90, max: 94}, 'A-': {min: 85, max: 89},
+            'B+': {min: 80, max: 84}, 'B': {min: 75, max: 79}, 'B-': {min: 70, max: 74},
+            'C+': {min: 65, max: 69}, 'C': {min: 62, max: 64}, 'C-': {min: 60, max: 61},
+            'D+': {min: 55, max: 59}, 'D': {min: 50, max: 54}, 'E': {min: 0, max: 49}
         };
 
         const defaultUnits = {
-            sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2, },
-            sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 }
+            sec4: {
+                'ART': 2, 'MUS': 2, 'DRM': 2,
+                'CAT': 4,
+                'FRA': 6,
+                'ANG': 4, 'ESL': 4,
+                'MAT': 6,
+                'SCT': 4, 'ATS': 6,
+                'EHI': 4, 'HQC': 4,
+                'ECR': 2,
+                'EPS': 2
+            },
+            sec5: {
+                'ART': 2, 'MUS': 2, 'DRM': 2,
+                'CAT': 2,
+                'FRA': 6,
+                'ANG': 4, 'ESL': 4,
+                'MAT': 6,
+                'CHI': 4, 'PHY': 4,
+                'MON': 4, 'HQC': 4,
+                'ECR': 2,
+                'EPS': 2
+            }
         };
 
         const subjectList = {
-            'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français, Langue d'enseignement", 'ELA': "English Language Arts", 'EESL': "Enriched English as a Second Language", 'ESL': "English as a Second Language", 'SN': "Mathématique, Science Nature", 'CST': "Mathématique, Culture, Société et Technique", 'ST': "Science et Technologie", 'STE': "Science et Technologie de l'Environnement", 'HQC': "Histoire du Québec et du Canada", 'CCQ': "Culture et Citoyenneté Québécoise", 'EPS': "Éducation Physique et à la Santé", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière",
+            'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique",
+            'CAT': "Conception et Application Technologique",
+            'FRA': "Français, Langue d'enseignement", 'ANG': "Anglais, Langue Maternelle", 'ESL': "Anglais, Langue Seconde",
+            'MAT': "Mathématique", 'SCT': "Science et Technologie", 'ATS': "Applications Technologiques et Scientifiques",
+            'EHI': "Éthique et Histoire des Idées", 'HQC': "Histoire du Québec et du Canada",
+            'ECR': "Éducation à la Citoyenneté et aux Relations", 'EPS': "Éducation Physique et à la Santé",
+            'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain"
         };
         
         let jdlmData, activeTab = 'etape1';
 
         document.addEventListener('DOMContentLoaded', () => {
-            checkLogoutTimer();
             jdlmData = JSON.parse(localStorage.getItem('jdlmData')) || {};
             if (!jdlmData.nom) {
                 document.getElementById('tab-contents').innerHTML = "<p>Aucune donnée disponible. Veuillez ajouter les données.</p>";
                 return;
             }
-            localStorage.setItem('jdlmLastActive', Date.now().toString());
             loadSettings();
             setupEventListeners();
             renderAll();
         });
-
-        function checkLogoutTimer() {
-            const lastActiveTime = localStorage.getItem('jdlmLastActive');
-            const ONE_HOUR = 60 * 60 * 1000;
-            if (lastActiveTime && (Date.now() - parseInt(lastActiveTime)) > ONE_HOUR) {
-                window.location.href = 'index.html';
-            }
-            setInterval(() => {
-                const checkTime = localStorage.getItem('jdlmLastActive');
-                 if (checkTime && (Date.now() - parseInt(checkTime)) > ONE_HOUR) {
-                    window.location.href = 'index.html';
-                }
-            }, 5 * 60 * 1000);
-        }
 
         function setupEventListeners() {
             document.querySelectorAll('.tab-btn').forEach(tab => {
@@ -440,26 +354,25 @@
                 const { min, max } = gradeMap[trimmedResult];
                 return (min + max) / 2;
             }
-            const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
-            if (scoreMatch) {
-                const score = parseFloat(scoreMatch[1].replace(',', '.'));
-                const maxScore = parseFloat(scoreMatch[2].replace(',', '.'));
-                if (!isNaN(score) && !isNaN(maxScore) && maxScore > 0) {
-                    return (score / maxScore) * 100;
-                }
+            const match = trimmedResult.match(/(\d+,\d)\s\/\s\d+,\d\s\((\d+,\d)\s%\)/);
+            if (match && match[2]) {
+                return parseFloat(match[2].replace(',', '.'));
             }
             return null;
         }
 
-        function calculateSubjectAverage(subject) {
+    function calculateSubjectAverage(subject) {
             let totalWeightedGrade = 0;
             let totalCompetencyWeight = 0;
+
             subject.competencies.forEach(comp => {
                 const compWeightMatch = comp.name.match(/\((\d+)%\)/);
                 if (!compWeightMatch) return;
                 const compWeight = parseFloat(compWeightMatch[1]);
+                
                 let totalAssignmentGrade = 0;
                 let totalAssignmentWeight = 0;
+
                 comp.assignments.forEach(assign => {
                     const grade = getNumericGrade(assign.result);
                     const weight = parseFloat(assign.pond);
@@ -468,58 +381,53 @@
                         totalAssignmentWeight += weight;
                     }
                 });
+                
                 if (totalAssignmentWeight > 0) {
                     const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
                     totalWeightedGrade += competencyAverage * compWeight;
-                    totalCompetencyWeight += compWeight;
+                    totalCompetencyWeight += compWeight; 
                 }
             });
+
             return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
         }
-        
         function getUnits() {
             const settings = jdlmData.settings || {};
             const niveau = settings.niveau;
             const mode = settings.unitesMode || 'defaut';
-            
             if (mode === 'sans') return new Proxy({}, { get: () => 1 });
             if (mode === 'perso') return settings.customUnites || {};
-            
-            if (mode === 'defaut' && niveau && defaultUnits[niveau]) {
-                return defaultUnits[niveau];
-            }
-
+            if (mode === 'defaut' && niveau) return defaultUnits[niveau] || {};
             return {};
         }
 
         function calculateAverages() {
             const units = getUnits();
-            const settings = jdlmData.settings || {};
-            const niveau = settings.niveau;
-            const mode = settings.unitesMode || 'defaut';
+            const niveau = (jdlmData.settings || {}).niveau;
             
             let allTermAverages = {};
             let allSubjectAverages = {};
             
-            const defaultSubjectUnit = 2;
-            
             ['etape1', 'etape2', 'etape3'].forEach(etape => {
                 if (!jdlmData[etape]) return;
+                
                 let termWeightedSum = 0;
                 let termUnitSum = 0;
                 allSubjectAverages[etape] = {};
+                
                 jdlmData[etape].forEach(subject => {
                     const average = calculateSubjectAverage(subject);
-                    const codePrefix = subject.code.substring(0,3);
-                    allSubjectAverages[etape][codePrefix] = { name: subjectList[codePrefix] || subject.name, average: average };
+                    const codePrefix = subject.code.substring(0, 3);
                     
-                    let unit;
-                    if (mode === 'defaut' && !niveau) {
-                        unit = null;
-                    } else if (mode === 'sans' || mode === 'perso') {
-                        unit = units[codePrefix] ?? 1;
-                    } else if (mode === 'defaut') {
-                        unit = units[codePrefix] ?? defaultSubjectUnit;
+                    allSubjectAverages[etape][subject.code] = { 
+                        name: subjectList[codePrefix] || subject.name, 
+                        average: average 
+                    };
+                    
+                    let unit = units[codePrefix];
+                    if (unit === undefined) {
+    
+                        unit = (jdlmData.settings?.unitesMode === 'perso') ? 1 : null;
                     }
 
                     if (average !== null && unit !== null && niveau) {
@@ -527,8 +435,10 @@
                         termUnitSum += unit;
                     }
                 });
+                
                 allTermAverages[etape] = termUnitSum > 0 ? termWeightedSum / termUnitSum : null;
             });
+            
             let globalWeightedSum = 0;
             let globalTermCount = 0;
             Object.values(allTermAverages).forEach(avg => {
@@ -537,6 +447,7 @@
                     globalTermCount++;
                 }
             });
+
             return {
                 subjectAverages: allSubjectAverages,
                 termAverages: allTermAverages,
@@ -555,7 +466,7 @@
             renderTermData(jdlmData.etape3, document.getElementById('etape3'));
         }
         
-        function renderSidePanel() {
+       function renderSidePanel() {
             const averages = calculateAverages();
             const niveau = (jdlmData.settings || {}).niveau;
             const globalAvgEl = document.getElementById('moyenne-generale');
@@ -564,19 +475,18 @@
             globalAvgEl.classList.toggle('invalid', !niveau);
             termAvgEl.classList.toggle('invalid', !niveau);
             
-            const formatAvg = (avg) => avg !== null ? `<span class="grade-percentage">${avg.toFixed(2)}%</span>` : '--';
+            globalAvgEl.textContent = !niveau ? 'N/A' : (averages.globalAverage !== null ? averages.globalAverage.toFixed(2) + '%' : '--');
+            termAvgEl.textContent = !niveau ? 'N/A' : (averages.termAverages[activeTab] !== null ? averages.termAverages[activeTab].toFixed(2) + '%' : '--');
             
-            globalAvgEl.innerHTML = !niveau ? 'N/A' : formatAvg(averages.globalAverage);
-            termAvgEl.innerHTML = !niveau ? 'N/A' : formatAvg(averages.termAverages[activeTab]);
-
             const subjectListEl = document.getElementById('subject-averages-list');
             subjectListEl.innerHTML = '';
+            
             const activeTermSubjects = averages.subjectAverages[activeTab];
             
             if (activeTermSubjects && Object.keys(activeTermSubjects).length > 0) {
-                Object.entries(activeTermSubjects).forEach(([code, subj]) => {
+                Object.values(activeTermSubjects).forEach(subj => {
                     const li = document.createElement('li');
-                    li.innerHTML = `<span>${subj.name}</span><strong>${formatAvg(subj.average)}</strong>`;
+                    li.innerHTML = `<span>${subj.name}</span><strong>${subj.average !== null ? subj.average.toFixed(2) + '%' : 'N/A'}</strong>`;
                     subjectListEl.appendChild(li);
                 });
             } else {
@@ -604,24 +514,16 @@
                 listContainer.innerHTML = '<div class="no-data">Aucune matière trouvée.</div>';
                 return;
             }
-            const units = getUnits();
-            const defaultSubjectUnit = 2;
-            
             allSubjects.forEach((name, code) => {
                 const item = document.createElement('div');
                 item.className = 'unite-item';
                 let valueDisplay = '';
-                
                 if (mode === 'perso') {
                     const currentValue = (settings.customUnites || {})[code] || 1;
                     valueDisplay = `<input type="number" data-code="${code}" value="${currentValue}" min="0" step="1">`;
                 } else {
-                    let unitValue;
-                    if (mode === 'sans') {
-                        unitValue = 1;
-                    } else if (mode === 'defaut') {
-                        unitValue = units[code] ?? defaultSubjectUnit;
-                    }
+                    const units = getUnits();
+                    const unitValue = units[code] || (mode === 'sans' ? 1 : 'N/A');
                     valueDisplay = `<span>${unitValue}</span>`;
                 }
                 item.innerHTML = `<label>${name} (${code})</label>${valueDisplay}`;
@@ -655,19 +557,7 @@
                 comp.assignments.forEach(assign => {
                     const assignRow = document.createElement('tr');
                     const numGrade = getNumericGrade(assign.result);
-                    let formattedResult = '<span class="no-data">-</span>';
-                    if (assign.result) {
-                        const isLetterGrade = !!gradeMap[assign.result.trim()];
-                        const isSimplePercentage = assign.result.includes('%') && !assign.result.includes('/');
-                        
-                        if (isLetterGrade && numGrade !== null) {
-                            formattedResult = `${assign.result} <i>(~<span class="grade-percentage">${numGrade.toFixed(1)}%</span>)</i>`;
-                        } else if (isSimplePercentage || assign.result.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/)) {
-                            formattedResult = assign.result.replace(/(\d+[,.]?\d*\s*\/.*|(\d+[,.]?\d*\s*%))/g, (match) => `<span class="grade-percentage">${match}</span>`);
-                        } else {
-                            formattedResult = assign.result;
-                        }
-                    }
+                    const formattedResult = assign.result ? (numGrade !== null ? `${assign.result} <i>(~${numGrade.toFixed(1)}%)</i>` : assign.result) : '<span class="no-data">-</span>';
                     assignRow.innerHTML = `
                         <td>${assign.category || '<span class="no-data">-</span>'}</td>
                         <td>${assign.work || '<span class="no-data">-</span>'}</td>
