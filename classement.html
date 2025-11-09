@@ -238,7 +238,7 @@ async function getLockStatus() {
     return result.isLocked === true;
   } catch (error) {
     console.error('Erreur lors de la récupération du statut de verrouillage:', error);
-    return true; // Default to locked on error
+    return false; // Default to locked on error
   }
 }
 
