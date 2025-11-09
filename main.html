@@ -81,6 +81,7 @@
 
 
 <!-- CSS -->
+<!-- CSS -->
 <style>
 .legal-text {
     font-size: 0.75rem;
@@ -110,11 +111,15 @@
     height: 100%;
     background-color: rgba(44, 62, 80, 1);
     z-index: 10000;
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     transition: opacity 1s ease;
     flex-direction: column;
+}
+
+.password-overlay.show {
+    display: flex;
 }
 
 .overlay-content {
@@ -219,11 +224,11 @@ async function handleLockStatus() {
 
   if (isLocked) {
     isSystemLocked = true;
+    document.getElementById('password-lock').classList.add('show');
     setupPasswordLock();
     freezeAllFunctions();
   } else {
     isSystemLocked = false;
-    document.getElementById('password-lock').classList.add('hidden');
     sessionStorage.setItem(UNLOCK_KEY, 'true');
     unfreezeAllFunctions();
   }
@@ -250,7 +255,7 @@ async function getLockStatus() {
     return result.isLocked === true;
   } catch (error) {
     console.error('Erreur lors de la récupération du statut de verrouillage:', error);
-    return false; // Default to locked on error
+    return true; // Default to locked on error
   }
 }
 
@@ -261,9 +266,9 @@ function setupPasswordLock() {
   const submitBtn = document.getElementById('password-submit-btn');
   const errorDiv = document.getElementById('password-error');
 
-  // If already unlocked in session, hide immediately
+  // If already unlocked in session, don't show lock
   if (sessionStorage.getItem(UNLOCK_KEY) === 'true') {
-    passwordLock.classList.add('hidden');
+    passwordLock.classList.remove('show');
     isSystemLocked = false;
     unfreezeAllFunctions();
     return;
@@ -287,7 +292,7 @@ function setupPasswordLock() {
       const result = await response.json();
 
       if (result.success === true) {
-        passwordLock.classList.add('hidden');
+        passwordLock.classList.remove('show');
         sessionStorage.setItem(UNLOCK_KEY, 'true');
         passwordInput.value = '';
         isSystemLocked = false;
