@@ -168,6 +168,22 @@
         background-color: #212f3c;
     }
 
+    .terms-text {
+        margin-top: 20px;
+        font-size: 0.85em;
+        color: var(--footer-grey);
+        line-height: 1.5;
+    }
+
+    .terms-text a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+
+    .terms-text a:hover {
+        text-decoration: underline;
+    }
+
     #signup-flow, #login-flow {
         display: none;
     }
@@ -180,13 +196,16 @@
     <main class="content">
         <div class="login-widget">
             <div class="logo-container">
-                <svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
             </div>
 
             <div id="signup-flow">
                 <h2>Bienvenue sur JDLM*</h2>
                 <p class="subtitle">Créez un compte pour commencer.</p>
-                <a href="data.html" class="btn btn-primary">S’inscrire</a>
+                <a href="data.html" class="btn btn-primary">S'inscrire</a>
+                <p class="terms-text">
+                    Veuillez lire nos <a href="confidentialite.html">Politiques de Confidentialité</a> et nos <a href="conditions.html">Conditions d'utilisations</a>. En appuyant sur ces boutons, vous acceptez aux conditions et à nos politiques. Sinon, quittez le site.
+                </p>
             </div>
 
             <div id="login-flow">
@@ -194,6 +213,9 @@
                 <div id="userNameDisplay" class="user-name"></div>
                 <a href="main.html" class="btn btn-primary">Accéder à l'outil</a>
                 <a href="data.html" class="btn btn-secondary">Modifier mes données</a>
+                <p class="terms-text">
+                    Veuillez lire nos <a href="confidentialite.html">Politiques de Confidentialité</a> et nos <a href="conditions.html">Conditions d'utilisations</a>. En appuyant sur ces boutons, vous acceptez aux conditions et à nos politiques. Sinon, quittez le site.
+                </p>
             </div>
         </div>
     </main>
