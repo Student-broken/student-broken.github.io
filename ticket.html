@@ -155,7 +155,6 @@
             opacity: 0.8;
         }
 
-        /* STATUS WIDGET STYLES */
         .status-header {
             background-color: #34495e;
             padding: 25px;
@@ -354,12 +353,10 @@
         const statusHeader = document.getElementById('statusHeader');
         const submitButton = ticketForm.querySelector('input[type="submit"]');
 
-        // Collapsible status widget
         statusHeader.addEventListener('click', () => {
             statusWidget.classList.toggle('collapsed');
         });
 
-        // Form submission
         ticketForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -403,7 +400,6 @@
             });
         });
 
-        // Status check
         checkStatusButton.addEventListener('click', function() {
             const ticketId = ticketIdInput.value.trim();
             if (!ticketId) {
