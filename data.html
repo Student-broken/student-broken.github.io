@@ -135,7 +135,6 @@
             opacity: 0.8;
         }
 
-        /* --- MODIFIED STYLE FOR A MORE VISIBLE BUTTON --- */
         .info-btn {
             position: absolute;
             top: 15px;
@@ -163,7 +162,6 @@
             box-shadow: 0 6px 15px rgba(41, 128, 185, 0.5);
         }
 
-        /* --- NEW ANIMATION STYLES --- */
         @keyframes shake-it {
             0%, 100% { transform: rotate(0deg); }
             25% { transform: rotate(-15deg); }
@@ -174,7 +172,6 @@
         .animate-attention {
             animation: shake-it 0.7s ease-in-out 2;
         }
-        /* --- END OF NEW STYLES --- */
 
         .modal-overlay {
             position: fixed;
@@ -319,17 +316,14 @@
         </footer>
                 
     <script>
-        // --- NEW SCRIPT TO ANIMATE THE BUTTON ON PAGE LOAD ---
         document.addEventListener('DOMContentLoaded', () => {
             const infoBtn = document.getElementById('open-modal-btn');
             if (infoBtn) {
-                // Add the animation class
                 infoBtn.classList.add('animate-attention');
 
-                // Remove the class after 1.4 seconds (0.7s duration * 2 iterations)
                 setTimeout(() => {
                     infoBtn.classList.remove('animate-attention');
-                }, 1400);
+                }, 14000);
             }
         });
 
