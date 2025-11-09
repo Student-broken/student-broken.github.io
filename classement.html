@@ -6,7 +6,6 @@
     <title>Classement - Outil JDLM</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <!-- Including Chart.js for the graph -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .legal-text {font-size: 0.75rem; color: #6c757d; margin-top: 15px; line-height: 1.4; text-align: center; padding: 0 10px;}
@@ -56,8 +55,18 @@
         .error-message, .no-data { text-align: center; padding: 40px; font-size: 1.2em; color: var(--light-grey); }
         .error-message { color: var(--danger-color); background-color: #fdd; border: 1px solid var(--danger-color); border-radius: 8px; }
         footer { text-align: center; padding: 25px; font-size: 0.8em; color: #95a5a6; font-style: italic; flex-shrink: 0;}
-        .loader { height: 9px; width: 60px; --c:no-repeat linear-gradient(#000 0 0); background: var(--c), var(--c), var(--c), var(--c); background-size: 26% 3px; animation: l2 1s infinite; margin: 0 auto; }
-        @keyframes l2 { 0%, 70%, 100% {background-position: calc(0*100%/3) 100%,calc(1*100%/3) 100%,calc(2*100%/3) 100%,calc(3*100%/3) 100%} 14%  {background-position: calc(0*100%/3) 0   ,calc(1*100%/3) 100%,calc(2*100%/3) 100%,calc(3*100%/3) 100%} 28%  {background-position: calc(0*100%/3) 100%,calc(1*100%/3) 0   ,calc(2*100%/3) 100%,calc(3*100%/3) 100%} 42%  {background-position: calc(0*100%/3) 100%,calc(1*100%/3) 100%,calc(2*100%/3) 0   ,calc(3*100%/3) 100%} 56%  {background-position: calc(0*100%/3) 100%,calc(1*100%/3) 100%,calc(2*100%/3) 100%,calc(3*100%/3) 0   }}
+        .loader {
+          width: 120px;
+          height: 20px;
+          -webkit-mask:linear-gradient(90deg,#000 70%,#0000 0) 0/20%;
+          background:
+           linear-gradient(#000 0 0) 0/0% no-repeat
+           #ddd;
+          animation: l4 2s infinite steps(6);
+        }
+        @keyframes l4 {
+            100% {background-size:120%}
+        }
         .stacked-avg-widget { justify-content: center; }
         .avg-half { text-align: center; }
         .widget-subtitle { font-size: 1em; color: #6c757d; margin-bottom: 5px; }
@@ -67,9 +76,6 @@
 <body>
 
 
-
-<!-- CSS -->
-<!-- CSS -->
 <style>
 .legal-text {
     font-size: 0.75rem;
@@ -183,7 +189,6 @@
     </div>
 </div>
 
-<!-- JAVASCRIPT -->
 <script>
 const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbwFJU9sB3J7sif5XSth2lt0q1ySLb8hpgg3tB1Fx3GNTGWn_DL-K6n0ZU5bhY2ABIZI/exec";
 const UNLOCK_KEY = 'leaderboardUnlocked';
@@ -194,7 +199,6 @@ let isSystemLocked = true; // Global flag to freeze all functions
 document.addEventListener('DOMContentLoaded', async () => {
   await handleLockStatus();
   
-  // Only proceed with other functions if unlocked
   if (!isSystemLocked) {
     await loadLeaderboardData();
   }
@@ -391,33 +395,25 @@ async function loadLeaderboardData() {
 </div>
 
 <script>
-    // !! IMPORTANT !! REMPLACEZ CETTE URL PAR VOTRE URL DE DÉPLOIEMENT DE L'APPLICATION WEB LOGGING
     const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbzl1HuhGVg30LP5veVSbO0tlxff3udKSsKnE_jFcP_HKZ1fGhaJTUu7Vh8W5mXUbQ1y/exec"; 
 
-    // Fonction pour récupérer le nom de l'utilisateur (utilisant la variable 'nom')
     function getUserName() {
-        // Tente de récupérer le nom depuis localStorage.
         try {
             const userData = JSON.parse(localStorage.getItem('jdlmData'));
             
-            // On vérifie que userData existe et que la propriété 'nom' existe et n'est pas vide
             if (userData && userData.nom && userData.nom.trim() !== "") {
                 return userData.nom;
             }
         } catch (e) {
-            // Ignorer l'erreur si localStorage est inaccessible ou corrompu
         }
-        // Retourne 'Anonyme' si aucune donnée valide n'est trouvée
         return 'Anonyme'; 
     }
 
-    // Fonction principale pour enregistrer la visite
     async function logUserVisit() {
         const userName = getUserName();
         const logStatus = document.getElementById('log-status');
         const userDisplay = document.getElementById('current-user-display');
 
-        // Mise à jour de l'affichage utilisateur (peut être Anonyme)
         userDisplay.textContent = userName;
 
         if (LOGGING_API_URL === "VOTRE_LOGGING_API_URL_ICI" || LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
@@ -426,7 +422,6 @@ async function loadLeaderboardData() {
         }
 
         try {
-            // Envoi du nom d'utilisateur (qui sera 'Anonyme' si non trouvé) au paramètre 'name' de l'Apps Script
             const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userName)}`;
 
             const response = await fetch(fullUrl, {
@@ -441,7 +436,6 @@ async function loadLeaderboardData() {
             const result = await response.json();
 
             if (result.success) {
-                // Si l'enregistrement est réussi, affiche l'heure locale du client
                 const now = new Date();
                 const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -457,7 +451,6 @@ async function loadLeaderboardData() {
         }
     }
 
-    // Déclencher la fonction d'enregistrement au chargement complet de la page
     document.addEventListener('DOMContentLoaded', logUserVisit);
 </script>
 
@@ -478,7 +471,6 @@ async function loadLeaderboardData() {
         let currentRanks = {}; 
         let chartInstance = null;
         
-        // --- NEW: Function to notify the backend that the user viewed this page ---
         async function notifyClassView(userCode, userRandom) {
             const formData = new FormData();
             formData.append('userCode', userCode);
@@ -500,7 +492,6 @@ async function loadLeaderboardData() {
 
         async function initializeDashboard() {
             const localData = JSON.parse(localStorage.getItem('jdlmData')) || {};
-            // --- UPDATED: Use both userCode and user_random from local storage ---
             const userCode = (localData.nom || '').replace(/\s+/g, '').toLowerCase();
             const userRandom = localData.user_random; 
             const selectedLevel = localStorage.getItem('jdlmNiveau');
@@ -510,7 +501,6 @@ async function loadLeaderboardData() {
                 return;
             }
             
-            // --- NEW: Call the notification function when the page loads ---
             await notifyClassView(userCode, userRandom);
 
             try {
@@ -521,7 +511,6 @@ async function loadLeaderboardData() {
 
                 const oldRanks = JSON.parse(localStorage.getItem('jdlmRankHistory')) || {};
                 
-                // --- UPDATED: Pass userRandom to the render function ---
                 document.getElementById('term-select').addEventListener('change', () => renderDashboard(allData, userRandom, selectedLevel, oldRanks));
                 renderDashboard(allData, userRandom, selectedLevel, oldRanks);
 
@@ -544,7 +533,6 @@ async function loadLeaderboardData() {
                 return;
             }
 
-            // --- UPDATED: Find the current user by their RANDOM code ---
             const currentUserData = levelData.find(d => d.user_random === userRandom);
             
             if (!currentUserData) {
@@ -584,7 +572,6 @@ async function loadLeaderboardData() {
         function createStatWidgetHTML(widgetClass, currentKey, title, allUsersData, currentUserData, oldRanks) {
             const rankedUsers = allUsersData.filter(u => u[currentKey] && !isNaN(parseFloat(u[currentKey]))).sort((a, b) => b[currentKey] - a[currentKey]);
             const totalUsers = rankedUsers.length;
-            // --- UPDATED: Find rank using user_random ---
             const currentUserRank = rankedUsers.findIndex(u => u.user_random === currentUserData.user_random) + 1;
             const currentUserGrade = parseFloat(currentUserData[currentKey]);
             
@@ -594,7 +581,6 @@ async function loadLeaderboardData() {
 
             let leaderboardItemsHTML = rankedUsers.map((user, index) => {
                 const rank = index + 1;
-                // --- UPDATED: Check for current user using user_random ---
                 const isCurrentUser = user.user_random === currentUserData.user_random;
                 const userName = isCurrentUser ? 'Vous' : `Utilisateur ${rank}`;
                 return `<li class="leaderboard-item ${isCurrentUser ? 'is-user' : ''}" data-rank="${rank}">
