@@ -46,8 +46,8 @@
         
         .update-date { 
             font-size: 0.95em;
-            opacity: 0.9;
-            font-weight: 300;
+            color: #666666;
+            font-weight: 400;
         }
         
         .content {
@@ -55,55 +55,42 @@
         }
         
         .notice-box {
-            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
-            border-radius: 16px;
+            background: #fffbf0;
+            border: 2px solid #f5c842;
             padding: 28px 32px;
             margin-bottom: 40px;
-            border-left: 5px solid #fdcb6e;
-            box-shadow: 0 4px 20px rgba(253, 203, 110, 0.2);
         }
         
         .notice-box p {
-            color: #2d3436;
+            color: #1a1a1a;
             font-weight: 500;
             line-height: 1.6;
         }
         
         .notice-box strong {
-            color: #e17055;
+            color: #000000;
             font-weight: 700;
         }
         
         h2 { 
-            color: #2d3436; 
+            color: #000000; 
             font-weight: 700; 
             margin-top: 50px;
             margin-bottom: 20px;
             font-size: 1.5em;
             padding-bottom: 12px;
-            border-bottom: 3px solid #667eea;
-            position: relative;
-        }
-        
-        h2::before {
-            content: '';
-            position: absolute;
-            bottom: -3px;
-            left: 0;
-            width: 60px;
-            height: 3px;
-            background: #764ba2;
+            border-bottom: 2px solid #000000;
         }
         
         p { 
             font-size: 16px; 
             margin-bottom: 18px;
-            color: #4a5568;
+            color: #333333;
             font-weight: 400;
         }
         
         strong { 
-            color: #2d3436; 
+            color: #000000; 
             font-weight: 600;
         }
         
@@ -117,29 +104,27 @@
             margin-bottom: 16px;
             padding-left: 32px;
             position: relative;
-            color: #4a5568;
+            color: #333333;
         }
         
         li::before {
-            content: '→';
+            content: '•';
             position: absolute;
             left: 0;
-            color: #667eea;
+            color: #000000;
             font-weight: 700;
-            font-size: 1.2em;
+            font-size: 1.4em;
         }
         
         a { 
-            color: #667eea; 
-            text-decoration: none; 
+            color: #000000; 
+            text-decoration: underline; 
             font-weight: 600;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
+            transition: opacity 0.2s ease;
         }
         
         a:hover { 
-            border-bottom-color: #667eea;
-            color: #764ba2;
+            opacity: 0.7;
         }
         
         .section {
@@ -148,8 +133,8 @@
         
         hr {
             border: none;
-            height: 1px;
-            background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+            height: 2px;
+            background: #e5e5e5;
             margin: 50px 0 30px 0;
         }
         
@@ -157,10 +142,8 @@
             text-align: center;
             font-style: italic;
             font-size: 0.9em;
-            color: #718096;
+            color: #666666;
             padding: 20px;
-            background: #f7fafc;
-            border-radius: 12px;
         }
         
         @media (max-width: 768px) {
@@ -220,7 +203,7 @@
 
             <div class="section">
                 <h2>3. Fonctionnalité de Classement et Protection des Renseignements Personnels</h2>
-                <p>L'Outil propose une fonctionnalité de classement <strong>optionnelle</strong>. Celle-ci est régie par la <a href="confidentialite.html">Politique de confidentialité</a>, en stricte conformité avec la <strong>Loi 25 du Québec</strong> et la <strong>LPRPDE</strong> fédérale.</p>
+                <p>L'Outil propose une fonctionnalité de classement <strong>optionnelle</strong>. En accédant à la page "Classement" en cliquant sur le bouton "Classement", vous consentez à ce que vos données anonymes soient stockées de manière sécurisée sous un code utilisateur anonyme (par exemple : "user-kf12xnk0ih2ykk6a7"), généré de manière aléatoire. L'estimation de votre moyenne sera également envoyée à ce serveur sécurisé. Ce processus est conçu pour qu'aucune information personnelle ne puisse être extraite, même avec la clé API. Cette fonctionnalité est régie par la <a href="confidentialite.html">Politique de confidentialité</a>, en stricte conformité avec la <strong>Loi 25 du Québec</strong> et la <strong>LPRPDE</strong> fédérale.</p>
                 <ul>
                     <li><strong>Base légale :</strong> Votre participation au classement repose sur votre <strong>consentement explicite, libre et éclairé</strong> (Art. 10, Loi 25). Ce consentement est spécifique aux fins décrites et <strong>dissociable</strong> de l'utilisation de l'Outil de base.</li>
                     <li><strong>Pseudonymisation :</strong> Les données transmises sont rigoureusement pseudonymisées pour réduire au minimum le risque d'identification, conformément à l'<strong>Article 12 de la Loi 25</strong>.</li>
