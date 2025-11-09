@@ -239,7 +239,7 @@ async function handleLockStatus() {
       sessionStorage.setItem(LOCK_STATUS_KEY, String(newStatus));
       location.reload();
     }
-  }, 6000000);
+  }, 60000);
 }
 
 // Get lock status from API
