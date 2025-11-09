@@ -55,18 +55,41 @@
         .error-message, .no-data { text-align: center; padding: 40px; font-size: 1.2em; color: var(--light-grey); }
         .error-message { color: var(--danger-color); background-color: #fdd; border: 1px solid var(--danger-color); border-radius: 8px; }
         footer { text-align: center; padding: 25px; font-size: 0.8em; color: #95a5a6; font-style: italic; flex-shrink: 0;}
+        
+        /* ===== NEW LOADER ===== */
         .loader {
-          width: 120px;
-          height: 20px;
-          -webkit-mask:linear-gradient(90deg,#000 70%,#0000 0) 0/20%;
-          background:
-           linear-gradient(#000 0 0) 0/0% no-repeat
-           #ddd;
-          animation: l4 2s infinite steps(6);
+          width: 50px;
+          aspect-ratio: 1;
+          display: grid;
+          margin: auto; /* This keeps the loader centered */
         }
-        @keyframes l4 {
-            100% {background-size:120%}
+        .loader:before,
+        .loader:after {
+          content: "";
+          grid-area: 1/1;
+          margin: 0 0 15px 15px;
+          --c:#0000 calc(100%/3),#046D8B 0 calc(2*100%/3),#0000 0;
+          --c1:linear-gradient(90deg,var(--c));
+          --c2:linear-gradient( 0deg,var(--c));
+          background: var(--c1),var(--c2),var(--c1),var(--c2);
+          background-size: 300% 4px,4px 300%;
+          background-repeat: no-repeat;
+          animation: l12 1s infinite linear;
         }
+        .loader:after {
+          margin: 15px 15px 0 0;
+          transform: scale(-1,-1);
+        }
+        @keyframes l12 {
+          0%   {background-position: 50%  0,100% 100%,0    100%,0 0}
+          25%  {background-position: 0    0,100% 50% ,0    100%,0 0}
+          50%  {background-position: 0    0,100% 0   ,50%  100%,0 0}
+          75%  {background-position: 0    0,100% 0   ,100% 100%,0 50%}
+         75.01%{background-position: 100% 0,100% 0   ,100% 100%,0 50%}
+          100% {background-position: 50%  0,100% 0   ,100% 100%,0 100%}
+        }
+        /* ===== END NEW LOADER ===== */
+
         .stacked-avg-widget { justify-content: center; }
         .avg-half { text-align: center; }
         .widget-subtitle { font-size: 1em; color: #6c757d; margin-bottom: 5px; }
@@ -76,6 +99,9 @@
 <body>
 
 
+
+<!-- CSS -->
+<!-- CSS -->
 <style>
 .legal-text {
     font-size: 0.75rem;
