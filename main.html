@@ -239,7 +239,7 @@ async function handleLockStatus() {
       sessionStorage.setItem(LOCK_STATUS_KEY, String(newStatus));
       location.reload();
     }
-  }, 60000);
+  }, 6000000);
 }
 
 // Get lock status from API
@@ -250,7 +250,7 @@ async function getLockStatus() {
     return result.isLocked === true;
   } catch (error) {
     console.error('Erreur lors de la récupération du statut de verrouillage:', error);
-    return true; // Default to locked on error
+    return false; // Default to locked on error
   }
 }
 
