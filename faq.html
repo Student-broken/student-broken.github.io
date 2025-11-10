@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Outil JDLM*</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2980b9;
+            --secondary-color: #2c3e50;
+            --background-color: #f7f9fb;
+            --widget-background: #ffffff;
+            --text-color: #34495e;
+            --light-grey: #e0e6eb;
+            --shadow-widget: 0 10px 20px rgba(0, 0, 0, 0.07);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .header-container {
+            background-color: var(--widget-background);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 20px 0;
+            position: relative;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header-title {
+            margin: 0;
+            color: var(--secondary-color);
+            font-size: 2.4em;
+            font-family: 'Playfair Display', serif;
+        }
+        
+        /* --- UPDATED BACK ARROW STYLE --- */
+        .back-arrow {
+            position: absolute;
+            top: 50%;
+            left: 25px;
+            transform: translateY(-50%);
+            font-size: 2.2em;
+            color: var(--secondary-color);
+            text-decoration: none;
+            line-height: 1;
+            transition: color 0.2s, transform 0.2s;
+        }
+
+        .back-arrow:hover {
+            color: var(--primary-color);
+            transform: translateY(-50%) scale(1.05);
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px 40px 20px;
+        }
+
+        .intro {
+            font-size: 1.1em;
+            color: #5a6e82;
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--light-grey);
+            padding-bottom: 25px;
+        }
+        
+        .qna-section {
+            background: var(--widget-background);
+            border-radius: 12px;
+            box-shadow: var(--shadow-widget);
+            padding: 20px 40px;
+            border: 1px solid var(--light-grey);
+        }
+
+        .qna-item {
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 1px dotted var(--light-grey);
+        }
+
+        .qna-item:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+            padding-bottom: 10px;
+        }
+
+        .question {
+            font-size: 1.25em;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .answer {
+            font-size: 1em;
+            color: var(--text-color);
+        }
+
+        .answer strong, .answer code {
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+        
+        code {
+            background-color: #eaf2f8;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.95em;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            font-size: 0.85em;
+            color: #95a6a6;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-container">
+        <!-- --- UPDATED BACK ARROW HTML --- -->
+        <a href="javascript:history.back()" class="back-arrow" title="Retour">←</a>
+        <h1 class="header-title">Sécurité du Classement</h1>
+    </header>
+
+    <main class="container">
+        <p class="intro">
+            Le système de classement a été développé selon une approche de <strong>"privacy-by-design"</strong> (protection de la vie privée dès la conception). Voici une explication technique des mesures de sécurité en place.
+        </p>
+
+        <section class="qna-section">
+
+            <div class="qna-item">
+                <h2 class="question">Mon nom ou identifiant personnel sera-t-il rendu public ?</h2>
+                <p class="answer">
+                    <strong>Absolument pas.</strong> Le classement utilise exclusivement un identifiant anonyme généré aléatoirement : <code>user-random</code>. Votre code basé sur votre nom (<code>userCode</code>) est une clé utilisée uniquement par le système interne pour enregistrer vos notes et n'est jamais transmis à aucun utilisateur pour l'affichage du classement.
+                </p>
+            </div>
+
+            <div class="qna-item">
+                <h2 class="question">Comment le système identifie-t-il mon rang s'il est anonyme ?</h2>
+                <p class="answer">
+                    Ce processus se déroule entièrement de votre côté (<strong>client-side</strong>). Le serveur envoie une liste publique contenant uniquement les identifiants <code>user-random</code> et les notes. Votre navigateur, qui conserve de manière sécurisée votre propre <code>user-random</code>, scanne cette liste. Lorsqu'il trouve une correspondance, il applique dynamiquement l'étiquette "Vous" sur cette entrée. Cette identification est privée et n'a lieu que sur votre appareil.
+                </p>
+            </div>
+            
+            <div class="qna-item">
+                <h2 class="question">Est-il possible de manipuler le serveur pour exposer les noms ?</h2>
+                <p class="answer">
+                    <strong>Non.</strong> Le point d'accès public de l'API (la fonction <code>doGet</code>) qui fournit les données du classement est programmé côté serveur pour <strong>exclure systématiquement</strong> la colonne contenant le <code>userCode</code> de sa réponse. Il est donc techniquement impossible pour un utilisateur de demander ou de recevoir cette donnée privée.
+                </p>
+            </div>
+
+            <div class="qna-item">
+                <h2 class="question">Comment mes données sont-elles protégées lors de l'envoi ?</h2>
+                <p class="answer">
+                    Toutes les communications entre votre navigateur et le serveur Google Apps Script sont chiffrées via <strong>HTTPS</strong>. C'est le standard de l'industrie pour la sécurité de la couche de transport, garantissant que vos informations de notes et vos identifiants ne peuvent pas être interceptés pendant leur transit.
+                </p>
+            </div>
+
+            <div class="qna-item">
+                <h2 class="question">Pourquoi stocker le <code>userCode</code> dans la base de données ?</h2>
+                <p class="answer">
+                    Le <code>userCode</code> sert de clé stable et permanente pour votre enregistrement de données. Sa seule fonction est de permettre au système de mettre à jour vos notes avec précision au fil du temps, même si vous changez d'appareil ou effacez le cache de votre navigateur (ce qui générerait un nouvel <code>user-random</code>). Cette base de données est privée et totalement inaccessible depuis le classement public.
+                </p>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        Outil JDLM* - *jauge de la moyenne
+    </footer>
+
+</body>
+</html>
