@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report a Problem</title>
+    <title>Signaler un Problème</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -284,30 +284,30 @@
 </head>
 <body>
     <div class="site-header-container">
-        <header class="site-header">Report a Problem</header>
+        <header class="site-header">Signaler un Problème</header>
     </div>
 
     <main class="content">
         <div class="form-widget">
-            <h2>Submit a Request</h2>
+            <h2>Soumettre une Demande</h2>
 
             <form id="ticketForm">
-                <label for="Name">Your Name / Username *</label>
+                <label for="Name">Votre nom / nom d'utilisateur *</label>
                 <input type="text" id="Name" name="Name" required>
 
-                <label for="Contact">Contact Email / Phone (Only required if requesting information or copy of data)</label>
+                <label for="Contact">Contacte email (Seulement nécessaire si vous demandez de l'information ou désirez obtenir une copie de vos donnés)</label>
                 <input type="text" id="Contact" name="Contact">
                 
                 <label for="Message">Message *</label>
                 <textarea id="Message" name="Message" rows="5" required></textarea>
 
-                <label for="Category">Select Request Type *</label>
+                <label for="Category">Type de demande *</label>
                 <select id="Category" name="Category" required>
                     <option value="" disabled selected>-- Select One --</option>
-                    <option value="Request erasure of your data">Request erasure of your data</option>
-                    <option value="Request copy of your data">Request copy of your data</option>
-                    <option value="Request information about how data is collected">Request information about how data is collected</option>
-                    <option value="Other">Other</option>
+                    <option value="Request erasure of your data">Supprimer vos donnés</option>
+                    <option value="Request copy of your data">Obtenir une copie de vos donnés</option>
+                    <option value="Request information about how data is collected">Demande sur l'obtention des donnés</option>
+                    <option value="Other">Autre</option>
                 </select>
                 
                 <input type="submit" value="Submit Ticket">
@@ -318,14 +318,14 @@
 
         <div class="status-widget" id="statusWidget">
             <div class="status-header" id="statusHeader">
-                Check Ticket Status
+                Statut du ticket
                 <span>▼</span>
             </div>
             
             <div class="status-content">
-                <label for="ticketIdInput">Enter your Ticket ID</label>
+                <label for="ticketIdInput">Entrer votre Ticket ID</label>
                 <input type="text" id="ticketIdInput" placeholder="TICKET-1234567890123" required>
-                <button class="btn" id="checkStatusButton">Check Status</button>
+                <button class="btn" id="checkStatusButton">Vérifier le Statut</button>
                 
                 <div id="statusResult"></div>
             </div>
@@ -341,116 +341,140 @@
 
     </footer>
 
-    <script>
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzHVZaGT40V_JhubKQQDU_YNoWOwv7Au3IK4GEgmkJPqkQkBkM9w-RrU_TZj_NA7efo/exec';
+ <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzHVZaGT40V_JhubKQQDU_YNoWOwv7Au3IK4GEgmkJPqkQkBkM9w-RrU_TZj_NA7efo/exec';
+    
+    const ticketForm = document.getElementById('ticketForm');
+    const responseMessage = document.getElementById('responseMessage');
+    const ticketIdInput = document.getElementById('ticketIdInput');
+    const checkStatusButton = document.getElementById('checkStatusButton');
+    const statusResult = document.getElementById('statusResult');
+    const statusWidget = document.getElementById('statusWidget');
+    const statusHeader = document.getElementById('statusHeader');
+    const submitButton = ticketForm.querySelector('input[type="submit"]');
+
+    // --- New Function to manage Local Storage ---
+    function saveTicketId(id) {
+        localStorage.setItem('lastTicketId', id);
+        ticketIdInput.value = id; // Also updates the input field
+    }
+
+    function removeTicketId() {
+        localStorage.removeItem('lastTicketId');
+        ticketIdInput.value = ''; // Clears the input field
+    }
+
+    // --- Check for stored ID on page load ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const storedId = localStorage.getItem('lastTicketId');
+        if (storedId) {
+            ticketIdInput.value = storedId;
+            statusWidget.classList.remove('collapsed');
+        }
+    });
+
+    statusHeader.addEventListener('click', () => {
+        statusWidget.classList.toggle('collapsed');
+    });
+
+    ticketForm.addEventListener('submit', function(e) {
+        e.preventDefault();
         
-        const ticketForm = document.getElementById('ticketForm');
-        const responseMessage = document.getElementById('responseMessage');
-        const ticketIdInput = document.getElementById('ticketIdInput');
-        const checkStatusButton = document.getElementById('checkStatusButton');
-        const statusResult = document.getElementById('statusResult');
-        const statusWidget = document.getElementById('statusWidget');
-        const statusHeader = document.getElementById('statusHeader');
-        const submitButton = ticketForm.querySelector('input[type="submit"]');
+        const form = e.target;
+        const formData = new FormData(form);
+        
+        submitButton.disabled = true; 
+        submitButton.value = 'Sending...';
+        responseMessage.textContent = 'Submitting your request...';
+        responseMessage.className = 'loading';
 
-        statusHeader.addEventListener('click', () => {
-            statusWidget.classList.toggle('collapsed');
-        });
+        const searchParams = new URLSearchParams(formData);
 
-        ticketForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: searchParams
+        })
+        .then(response => response.json())
+        .then(data => {
+            submitButton.disabled = false;
+            submitButton.value = 'Submit Ticket';
             
-            const form = e.target;
-            const formData = new FormData(form);
-            
-            submitButton.disabled = true; 
-            submitButton.value = 'Sending...';
-            responseMessage.textContent = 'Submitting your request...';
-            responseMessage.className = 'loading';
-
-            const searchParams = new URLSearchParams(formData);
-
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                body: searchParams
-            })
-            .then(response => response.json())
-            .then(data => {
-                submitButton.disabled = false;
-                submitButton.value = 'Submit Ticket';
+            if (data.status === 'success') {
+                responseMessage.className = 'success';
+                responseMessage.innerHTML = `✅ Succès! Votre ticket a été soumis<br><br>Your <strong>Ticket ID</strong> is: <strong>${data.ticketId}</strong><br><br>Veuillez conserver cet identifiant pour consulter l'état de votre ticket. Votre demande sera traitée dans les prochaines 24 heures. Veuillez revenir consulter l'état de votre billet dans quelques heures. Merci.`;
                 
-                if (data.status === 'success') {
-                    responseMessage.className = 'success';
-                    responseMessage.innerHTML = `✅ Success! Your ticket has been submitted.<br><br>Your <strong>Ticket ID</strong> is: <strong>${data.ticketId}</strong><br><br>Please save this ID to check your ticket status. Your request will be processed in the next 24 hours. Please come back and check on your ticket status in a few hours. Thank you.`;
-                    
-                    ticketIdInput.value = data.ticketId;
-                    form.reset(); 
-                    statusWidget.classList.remove('collapsed'); 
-                } else {
-                    responseMessage.className = 'error';
-                    responseMessage.textContent = data.message || '❌ An error occurred. Please try again.';
-                }
-            })
-            .catch(error => {
-                submitButton.disabled = false;
-                submitButton.value = 'Submit Ticket';
-                console.error('Error:', error);
+                // --- ADDED: Save Ticket ID to Local Storage ---
+                saveTicketId(data.ticketId);
+
+                form.reset(); 
+                statusWidget.classList.remove('collapsed'); 
+            } else {
                 responseMessage.className = 'error';
-                responseMessage.textContent = '❌ An error occurred during submission. Please check your connection and try again.';
-            });
-        });
-
-        checkStatusButton.addEventListener('click', function() {
-            const ticketId = ticketIdInput.value.trim();
-            if (!ticketId) {
-                statusResult.style.color = '#FFB74D';
-                statusResult.textContent = '⚠️ Please enter a Ticket ID.';
-                return;
+                responseMessage.textContent = data.message || '❌ An error occurred. Please try again.';
             }
-
-            statusResult.textContent = 'Checking status...';
-            statusResult.style.color = '#B0BEC5';
-
-            fetch(`${WEB_APP_URL}?ticketId=${encodeURIComponent(ticketId)}`, {
-                method: 'GET'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    let color = '#fff';
-                    let emoji = '';
-                    
-                    switch (data.statusCode) {
-                        case 'D':
-                            color = '#81C784';
-                            emoji = '✅';
-                            break;
-                        case 'P':
-                            color = '#FFB74D';
-                            emoji = '⚙️';
-                            break;
-                        case 'W':
-                            color = '#64B5F6';
-                            emoji = '⏳';
-                            break;
-                        default:
-                            color = '#BDBDBD';
-                            emoji = '❓';
-                    }
-                    
-                    statusResult.style.color = color;
-                    statusResult.innerHTML = `${emoji} Status for <strong>${ticketId}</strong>: <span>${data.statusText}</span>`;
-                } else {
-                    statusResult.style.color = '#E57373';
-                    statusResult.textContent = `❌ Error: ${data.message}`;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                statusResult.style.color = '#E57373';
-                statusResult.textContent = '❌ Network error during status lookup. Please try again.';
-            });
+        })
+        .catch(error => {
+            submitButton.disabled = false;
+            submitButton.value = 'Submit Ticket';
+            console.error('Error:', error);
+            responseMessage.className = 'error';
+            responseMessage.textContent = '❌ An error occurred during submission. Please check your connection and try again.';
         });
-    </script>
+    });
+
+    checkStatusButton.addEventListener('click', function() {
+        const ticketId = ticketIdInput.value.trim();
+        if (!ticketId) {
+            statusResult.style.color = '#FFB74D';
+            statusResult.textContent = '⚠️ Veuillez entrer un ticket ID.';
+            return;
+        }
+
+        statusResult.textContent = 'Votre demande est en cours de traitement...';
+        statusResult.style.color = '#B0BEC5';
+
+        fetch(`${WEB_APP_URL}?ticketId=${encodeURIComponent(ticketId)}`, {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                let color = '#fff';
+                let emoji = '';
+                
+                switch (data.statusCode) {
+                    case 'D':
+                        color = '#81C784';
+                        emoji = '✅';
+                        // --- ADDED: Remove Ticket ID if status is 'Done' (D) ---
+                        removeTicketId();
+                        break;
+                    case 'P':
+                        color = '#FFB74D';
+                        emoji = '⚙️';
+                        break;
+                    case 'W':
+                        color = '#64B5F6';
+                        emoji = '⏳';
+                        break;
+                    default:
+                        color = '#BDBDBD';
+                        emoji = '❓';
+                }
+                
+                statusResult.style.color = color;
+                statusResult.innerHTML = `${emoji} Status for <strong>${ticketId}</strong>: <span>${data.statusText}</span>`;
+            } else {
+                statusResult.style.color = '#E57373';
+                statusResult.textContent = `❌ Error: ${data.message}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusResult.style.color = '#E57373';
+            statusResult.textContent = '❌ Network error during status lookup. Please try again.';
+        });
+    });
+</script>
 </body>
 </html>
