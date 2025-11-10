@@ -390,11 +390,11 @@
 
 <!-- JAVASCRIPT -->
 <script>
-const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
-const UNLOCK_KEY = 'leaderboardUnlocked';
-const LOCK_STATUS_KEY = 'lastLockStatus';
+//const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
+//const UNLOCK_KEY = 'leaderboardUnlocked';
+//const LOCK_STATUS_KEY = 'lastLockStatus';
 
-let isSystemLocked = true; // Global flag to freeze all functions
+let isSystemLocked = FALSE; // Global flag to freeze all functions
 
 document.addEventListener('DOMContentLoaded', async () => {
   await handleLockStatus();
