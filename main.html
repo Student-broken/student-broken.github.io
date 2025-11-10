@@ -75,307 +75,34 @@
         .unite-item input, .unite-item span { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
         .unite-item span { background-color: var(--widget-darker-color); font-weight: bold; border: none; }
         .unite-item input:focus { border-color: var(--primary-color); outline: none; }
+        .password-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(44, 62, 80, 1); z-index: 10000; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        .password-overlay.show { display: flex; }
+        .overlay-content { background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); text-align: center; max-width: 400px; width: 90%; }
+        .overlay-content h3 { color: var(--primary-color); margin-top: 0; margin-bottom: 20px; font-size: 1.5em; }
+        .overlay-content input[type="password"] { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.1em; box-sizing: border-box; }
+        .overlay-content button { width: 100%; padding: 12px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; transition: background-color 0.2s; }
+        .overlay-content button:hover { background-color: #1e6fa3; }
+        .error-message { color: #e74c3c; margin-top: 15px; font-weight: bold; min-height: 20px; }
+        .legal-text { font-size: 0.75rem; color: #6c757d; margin-top: 15px; line-height: 1.4; text-align: center; padding: 0 10px; }
+        .legal-text a { color: #007bff; text-decoration: none; font-weight: 500; }
+        .legal-text a:hover { text-decoration: underline; color: #0056b3; }
     </style>
 </head>
 <body>
-
-
-<!-- CSS -->
-<!-- CSS -->
-<style>
-.legal-text {
-    font-size: 0.75rem;
-    color: #6c757d;
-    margin-top: 15px;
-    line-height: 1.4;
-    text-align: center;
-    padding: 0 10px;
-}
-
-.legal-text a {
-    color: #007bff;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.legal-text a:hover {
-    text-decoration: underline;
-    color: #0056b3;
-}
-
-.password-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(44, 62, 80, 1);
-    z-index: 10000;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    transition: opacity 1s ease;
-    flex-direction: column;
-}
-
-.password-overlay.show {
-    display: flex;
-}
-
-.overlay-content {
-    background-color: #ffffff;
-    padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-}
-
-.overlay-content h3 {
-    color: #2980b9;
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.5em;
-}
-
-.overlay-content input[type="password"] {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 15px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 1.1em;
-    box-sizing: border-box;
-}
-
-.overlay-content button {
-    width: 100%;
-    padding: 12px;
-    background-color: #2980b9;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1em;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.overlay-content button:hover {
-    background-color: #1e6fa3;
-}
-
-.error-message {
-    color: #e74c3c;
-    margin-top: 15px;
-    font-weight: bold;
-    min-height: 20px;
-}
-
-.hidden {
-    display: none !important;
-}
-</style>
-
-<!-- HTML -->
-<div class="password-overlay" id="password-lock">
-    <div class="overlay-content">
-        <h3>🔒 Accès Restreint</h3>
-        <p>Nous sommes désolés pour le désagrément. L'accès est actuellement restreint pour des raisons de sécurité et de développement. Veuillez contacter un administrateur pour un accès immédiat.</p>
-        <input type="password" id="password-input" placeholder="Mot de passe" required>
-        <button id="password-submit-btn">Déverrouiller</button>
-        <p class="legal-text">
-            La lecture de nos 
-            <a href="confidentialite.html" target="_blank">politiques de confidentialité</a> 
-            ainsi que nos 
-            <a href="conditions.html" target="_blank">Conditions d'utilisations</a> 
-            est obligatoire pour vos fins d'utilisations. En utilisant ce site, vous acceptez ces conditions. Sinon, fermez la page.
-        </p>
-        <div class="error-message" id="password-error"></div>
-    </div>
-</div>
-
-<!-- JAVASCRIPT -->
-<script>
-const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
-const UNLOCK_KEY = 'leaderboardUnlocked';
-const LOCK_STATUS_KEY = 'lastLockStatus';
-
-let isSystemLocked = true; // Global flag to freeze all functions
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await handleLockStatus();
-  
-  // Only proceed with other functions if unlocked
-  if (!isSystemLocked) {
-    await loadLeaderboardData();
-  }
-});
-
-// Check lock status
-async function handleLockStatus() {
-  const isLocked = await getLockStatus();
-  const storedStatus = sessionStorage.getItem(LOCK_STATUS_KEY);
-
-  if (storedStatus === null || storedStatus !== String(isLocked)) {
-    sessionStorage.removeItem(UNLOCK_KEY);
-    sessionStorage.setItem(LOCK_STATUS_KEY, String(isLocked));
-  }
-
-  if (isLocked) {
-    isSystemLocked = true;
-    document.getElementById('password-lock').classList.add('show');
-    setupPasswordLock();
-    freezeAllFunctions();
-  } else {
-    isSystemLocked = false;
-    sessionStorage.setItem(UNLOCK_KEY, 'true');
-    unfreezeAllFunctions();
-  }
-
-  // Auto-sync every 60 seconds
-  setInterval(async () => {
-    const newStatus = await getLockStatus();
-    const currentStatus = sessionStorage.getItem(LOCK_STATUS_KEY);
-
-    if (String(newStatus) !== currentStatus) {
-      console.log('🔄 Statut du verrouillage changé. Actualisation...');
-      sessionStorage.removeItem(UNLOCK_KEY);
-      sessionStorage.setItem(LOCK_STATUS_KEY, String(newStatus));
-      location.reload();
-    }
-  }, 60000);
-}
-
-// Get lock status from API
-async function getLockStatus() {
-  try {
-    const response = await fetch(`${PASSWORD_API_URL}?action=getLockStatus`);
-    const result = await response.json();
-    return result.isLocked === true;
-  } catch (error) {
-    console.error('Erreur lors de la récupération du statut de verrouillage:', error);
-    return true; // Default to locked on error
-  }
-}
-
-// Password lock system
-function setupPasswordLock() {
-  const passwordLock = document.getElementById('password-lock');
-  const passwordInput = document.getElementById('password-input');
-  const submitBtn = document.getElementById('password-submit-btn');
-  const errorDiv = document.getElementById('password-error');
-
-  // If already unlocked in session, don't show lock
-  if (sessionStorage.getItem(UNLOCK_KEY) === 'true') {
-    passwordLock.classList.remove('show');
-    isSystemLocked = false;
-    unfreezeAllFunctions();
-    return;
-  }
-
-  // Password verification
-  const checkPassword = async () => {
-    const password = passwordInput.value;
-    if (!password) {
-      errorDiv.textContent = 'Veuillez entrer un mot de passe.';
-      return;
-    }
-
-    submitBtn.textContent = 'Vérification...';
-    errorDiv.textContent = '';
-    submitBtn.disabled = true;
-
-    try {
-      const fullUrl = `${PASSWORD_API_URL}?action=checkPassword&password=${encodeURIComponent(password)}`;
-      const response = await fetch(fullUrl);
-      const result = await response.json();
-
-      if (result.success === true) {
-        passwordLock.classList.remove('show');
-        sessionStorage.setItem(UNLOCK_KEY, 'true');
-        passwordInput.value = '';
-        isSystemLocked = false;
-        unfreezeAllFunctions();
-        await loadLeaderboardData();
-      } else {
-        errorDiv.textContent = 'Mot de passe incorrect. Veuillez réessayer.';
-        passwordInput.value = '';
-      }
-    } catch (error) {
-      console.error('Erreur API de mot de passe:', error);
-      errorDiv.textContent = 'Erreur de connexion au serveur de vérification.';
-    } finally {
-      submitBtn.textContent = 'Déverrouiller';
-      submitBtn.disabled = false;
-    }
-  };
-
-  // Event listeners
-  submitBtn.addEventListener('click', checkPassword);
-  passwordInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      checkPassword();
-    }
-  });
-}
-
-// Freeze all non-lock functions
-function freezeAllFunctions() {
-  // Disable all buttons except password-related
-  document.querySelectorAll('button, a.btn, select, input').forEach(el => {
-    if (!el.closest('#password-lock')) {
-      el.disabled = true;
-      el.style.pointerEvents = 'none';
-      el.style.opacity = '0.5';
-    }
-  });
-
-  // Block navigation
-  document.querySelectorAll('a').forEach(link => {
-    if (!link.closest('#password-lock')) {
-      link.addEventListener('click', preventAction, true);
-    }
-  });
-
-  // Block all interactive elements
-  document.body.style.pointerEvents = 'none';
-  document.getElementById('password-lock').style.pointerEvents = 'all';
-}
-
-// Unfreeze all functions
-function unfreezeAllFunctions() {
-  document.querySelectorAll('button, a.btn, select, input').forEach(el => {
-    el.disabled = false;
-    el.style.pointerEvents = '';
-    el.style.opacity = '';
-  });
-
-  document.querySelectorAll('a').forEach(link => {
-    link.removeEventListener('click', preventAction, true);
-  });
-
-  document.body.style.pointerEvents = '';
-}
-
-// Prevent action when locked
-function preventAction(e) {
-  if (isSystemLocked) {
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-  }
-}
-
-// Stub function - replace with your actual implementation
-async function loadLeaderboardData() {
-  console.log('Loading leaderboard data...');
-}
-</script>
-
-
     
+    <div class="password-overlay" id="password-lock">
+        <div class="overlay-content">
+            <h3>🔒 Accès Restreint</h3>
+            <p>Nous sommes désolés pour le désagrément. L'accès est actuellement restreint. Veuillez contacter un administrateur pour un accès immédiat.</p>
+            <input type="password" id="password-input" placeholder="Mot de passe" required>
+            <button id="password-submit-btn">Déverrouiller</button>
+            <p class="legal-text">
+                En utilisant ce site, vous acceptez nos <a href="conditions.html" target="_blank">Conditions d'utilisation</a> et notre <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
+            </p>
+            <div class="error-message" id="password-error"></div>
+        </div>
+    </div>
+
     <div class="site-header-container">
         <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
         <header class="site-header">Outil JDLM*</header>
@@ -423,106 +150,121 @@ async function loadLeaderboardData() {
         <br>
         <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>
         <p style="font-style: normal; margin-top: 8px;">
-                Pour toute question, préoccupation ou pour signaler un bogue, veuillez contacter : 
-                <a href="mailto:notabot.chat@gmail.com" style="font-style: normal;">notabot.chat@gmail.com</a>
-            </p>
+            Pour toute question, préoccupation ou pour signaler un bogue, veuillez contacter : 
+            <a href="mailto:notabot.chat@gmail.com" style="font-style: normal;">notabot.chat@gmail.com</a>
+        </p>
     </footer>
 
+    <script type="module">
+        // =======================================================
+        // FIREBASE SETUP (V9 MODULAR SDK)
+        // =======================================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJcscWuakcliO7ZZvHCPIE9WX_Xypcmmo",
+            authDomain: "jdlm-leaderboard-app.firebaseapp.com",
+            projectId: "jdlm-leaderboard-app",
+            storageBucket: "jdlm-leaderboard-app.appspot.com",
+            messagingSenderId: "335016551784",
+            appId: "1:335016551784:web:2e799622fedf938ad062dd"
+        };
 
-    <div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
-    <p>Utilisateur enregistré : <strong id="current-user-display">x</strong></p>
-    <p id="log-status">Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>Failed to fetch</strong></p>
-</div>
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-<script>
-    // !! IMPORTANT !! REMPLACEZ CETTE URL PAR VOTRE URL DE DÉPLOIEMENT DE L'APPLICATION WEB LOGGING
-    const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec"; 
+        // =======================================================
+        // PASSWORD LOCK SYSTEM & LOGGING (UNCHANGED)
+        // =======================================================
+        const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
+        const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
+        const UNLOCK_KEY = 'leaderboardUnlocked';
+        const LOCK_STATUS_KEY = 'lastLockStatus';
+        let isSystemLocked = true;
 
-    // Fonction pour récupérer le nom de l'utilisateur (utilisant la variable 'nom')
-    function getUserName() {
-        // Tente de récupérer le nom depuis localStorage.
-        try {
-            const userData = JSON.parse(localStorage.getItem('jdlmData'));
-            
-            // On vérifie que userData existe et que la propriété 'nom' existe et n'est pas vide
-            if (userData && userData.nom && userData.nom.trim() !== "") {
-                return userData.nom;
+        async function handleLockStatus() {
+            const isLocked = await getLockStatus();
+            if (sessionStorage.getItem(LOCK_STATUS_KEY) !== String(isLocked)) {
+                sessionStorage.removeItem(UNLOCK_KEY);
+                sessionStorage.setItem(LOCK_STATUS_KEY, String(isLocked));
             }
-        } catch (e) {
-            // Ignorer l'erreur si localStorage est inaccessible ou corrompu
-        }
-        // Retourne 'Anonyme' si aucune donnée valide n'est trouvée
-        return 'Anonyme'; 
-    }
-
-    // Fonction principale pour enregistrer la visite
-    async function logUserVisit() {
-        const userName = getUserName();
-        const logStatus = document.getElementById('log-status');
-        const userDisplay = document.getElementById('current-user-display');
-
-        // Mise à jour de l'affichage utilisateur (peut être Anonyme)
-        userDisplay.textContent = userName;
-
-        if (LOGGING_API_URL === "VOTRE_LOGGING_API_URL_ICI" || LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
-            logStatus.textContent = "Erreur: Veuillez définir l'URL de l'API Logging.";
-            return;
-        }
-
-        try {
-            // Envoi du nom d'utilisateur (qui sera 'Anonyme' si non trouvé) au paramètre 'name' de l'Apps Script
-            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userName)}`;
-
-            const response = await fetch(fullUrl, {
-                method: 'GET',
-                mode: 'cors' 
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Erreur réseau: Statut ${response.status}`);
-            }
-
-            const result = await response.json();
-
-            if (result.success) {
-                // Si l'enregistrement est réussi, affiche l'heure locale du client
-                const now = new Date();
-                const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
-                const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                
-                logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>.`;
+            if (isLocked) {
+                document.getElementById('password-lock').classList.add('show');
+                setupPasswordLock();
             } else {
-                logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie).";
+                isSystemLocked = false;
+                runApp();
             }
-
-        } catch (error) {
-            console.error("Erreur lors de l'enregistrement de la visite :", error);
-            logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>${error.message}</strong>`;
         }
-    }
 
-    // Déclencher la fonction d'enregistrement au chargement complet de la page
-    document.addEventListener('DOMContentLoaded', logUserVisit);
-</script>
+        async function getLockStatus() {
+            try {
+                const response = await fetch(`${PASSWORD_API_URL}?action=getLockStatus`);
+                const result = await response.json();
+                return result.isLocked === true;
+            } catch (error) { return true; }
+        }
 
+        function setupPasswordLock() {
+            if (sessionStorage.getItem(UNLOCK_KEY) === 'true') {
+                document.getElementById('password-lock').classList.remove('show');
+                isSystemLocked = false;
+                runApp();
+                return;
+            }
+            const passInput = document.getElementById('password-input');
+            const submitBtn = document.getElementById('password-submit-btn');
+            const errorDiv = document.getElementById('password-error');
+            const checkPassword = async () => {
+                const password = passInput.value;
+                if (!password) { errorDiv.textContent = 'Veuillez entrer un mot de passe.'; return; }
+                submitBtn.textContent = 'Vérification...';
+                errorDiv.textContent = '';
+                submitBtn.disabled = true;
+                try {
+                    const response = await fetch(`${PASSWORD_API_URL}?action=checkPassword&password=${encodeURIComponent(password)}`);
+                    const result = await response.json();
+                    if (result.success === true) {
+                        document.getElementById('password-lock').classList.remove('show');
+                        sessionStorage.setItem(UNLOCK_KEY, 'true');
+                        isSystemLocked = false;
+                        runApp();
+                    } else {
+                        errorDiv.textContent = 'Mot de passe incorrect.';
+                    }
+                } catch (error) {
+                    errorDiv.textContent = 'Erreur de connexion au serveur.';
+                } finally {
+                    submitBtn.textContent = 'Déverrouiller';
+                    submitBtn.disabled = false;
+                    passInput.value = '';
+                }
+            };
+            submitBtn.addEventListener('click', checkPassword);
+            passInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') checkPassword(); });
+        }
+        
+        async function logUserVisit() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('jdlmData'));
+                const userName = (userData && userData.nom) ? userData.nom : 'Anonyme';
+                await fetch(`${LOGGING_API_URL}?name=${encodeURIComponent(userName)}`, { mode: 'cors' });
+            } catch (e) { console.error("Logging failed", e); }
+        }
 
-
-
-
-
-
-
-
-
-    
-    <script>
+        // =======================================================
+        // MAIN JDLM APPLICATION LOGIC
+        // =======================================================
         const gradeMap = { 'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90}, 'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75}, 'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60}, 'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45} };
         const defaultUnits = { sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2, }, sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 } };
         const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière", };
         let jdlmData, activeTab = 'etape1';
-        
-        document.addEventListener('DOMContentLoaded', () => { 
+
+        function runApp() {
+            logUserVisit();
             checkLogoutTimer(); 
             jdlmData = JSON.parse(localStorage.getItem('jdlmData')) || {}; 
 
@@ -539,79 +281,53 @@ async function loadLeaderboardData() {
             loadSettings(); 
             setupEventListeners(); 
             renderAll();
-        });
+        }
 
         function checkLogoutTimer() { const lastActiveTime = localStorage.getItem('jdlmLastActive'); const ONE_HOUR = 3600000; if (lastActiveTime && (Date.now() - parseInt(lastActiveTime)) > ONE_HOUR) { window.location.href = 'index.html'; } setInterval(() => { const checkTime = localStorage.getItem('jdlmLastActive'); if (checkTime && (Date.now() - parseInt(checkTime)) > ONE_HOUR) { window.location.href = 'index.html'; } }, 300000); }
-        
         function setupEventListeners() { 
-            document.querySelectorAll('.tab-btn').forEach(tab => { tab.addEventListener('click', () => { document.querySelector('.tab-btn.active').classList.remove('active'); tab.classList.add('active'); document.querySelector('.tab-content.active').classList.remove('active'); activeTab = tab.dataset.tab; document.getElementById(activeTab).classList.add('active'); renderSidePanel(); }); }); 
-            
-            document.getElementById('niveau-secondaire').addEventListener('change', (e) => { 
-                jdlmData.settings = { ...jdlmData.settings, niveau: e.target.value }; 
-                localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); 
-                renderAll(); 
-            }); 
-
-            document.getElementById('classement-btn').addEventListener('click', function() {
-                const canProceed = sendRankingData(true); 
-                if (canProceed) {
-                    window.location.href = 'classement.html';
-                }
-            });
-
+            document.querySelectorAll('.tab-btn').forEach(tab => { tab.addEventListener('click', () => { if(isSystemLocked) return; document.querySelector('.tab-btn.active').classList.remove('active'); tab.classList.add('active'); document.querySelector('.tab-content.active').classList.remove('active'); activeTab = tab.dataset.tab; document.getElementById(activeTab).classList.add('active'); renderSidePanel(); }); }); 
+            document.getElementById('niveau-secondaire').addEventListener('change', (e) => { if(isSystemLocked) return; jdlmData.settings = { ...jdlmData.settings, niveau: e.target.value }; localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); renderAll(); }); 
+            document.getElementById('classement-btn').addEventListener('click', async () => { if(isSystemLocked) return; const canProceed = await sendRankingData(true); if (canProceed) { window.location.href = 'classement.html'; } });
             const unitesModal = document.getElementById('unites-modal'); 
-            document.getElementById('unites-btn').addEventListener('click', () => { populateUnitesModal(); unitesModal.classList.add('active'); }); 
+            document.getElementById('unites-btn').addEventListener('click', () => { if(isSystemLocked) return; populateUnitesModal(); unitesModal.classList.add('active'); }); 
             document.getElementById('close-unites-modal').addEventListener('click', () => { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); }); 
             unitesModal.addEventListener('click', (e) => { if(e.target === unitesModal) { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); } }); 
             document.getElementById('unites-mode').addEventListener('change', (e) => { jdlmData.settings = { ...jdlmData.settings, unitesMode: e.target.value }; localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); populateUnitesModal(); }); 
         }
-        
         function loadSettings() { const settings = jdlmData.settings || {}; document.getElementById('niveau-secondaire').value = settings.niveau || ''; document.getElementById('unites-mode').value = settings.unitesMode || 'defaut'; }
         function saveCustomUnits() { if (document.getElementById('unites-mode').value !== 'perso') return; let customUnites = {}; document.querySelectorAll('.unite-item input').forEach(input => { customUnites[input.dataset.code] = parseFloat(input.value) || 1; }); jdlmData.settings.customUnites = customUnites; localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); }
         function getNumericGrade(result) { if (!result) return null; const trimmedResult = result.trim(); if (gradeMap[trimmedResult]) { const { min, max } = gradeMap[trimmedResult]; return (min + max) / 2; } const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/); if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const maxScore = parseFloat(scoreMatch[2].replace(',', '.')); if (!isNaN(score) && !isNaN(maxScore) && maxScore > 0) { return (score / maxScore) * 100; } } return null; }
         function calculateSubjectAverage(subject) { let totalWeightedGrade = 0; let totalCompetencyWeight = 0; subject.competencies.forEach(comp => { const compWeightMatch = comp.name.match(/\((\d+)%\)/); if (!compWeightMatch) return; const compWeight = parseFloat(compWeightMatch[1]); let totalAssignmentGrade = 0; let totalAssignmentWeight = 0; comp.assignments.forEach(assign => { const grade = getNumericGrade(assign.result); const weight = parseFloat(assign.pond); if (grade !== null && !isNaN(weight)) { totalAssignmentGrade += grade * weight; totalAssignmentWeight += weight; } }); if (totalAssignmentWeight > 0) { const competencyAverage = totalAssignmentGrade / totalAssignmentWeight; totalWeightedGrade += competencyAverage * compWeight; totalCompetencyWeight += compWeight; } }); return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null; }
         function getUnits() { const settings = jdlmData.settings || {}; const niveau = settings.niveau; const mode = settings.unitesMode || 'defaut'; if (mode === 'sans') return new Proxy({}, { get: () => 1 }); if (mode === 'perso') return settings.customUnites || {}; if (mode === 'defaut' && niveau && defaultUnits[niveau]) { return defaultUnits[niveau]; } return {}; }
         function calculateAverages() { const units = getUnits(); const settings = jdlmData.settings || {}; const niveau = settings.niveau; const mode = settings.unitesMode || 'defaut'; let allTermAverages = {}; let allSubjectAverages = {}; const defaultSubjectUnit = 2; ['etape1', 'etape2', 'etape3'].forEach(etape => { if (!jdlmData[etape]) return; let termWeightedSum = 0; let termUnitSum = 0; allSubjectAverages[etape] = {}; jdlmData[etape].forEach(subject => { const average = calculateSubjectAverage(subject); const codePrefix = subject.code.substring(0,3); allSubjectAverages[etape][codePrefix] = { name: subjectList[codePrefix] || subject.name, average: average }; let unit; if (mode === 'defaut' && !niveau) { unit = null; } else if (mode === 'sans' || mode === 'perso') { unit = units[codePrefix] ?? 1; } else if (mode === 'defaut') { unit = units[codePrefix] ?? defaultSubjectUnit; } if (average !== null && unit !== null && niveau) { termWeightedSum += average * unit; termUnitSum += unit; } }); allTermAverages[etape] = termUnitSum > 0 ? termWeightedSum / termUnitSum : null; }); let globalWeightedSum = 0; let globalTermCount = 0; Object.values(allTermAverages).forEach(avg => { if (avg !== null) { globalWeightedSum += avg; globalTermCount++; } }); return { subjectAverages: allSubjectAverages, termAverages: allTermAverages, globalAverage: globalTermCount > 0 ? globalWeightedSum / globalTermCount : null }; }
-        
-        function renderAll() { 
-            renderTermTables(); 
-            renderSidePanel();
-            sendRankingData(); 
-        }
-
+        function renderAll() { renderTermTables(); renderSidePanel(); sendRankingData(); }
         function renderTermTables() { renderTermData(jdlmData.etape1, document.getElementById('etape1')); renderTermData(jdlmData.etape2, document.getElementById('etape2')); renderTermData(jdlmData.etape3, document.getElementById('etape3')); }
         function renderSidePanel() { const averages = calculateAverages(); const niveau = (jdlmData.settings || {}).niveau; const globalAvgEl = document.getElementById('moyenne-generale'); const termAvgEl = document.getElementById('moyenne-etape'); globalAvgEl.classList.toggle('invalid', !niveau); termAvgEl.classList.toggle('invalid', !niveau); const formatAvg = (avg) => avg !== null ? `<span class="grade-percentage">${avg.toFixed(2)}%</span>` : '--'; globalAvgEl.innerHTML = !niveau ? 'N/A' : formatAvg(averages.globalAverage); termAvgEl.innerHTML = !niveau ? 'N/A' : formatAvg(averages.termAverages[activeTab]); const subjectListEl = document.getElementById('subject-averages-list'); subjectListEl.innerHTML = ''; const activeTermSubjects = averages.subjectAverages[activeTab]; if (activeTermSubjects && Object.keys(activeTermSubjects).length > 0) { Object.entries(activeTermSubjects).forEach(([code, subj]) => { const li = document.createElement('li'); li.innerHTML = `<span>${subj.name}</span><strong>${formatAvg(subj.average)}</strong>`; subjectListEl.appendChild(li); }); } else { subjectListEl.innerHTML = '<li class="no-data">Aucune matière pour cette étape</li>'; } }
         function populateUnitesModal() { const listContainer = document.getElementById('unites-list'); const mode = document.getElementById('unites-mode').value; const settings = jdlmData.settings || {}; listContainer.innerHTML = ''; const allSubjects = new Map(); ['etape1', 'etape2', 'etape3'].forEach(etape => { if (jdlmData[etape]) { jdlmData[etape].forEach(subject => { const codePrefix = subject.code.substring(0,3); if (!allSubjects.has(codePrefix)) { allSubjects.set(codePrefix, subjectList[codePrefix] || subject.name); } }); } }); if (allSubjects.size === 0) { listContainer.innerHTML = '<div class="no-data">Aucune matière trouvée.</div>'; return; } const units = getUnits(); const defaultSubjectUnit = 2; allSubjects.forEach((name, code) => { const item = document.createElement('div'); item.className = 'unite-item'; let valueDisplay = ''; if (mode === 'perso') { const currentValue = (settings.customUnites || {})[code] || 1; valueDisplay = `<input type="number" data-code="${code}" value="${currentValue}" min="0" step="1">`; } else { let unitValue; if (mode === 'sans') { unitValue = 1; } else if (mode === 'defaut') { unitValue = units[code] ?? defaultSubjectUnit; } valueDisplay = `<span>${unitValue}</span>`; } item.innerHTML = `<label>${name} (${code})</label>${valueDisplay}`; listContainer.appendChild(item); }); }
         function renderTermData(termData, container) { container.innerHTML = ''; if (!termData || termData.length === 0) { container.innerHTML = '<p class="no-data">Aucune donnée pour cette étape.</p>'; return; } termData.forEach(subject => container.appendChild(renderSubjectTable(subject))); }
         function renderSubjectTable(subject) { const table = document.createElement('table'); table.className = 'subject-table'; table.innerHTML = `<thead><tr><th colspan="7">${subject.code} - ${subject.name}</th></tr><tr><th>Catégorie</th><th>Travail</th><th>Pond.</th><th>Date assignée</th><th>Date due</th><th>Date complétée</th><th>Résultat</th></tr></thead><tbody></tbody>`; const tbody = table.querySelector('tbody'); subject.competencies.forEach(comp => { const compRow = document.createElement('tr'); compRow.className = 'competency-row'; compRow.innerHTML = `<td colspan="7">${comp.name}</td>`; tbody.appendChild(compRow); comp.assignments.forEach(assign => { const assignRow = document.createElement('tr'); const numGrade = getNumericGrade(assign.result); let formattedResult = '<span class="no-data">-</span>'; if (assign.result) { const isLetterGrade = !!gradeMap[assign.result.trim()]; const isSimplePercentage = assign.result.includes('%') && !assign.result.includes('/'); if (isLetterGrade && numGrade !== null) { formattedResult = `${assign.result} <i>(~<span class="grade-percentage">${numGrade.toFixed(1)}%</span>)</i>`; } else if (isSimplePercentage || assign.result.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/)) { formattedResult = assign.result.replace(/(\d+[,.]?\d*\s*\/.*|(\d+[,.]?\d*\s*%))/g, (match) => `<span class="grade-percentage">${match}</span>`); } else { formattedResult = assign.result; } } assignRow.innerHTML = `<td>${assign.category || '<span class="no-data">-</span>'}</td><td>${assign.work || '<span class="no-data">-</span>'}</td><td>${assign.pond || '<span class="no-data">-</span>'}</td><td>${assign.assignedDate || '<span class="no-data">-</span>'}</td><td>${assign.dueDate.replace('à','') || '<span class="no-data">-</span>'}</td><td>${assign.completedDate || '<span class="no-data">-</span>'}</td><td>${formattedResult}</td>`; tbody.appendChild(assignRow); }); }); return table; }
-
-
-
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5JYFE5JDLycaa4cCCsA57K-2Pka-CoHatWTr1685mQDiJtv_3IcrYDFhS2vkhsOet/exec";
-
+        
+        // =======================================================
+        // RANKING SCRIPT (FIREBASE MIGRATED)
+        // =======================================================
         function getUserCode() { const nom = (jdlmData || {}).nom; if (!nom) return null; return nom.replace(/\s+/g, '').toLowerCase(); }
         function getAggregatedSubjectAverage(allSubjectAverages, subjectCodes) { let totalSum = 0; let count = 0; ['etape1', 'etape2', 'etape3'].forEach(etape => { if (allSubjectAverages[etape]) { Object.entries(allSubjectAverages[etape]).forEach(([code, subjectData]) => { if (subjectCodes.includes(code) && subjectData.average !== null) { totalSum += subjectData.average; count++; } }); } }); return count > 0 ? totalSum / count : null; }
 
-        function sendRankingData(force = false) {
+        async function sendRankingData(force = false) {
             const niveau = document.getElementById('niveau-secondaire').value;
             const userCode = getUserCode();
             const userRandom = (jdlmData || {}).user_random; 
-
             if (!userCode || !niveau || !userRandom) {
                 if (force) alert("Veuillez sélectionner votre niveau (Secondaire 4 ou 5) avant de consulter le classement.");
                 return !force;
             }
-
             localStorage.setItem('jdlmNiveau', niveau);
             const averages = calculateAverages();
             const mathAvg = getAggregatedSubjectAverage(averages.subjectAverages, ['MAT', 'CST', 'SN']);
             const englishAvg = getAggregatedSubjectAverage(averages.subjectAverages, ['ELA', 'ESL', 'EESL']);
             const frenchAvg = getAggregatedSubjectAverage(averages.subjectAverages, ['FRA']);
-
             const dataPayload = {
-                userCode: userCode,
-                user_random: userRandom, 
-                niveau: niveau,
+                userCode: userCode, user_random: userRandom, niveau: niveau,
                 avg_generale: averages.globalAverage ? averages.globalAverage.toFixed(2) : '',
                 avg_etape1: averages.termAverages.etape1 ? averages.termAverages.etape1.toFixed(2) : '',
                 avg_etape2: averages.termAverages.etape2 ? averages.termAverages.etape2.toFixed(2) : '',
@@ -621,36 +337,388 @@ async function loadLeaderboardData() {
                 avg_francais: frenchAvg ? frenchAvg.toFixed(2) : '',
                 last_updated: new Date().toISOString()
             };
-
             const dataFingerprint = JSON.stringify(dataPayload);
-            const lastSentFingerprint = sessionStorage.getItem('lastDataFingerprint');
-
-            if (!force && dataFingerprint === lastSentFingerprint) {
-                console.log("Data is unchanged since last sync. Skipping automatic send.");
+            if (!force && dataFingerprint === sessionStorage.getItem('lastDataFingerprint')) {
+                console.log("Data is unchanged. Skipping send.");
                 return true;
             }
-
-            console.log(force ? "Force-syncing data..." : "Data has changed. Syncing automatically...");
-            
-            const formData = new FormData();
-            for (const key in dataPayload) {
-                formData.append(key, dataPayload[key]);
+            try {
+                const userDocRef = doc(db, "leaderboard", dataPayload.user_random);
+                await setDoc(userDocRef, dataPayload, { merge: true });
+                console.log(force ? "Force-syncing data..." : "Data has changed. Syncing automatically...");
+                sessionStorage.setItem('lastDataFingerprint', dataFingerprint);
+            } catch (error) {
+                console.error("Error writing document to Firestore: ", error);
             }
-            
-            fetch(SCRIPT_URL, { method: 'POST', body: formData })
-            .then(response => response.json())
-            .then(data => {
-                if(data.result === 'success') {
-                    console.log("Sync successful for user:", data.userCode);
-                    sessionStorage.setItem('lastDataFingerprint', dataFingerprint);
-                } else {
-                    console.error("Script Error:", data.error);
-                }
-            })
-            .catch(error => console.error("Network Error:", error));
-
             return true;
         }
+
+        // =======================================================
+        // INITIALIZATION
+        // =======================================================
+        document.addEventListener('DOMContentLoaded', handleLockStatus);
+
+    </script>
+</body>
+</html>```
+
+---
+
+### 2. `classement.html` (Complete Code)
+
+This file now reads all data from Firestore and updates the `class_view` flag for the user.
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classement - Outil JDLM</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f7f9fb;
+            --widget-background: #ffffff; --text-color: #34495e; --light-grey: #e0e6eb;
+            --danger-color: #e74c3c; --success-color: #27ae60; --shadow-widget: 0 10px 20px rgba(0, 0, 0, 0.07);
+        }
+        html { height: 100%; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); display: flex; flex-direction: column; min-height: 100%; }
+        .site-header-container { background-color: var(--widget-background); box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 15px 0; position: relative; margin-bottom: 20px; flex-shrink: 0; }
+        .site-header { text-align: center; padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; }
+        .back-arrow { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); font-size: 2.2em; color: var(--secondary-color); text-decoration: none; transition: color 0.2s; }
+        .back-arrow:hover { color: var(--primary-color); }
+        .main-container { max-width: 1200px; margin: auto; padding: 0 20px; width: 100%; box-sizing: border-box; }
+        .controls { background: var(--widget-background); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-widget); margin-bottom: 25px; border: 1px solid var(--light-grey); }
+        .controls label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9em; }
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; background-color: white; font-size: 1em; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+        .stat-widget { background: var(--widget-background); border-radius: 16px; padding: 25px; box-shadow: var(--shadow-widget); border: 1px solid var(--light-grey); display: flex; flex-direction: column; }
+        .main-avg-widget { grid-column: span 2; }
+        .graph-widget { grid-column: 1 / -1; }
+        .widget-header { text-align: center; margin-bottom: 20px; }
+        .widget-title { font-size: 1.1em; font-weight: bold; color: var(--secondary-color); margin: 0 0 10px 0; }
+        .widget-value { font-size: 3.5em; font-weight: 700; }
+        .small-widget .widget-value { font-size: 2.5em; }
+        .widget-rank { font-size: 1.2em; font-weight: 600; color: var(--secondary-color); display: flex; align-items: center; justify-content: center; }
+        .rank-trend { font-weight: bold; margin-left: 8px; font-size: 1.1em; }
+        .rank-trend-up { color: var(--success-color); } .rank-trend-up::before { content: '▲'; }
+        .rank-trend-down { color: var(--danger-color); } .rank-trend-down::before { content: '▼'; }
+        .mini-leaderboard-container { flex-grow: 1; overflow-y: auto; position: relative; margin-top: 15px; border-top: 1px solid var(--light-grey); padding-top: 15px; max-height: 190px; }
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
+        .leaderboard-item { display: flex; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 0.95em; transition: background-color 0.2s; }
+        .leaderboard-item.is-user { background-color: #eaf2f8; font-weight: bold; }
+        .item-rank { width: 45px; font-weight: 600; text-align: left; }
+        .item-name { font-weight: normal; margin-left: 10px; }
+        .is-user .item-name { font-weight: bold; }
+        .item-grade { margin-left: auto; font-weight: 600; }
+        .graph-container { padding-top: 20px; }
+        .overall-avg-widget { text-align: center; }
+        .error-message, .no-data { text-align: center; padding: 40px; font-size: 1.2em; color: var(--light-grey); }
+        .error-message { color: var(--danger-color); background-color: #fdd; border: 1px solid var(--danger-color); border-radius: 8px; }
+        footer { text-align: center; padding: 25px; font-size: 0.8em; color: #95a5a6; font-style: italic; flex-shrink: 0;}
+        .loader { height: 9px; width: 60px; --c:no-repeat linear-gradient(#000 0 0); background: var(--c), var(--c), var(--c), var(--c); background-size: 26% 3px; animation: l2 1s infinite; margin: 0 auto; }
+        @keyframes l2 { 0%, 70%, 100% {background-position: calc(0*100%/3) 100%,calc(1*100%/3) 100%,calc(2*100%/3) 100%,calc(3*100%/3) 100%} 14% {background-position: calc(0*100%/3) 0 ,calc(1*100%/3) 100%,calc(2*100%/3) 100%,calc(3*100%/3) 100%} 28% {background-position: calc(0*100%/3) 100%,calc(1*100%/3) 0 ,calc(2*100%/3) 100%,calc(3*100%/3) 100%} 42% {background-position: calc(0*100%/3) 100%,calc(1*100%/3) 100%,calc(2*100%/3) 0 ,calc(3*100%/3) 100%} 56% {background-position: calc(0*100%/3) 100%,calc(1*100%/3) 100%,calc(2*100%/3) 100%,calc(3*100%/3) 0 }}
+        .stacked-avg-widget { justify-content: center; }
+        .avg-half { text-align: center; }
+        .widget-subtitle { font-size: 1em; color: #6c757d; margin-bottom: 5px; }
+        .avg-half .widget-value { font-size: 2.8em; }
+        .password-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(44, 62, 80, 1); z-index: 10000; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        .password-overlay.show { display: flex; }
+        .overlay-content { background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); text-align: center; max-width: 400px; width: 90%; }
+        .overlay-content h3 { color: var(--primary-color); margin-top: 0; margin-bottom: 20px; font-size: 1.5em; }
+        .overlay-content input[type="password"] { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.1em; box-sizing: border-box; }
+        .overlay-content button { width: 100%; padding: 12px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; transition: background-color 0.2s; }
+        .overlay-content button:hover { background-color: #1e6fa3; }
+        .error-message { color: #e74c3c; margin-top: 15px; font-weight: bold; min-height: 20px; }
+        .legal-text { font-size: 0.75rem; color: #6c757d; margin-top: 15px; line-height: 1.4; text-align: center; padding: 0 10px; }
+        .legal-text a { color: #007bff; text-decoration: none; font-weight: 500; }
+        .legal-text a:hover { text-decoration: underline; color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="password-overlay" id="password-lock">
+        <div class="overlay-content">
+            <h3>🔒 Accès Restreint</h3>
+            <p>Nous sommes désolés pour le désagrément. L'accès est actuellement restreint. Veuillez contacter un administrateur pour un accès immédiat.</p>
+            <input type="password" id="password-input" placeholder="Mot de passe" required>
+            <button id="password-submit-btn">Déverrouiller</button>
+            <p class="legal-text">
+                En utilisant ce site, vous acceptez nos <a href="conditions.html" target="_blank">Conditions d'utilisation</a> et notre <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
+            </p>
+            <div class="error-message" id="password-error"></div>
+        </div>
+    </div>
+
+    <div class="site-header-container">
+        <a href="main.html" class="back-arrow" title="Retour">←</a>
+        <header class="site-header">Outil JDLM*</header>
+    </div>
+    <main class="main-container">
+        <div class="controls">
+            <label for="term-select">Comparer les moyennes pour :</label>
+            <select id="term-select">
+                <option value="avg_generale">Moyenne générale</option>
+                <option value="avg_etape1">Étape 1</option>
+                <option value="avg_etape2">Étape 2</option>
+                <option value="avg_etape3">Étape 3</option>
+            </select>
+        </div>
+        <div id="dashboard-container">
+             <div class="loader"></div>
+        </div>
+    </main>
+    <footer>*jauge de la moyenne</footer>
+
+    <script type="module">
+        // =======================================================
+        // FIREBASE SETUP (V9 MODULAR SDK)
+        // =======================================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, doc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJcscWuakcliO7ZZvHCPIE9WX_Xypcmmo",
+            authDomain: "jdlm-leaderboard-app.firebaseapp.com",
+            projectId: "jdlm-leaderboard-app",
+            storageBucket: "jdlm-leaderboard-app.appspot.com",
+            messagingSenderId: "335016551784",
+            appId: "1:335016551784:web:2e799622fedf938ad062dd"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // =======================================================
+        // PASSWORD LOCK SYSTEM (UNCHANGED)
+        // =======================================================
+        const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
+        const UNLOCK_KEY = 'leaderboardUnlocked';
+        const LOCK_STATUS_KEY = 'lastLockStatus';
+        let isSystemLocked = true;
+
+        async function handleLockStatus() {
+            const isLocked = await getLockStatus();
+            if (sessionStorage.getItem(LOCK_STATUS_KEY) !== String(isLocked)) {
+                sessionStorage.removeItem(UNLOCK_KEY);
+                sessionStorage.setItem(LOCK_STATUS_KEY, String(isLocked));
+            }
+            if (isLocked) {
+                document.getElementById('password-lock').classList.add('show');
+                setupPasswordLock();
+            } else {
+                isSystemLocked = false;
+                initializeDashboard();
+            }
+        }
+        async function getLockStatus() {
+            try {
+                const response = await fetch(`${PASSWORD_API_URL}?action=getLockStatus`);
+                const result = await response.json();
+                return result.isLocked === true;
+            } catch (error) { return true; }
+        }
+        function setupPasswordLock() {
+            if (sessionStorage.getItem(UNLOCK_KEY) === 'true') {
+                document.getElementById('password-lock').classList.remove('show');
+                isSystemLocked = false;
+                initializeDashboard();
+                return;
+            }
+            const passInput = document.getElementById('password-input');
+            const submitBtn = document.getElementById('password-submit-btn');
+            const errorDiv = document.getElementById('password-error');
+            const checkPassword = async () => {
+                const password = passInput.value;
+                if (!password) { errorDiv.textContent = 'Veuillez entrer un mot de passe.'; return; }
+                submitBtn.textContent = 'Vérification...';
+                errorDiv.textContent = '';
+                submitBtn.disabled = true;
+                try {
+                    const response = await fetch(`${PASSWORD_API_URL}?action=checkPassword&password=${encodeURIComponent(password)}`);
+                    const result = await response.json();
+                    if (result.success === true) {
+                        document.getElementById('password-lock').classList.remove('show');
+                        sessionStorage.setItem(UNLOCK_KEY, 'true');
+                        isSystemLocked = false;
+                        initializeDashboard();
+                    } else {
+                        errorDiv.textContent = 'Mot de passe incorrect.';
+                    }
+                } catch (error) {
+                    errorDiv.textContent = 'Erreur de connexion au serveur.';
+                } finally {
+                    submitBtn.textContent = 'Déverrouiller';
+                    submitBtn.disabled = false;
+                    passInput.value = '';
+                }
+            };
+            submitBtn.addEventListener('click', checkPassword);
+            passInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') checkPassword(); });
+        }
+
+        // =======================================================
+        // LEADERBOARD APPLICATION LOGIC
+        // =======================================================
+        const dashboardContainer = document.getElementById('dashboard-container');
+        let chartInstance = null;
+        
+        async function notifyClassView(userRandom) {
+            if (!userRandom) return;
+            try {
+                const userDocRef = doc(db, "leaderboard", userRandom);
+                await updateDoc(userDocRef, { class_view: true });
+                console.log('Successfully notified leaderboard view.');
+            } catch (error) {
+                console.warn("Could not update view status (user might be new): ", error.message);
+            }
+        }
+
+        async function initializeDashboard() {
+            const localData = JSON.parse(localStorage.getItem('jdlmData')) || {};
+            const userRandom = localData.user_random; 
+            const selectedLevel = localStorage.getItem('jdlmNiveau');
+
+            if (!selectedLevel || !userRandom) {
+                dashboardContainer.innerHTML = `<div class="error-message"><strong>Erreur :</strong> Données utilisateur non trouvées. Retournez à la page principale et cliquez sur "Classement" à nouveau.</div>`;
+                return;
+            }
+            
+            await notifyClassView(userRandom);
+
+            try {
+                const leaderboardColRef = collection(db, "leaderboard");
+                const q = query(leaderboardColRef, where("niveau", "==", selectedLevel));
+                const querySnapshot = await getDocs(q);
+                const allData = querySnapshot.docs.map(doc => doc.data());
+                
+                const oldRanks = JSON.parse(localStorage.getItem('jdlmRankHistory')) || {};
+                
+                document.getElementById('term-select').addEventListener('change', () => renderDashboard(allData, userRandom, selectedLevel, oldRanks));
+                renderDashboard(allData, userRandom, selectedLevel, oldRanks);
+
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                dashboardContainer.innerHTML = `<div class="error-message"><strong>Erreur de chargement :</strong> Impossible de récupérer les données du classement.</div>`;
+            }
+        }
+
+        function renderDashboard(allData, userRandom, selectedLevel, oldRanks) {
+            let currentRanks = {}; 
+            const termSelect = document.getElementById('term-select');
+            const selectedTermKey = termSelect.value;
+            const selectedTermText = termSelect.options[termSelect.selectedIndex].text;
+            const levelData = allData.filter(d => d.niveau === selectedLevel);
+            
+            if (levelData.length === 0) {
+                dashboardContainer.innerHTML = `<div class="no-data">Aucune donnée de classement n'a encore été enregistrée pour ce niveau.</div>`;
+                return;
+            }
+
+            const currentUserData = levelData.find(d => d.user_random === userRandom);
+            
+            if (!currentUserData) {
+                dashboardContainer.innerHTML = `<div class="error-message"><strong>Erreur :</strong> Vos données n'ont pas été trouvées dans le classement. Assurez-vous d'avoir synchronisé vos notes depuis la page principale.</div>`;
+                return;
+            }
+            
+            const mainWidgetHTML = createStatWidgetHTML('main-avg-widget', selectedTermKey, selectedTermText, levelData, currentUserData, oldRanks, currentRanks);
+            const francaisWidgetHTML = createStatWidgetHTML('small-widget', 'avg_francais', 'Moyenne Français', levelData, currentUserData, oldRanks, currentRanks);
+            const mathWidgetHTML = createStatWidgetHTML('small-widget', 'avg_math', 'Moyenne Math', levelData, currentUserData, oldRanks, currentRanks);
+            const anglaisWidgetHTML = createStatWidgetHTML('small-widget', 'avg_anglais', 'Moyenne Anglais', levelData, currentUserData, oldRanks, currentRanks);
+            const overallAvgHTML = createOverallAveragesWidgetHTML(selectedTermKey, selectedTermText, levelData);
+            
+            dashboardContainer.innerHTML = `<div class="dashboard-grid">${mainWidgetHTML}${overallAvgHTML}<div class="stat-widget graph-widget"><h3 class="widget-title" style="text-align:center;">Performance par Étape</h3><div class="graph-container"><canvas id="performanceChart"></canvas></div></div>${francaisWidgetHTML}${mathWidgetHTML}${anglaisWidgetHTML}</div>`;
+            
+            createPerformanceChart(levelData, currentUserData);
+            document.querySelectorAll('.mini-leaderboard-container').forEach(container => updateLeaderboardScroll(container));
+            localStorage.setItem('jdlmRankHistory', JSON.stringify(currentRanks));
+        }
+
+        function createStatWidgetHTML(widgetClass, currentKey, title, allUsersData, currentUserData, oldRanks, currentRanks) {
+            const rankedUsers = allUsersData.filter(u => u[currentKey] && !isNaN(parseFloat(u[currentKey]))).sort((a, b) => b[currentKey] - a[currentKey]);
+            const totalUsers = rankedUsers.length;
+            const currentUserRank = rankedUsers.findIndex(u => u.user_random === currentUserData.user_random) + 1;
+            const currentUserGrade = parseFloat(currentUserData[currentKey]);
+            
+            if (currentUserRank > 0) currentRanks[currentKey] = currentUserRank;
+            
+            const getTrophy = (rank) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`);
+
+            let leaderboardItemsHTML = rankedUsers.map((user, index) => {
+                const rank = index + 1;
+                const isCurrentUser = user.user_random === currentUserData.user_random;
+                const userName = isCurrentUser ? 'Vous' : `Utilisateur ${rank}`;
+                return `<li class="leaderboard-item ${isCurrentUser ? 'is-user' : ''}" data-rank="${rank}"><span class="item-rank">${getTrophy(rank)}</span><span class="item-name">${userName}</span><span class="item-grade">${parseFloat(user[currentKey]).toFixed(1)}%</span></li>`;
+            }).join('');
+            
+            let widgetContent;
+            if (isNaN(currentUserGrade) || currentUserRank === 0) {
+                widgetContent = `<div class="widget-header"><h3 class="widget-title">${title}</h3><div class="no-data" style="padding:10px;">N/A</div></div>`;
+            } else {
+                const oldRank = oldRanks[currentKey];
+                let trendHTML = '';
+                if (oldRank !== undefined) {
+                    if (currentUserRank < oldRank) trendHTML = `<span class="rank-trend rank-trend-up"></span>`;
+                    else if (currentUserRank > oldRank) trendHTML = `<span class="rank-trend rank-trend-down"></span>`;
+                }
+                widgetContent = `<div class="widget-header"><h3 class="widget-title">${title}</h3><div class="widget-value">${currentUserGrade.toFixed(1)}%</div><div class="widget-rank"><span>Top ${currentUserRank} sur ${totalUsers}</span>${trendHTML}</div></div><div class="mini-leaderboard-container" data-user-rank="${currentUserRank}"><ul class="leaderboard-list">${leaderboardItemsHTML}</ul></div>`;
+            }
+            return `<div class="stat-widget ${widgetClass}">${widgetContent}</div>`;
+        }
+        
+        function updateLeaderboardScroll(container) {
+            const userRank = parseInt(container.dataset.userRank, 10);
+            if (!userRank) return;
+            const userItem = container.querySelector('.is-user');
+            if (!userItem) return;
+            const itemHeight = userItem.offsetHeight;
+            const containerHeight = container.clientHeight;
+            container.scrollTop = userItem.offsetTop - (containerHeight / 2) + (itemHeight / 2);
+        }
+
+        function createOverallAveragesWidgetHTML(termKey, termText, levelData) {
+            const generalValidGrades = levelData.map(u => parseFloat(u['avg_generale'])).filter(g => !isNaN(g));
+            const generalAverage = generalValidGrades.length > 0 ? generalValidGrades.reduce((a, b) => a + b, 0) / generalValidGrades.length : 0;
+            const termValidGrades = levelData.map(u => parseFloat(u[termKey])).filter(g => !isNaN(g));
+            const termAverage = termValidGrades.length > 0 ? termValidGrades.reduce((a, b) => a + b, 0) / termValidGrades.length : 0;
+            let trendHTML = '';
+            if (termKey !== 'avg_generale' && termAverage > 0 && generalAverage > 0) {
+                if (termAverage > generalAverage) trendHTML = `<span class="rank-trend rank-trend-up"></span>`;
+                else if (termAverage < generalAverage) trendHTML = `<span class="rank-trend rank-trend-down"></span>`;
+            }
+            let secondHalfHTML = '';
+            if (termKey !== 'avg_generale') {
+                secondHalfHTML = `<div class="avg-half"><h3 class="widget-title">Moyenne du Niveau</h3><div class="widget-subtitle">${termText}</div><div class="widget-value">${termAverage.toFixed(1)}%</div><div class="widget-rank" style="opacity:0.8;"><span>Basé sur ${termValidGrades.length} élèves</span>${trendHTML}</div></div>`;
+            }
+            return `<div class="stat-widget overall-avg-widget stacked-avg-widget"><div class="avg-half" ${termKey !== 'avg_generale' ? 'style="border-bottom: 1px solid var(--light-grey); padding-bottom: 15px; margin-bottom: 15px;"' : ''}><h3 class="widget-title">Moyenne du Niveau</h3><div class="widget-subtitle">Générale</div><div class="widget-value">${generalAverage.toFixed(1)}%</div><div class="widget-rank" style="opacity:0.8;">Basé sur ${generalValidGrades.length} élèves</div></div>${secondHalfHTML}</div>`;
+        }
+        
+        function createPerformanceChart(levelData, currentUserData) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            const calculateGroupAvg = (etapeKey) => {
+                const validGrades = levelData.map(u => parseFloat(u[etapeKey])).filter(g => !isNaN(g) && g > 0);
+                return validGrades.length > 0 ? validGrades.reduce((a,b) => a + b, 0) / validGrades.length : null;
+            };
+            const parseUserGrade = (grade) => (parseFloat(grade) > 0 ? parseFloat(grade) : null);
+            const userData = [parseUserGrade(currentUserData.avg_etape1), parseUserGrade(currentUserData.avg_etape2), parseUserGrade(currentUserData.avg_etape3)];
+            const groupData = [calculateGroupAvg('avg_etape1'), calculateGroupAvg('avg_etape2'), calculateGroupAvg('avg_etape3')];
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Étape 1', 'Étape 2', 'Étape 3'],
+                    datasets: [{ label: 'Votre Moyenne', data: userData, borderColor: 'rgba(39, 174, 96, 1)', backgroundColor: 'rgba(39, 174, 96, 0.1)', borderWidth: 3, fill: true, tension: 0.4, spanGaps: false }, { label: 'Moyenne du Niveau', data: groupData, borderColor: 'rgba(231, 76, 60, 1)', backgroundColor: 'rgba(231, 76, 60, 0.1)', borderWidth: 3, fill: true, tension: 0.4, spanGaps: false }]
+                },
+                options: { responsive: true, scales: { y: { min: 0, max: 100, ticks: { callback: value => `${value}%` } } }, plugins: { legend: { position: 'top' } } }
+            });
+        }
+        
+        // =======================================================
+        // INITIALIZATION
+        // =======================================================
+        document.addEventListener('DOMContentLoaded', handleLockStatus);
     </script>
 </body>
 </html>
