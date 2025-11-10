@@ -75,13 +75,80 @@
         .unite-item input, .unite-item span { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
         .unite-item span { background-color: var(--widget-darker-color); font-weight: bold; border: none; }
         .unite-item input:focus { border-color: var(--primary-color); outline: none; }
+
+        .faq-link-container {
+            text-align: center;
+            margin-top: -10px; 
+            margin-bottom: 20px;
+        }
+        .faq-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .faq-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+    <div class="site-header-container">
+        <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
+        <header class="site-header">Outil JDLM*</header>
+        <a href="data.html" class="btn btn-header-action">Ajouter des données</a>
+        <a href="ticket.html" class="btn btn-header-action" style="right: 290px;">Tickets</a>
+    </div>
+    <main class="main-container">
+        <section class="data-section">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="etape1">Étape 1</button>
+                <button class="tab-btn" data-tab="etape2">Étape 2</button>
+                <button class="tab-btn" data-tab="etape3">Étape 3</button>
+            </div>
+            <div id="tab-contents">
+                <div id="etape1" class="tab-content active"></div>
+                <div id="etape2" class="tab-content"></div>
+                <div id="etape3" class="tab-content"></div>
+            </div>
+        </section>
+        <aside class="side-panel">
+            <div class="moyenne-widgets">
+                <div class="moyenne-widget"><h4>Moyenne générale</h4><div id="moyenne-generale" class="moyenne-value">--</div></div>
+                <div class="moyenne-widget"><h4>Moyenne de l'étape</h4><div id="moyenne-etape" class="moyenne-value">--</div></div>
+            </div>
+            <div class="control-group">
+                <select id="niveau-secondaire"><option value="">-- Niveau --</option><option value="sec4">Secondaire 4</option><option value="sec5">Secondaire 5</option></select>
+            </div>
+            <div class="control-group"><button id="unites-btn" class="btn btn-control">Unités</button></div>
+            
+            <div class="control-group"><button id="classement-btn" class="btn btn-control">Classement</button></div>
+            <div class="faq-link-container">
+                <a href="privacy.html" class="faq-link" target="_blank">FAQ</a>
+            </div>
+            
+            <div class="subject-averages">
+                <h4>Moyennes par matière</h4>
+                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
+            </div>
+        </aside>
+    </main>
+    <div class="modal-overlay" id="unites-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="close-unites-modal">&times;</span><h3>Unités</h3>
+            <div class="control-group"><select id="unites-mode"><option value="defaut">Unités défaut</option><option value="sans">Sans unités</option><option value="perso">Personnalisée</option></select></div>
+            <div id="unites-list"></div>
+        </div>
+    </div>
+    <footer>*jauge de la moyenne
+        <br>
+        <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>
+        <p style="font-style: normal; margin-top: 8px;">
+                Pour toute question, préoccupation ou pour signaler un bogue, veuillez contacter : 
+                <a href="mailto:notabot.chat@gmail.com" style="font-style: normal;">notabot.chat@gmail.com</a>
+            </p>
+    </footer>
 
-
-<!-- CSS -->
-<!-- CSS -->
 <style>
 .legal-text {
     font-size: 0.75rem;
@@ -91,18 +158,15 @@
     text-align: center;
     padding: 0 10px;
 }
-
 .legal-text a {
     color: #007bff;
     text-decoration: none;
     font-weight: 500;
 }
-
 .legal-text a:hover {
     text-decoration: underline;
     color: #0056b3;
 }
-
 .password-overlay {
     position: fixed;
     top: 0;
@@ -117,11 +181,9 @@
     transition: opacity 1s ease;
     flex-direction: column;
 }
-
 .password-overlay.show {
     display: flex;
 }
-
 .overlay-content {
     background-color: #ffffff;
     padding: 40px;
@@ -131,14 +193,12 @@
     max-width: 400px;
     width: 90%;
 }
-
 .overlay-content h3 {
     color: #2980b9;
     margin-top: 0;
     margin-bottom: 20px;
     font-size: 1.5em;
 }
-
 .overlay-content input[type="password"] {
     width: 100%;
     padding: 12px;
@@ -148,7 +208,6 @@
     font-size: 1.1em;
     box-sizing: border-box;
 }
-
 .overlay-content button {
     width: 100%;
     padding: 12px;
@@ -160,18 +219,15 @@
     cursor: pointer;
     transition: background-color 0.2s;
 }
-
 .overlay-content button:hover {
     background-color: #1e6fa3;
 }
-
 .error-message {
     color: #e74c3c;
     margin-top: 15px;
     font-weight: bold;
     min-height: 20px;
 }
-
 .hidden {
     display: none !important;
 }
