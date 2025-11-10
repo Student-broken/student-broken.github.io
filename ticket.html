@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy & Contact Form</title>
+    <title>Tickets</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -342,7 +342,7 @@
     </footer>
 
     <script>
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXrvnohFw224HinMdLTHlKDSMx3lfHUBbMzkKLZMx8sZ0AVcij0vcxoFmIiy5Iy_kV/exec';
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzHVZaGT40V_JhubKQQDU_YNoWOwv7Au3IK4GEgmkJPqkQkBkM9w-RrU_TZj_NA7efo/exec';
         
         const ticketForm = document.getElementById('ticketForm');
         const responseMessage = document.getElementById('responseMessage');
@@ -381,7 +381,7 @@
                 
                 if (data.status === 'success') {
                     responseMessage.className = 'success';
-                    responseMessage.innerHTML = `✅ Success! Your ticket has been submitted.<br><br>Your <strong>Ticket ID</strong> is: <strong>${data.ticketId}</strong><br><br>Please save this ID to check your ticket status. Your request will take a minimum of 1 hour and a maximum of 24 hours to process. Thank you.`;
+                    responseMessage.innerHTML = `✅ Success! Your ticket has been submitted.<br><br>Your <strong>Ticket ID</strong> is: <strong>${data.ticketId}</strong><br><br>Please save this ID to check your ticket status. Your request will be processed in the next 24 hours. Please come back and check on your ticket status in a few hours. Thank you.`;
                     
                     ticketIdInput.value = data.ticketId;
                     form.reset(); 
