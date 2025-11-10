@@ -8,11 +8,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2980b9; 
-            --secondary-color: #2c3e50; 
-            --background-color: #f7f9fb; 
+            --primary-color: #2980b9;
+            --secondary-color: #2c3e50;
+            --background-color: #f7f9fb;
             --widget-background: #ffffff;
-            --text-color: #34495e; 
+            --text-color: #34495e;
             --light-grey: #bdc3c7;
             --footer-grey: #95a5a6;
             --danger-color: #e74c3c;
@@ -30,15 +30,15 @@
 
         .site-header-container {
             background-color: var(--widget-background);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); 
-            border-bottom: 1px solid #e0e6eb; 
-            padding: 15px 0; 
-            position: relative; 
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid #e0e6eb;
+            padding: 15px 0;
+            position: relative;
         }
-        
+
         .site-header {
             text-align: center;
-            padding: 0; 
+            padding: 0;
             margin: 0;
             color: var(--secondary-color);
             font-size: 2.2em;
@@ -56,7 +56,7 @@
         }
         .back-arrow {
             position: absolute;
-            top: 20px; 
+            top: 20px;
             left: 25px;
             font-size: 2.2em;
             color: var(--secondary-color);
@@ -95,21 +95,6 @@
             box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
             outline: none;
         }
-        
-        .terms-acceptance {
-            font-size: 0.85em;
-            text-align: center;
-            margin-bottom: 25px;
-            color: var(--text-color);
-        }
-        .terms-acceptance a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .terms-acceptance a:hover {
-            text-decoration: underline;
-        }
 
         .btn {
             display: block;
@@ -137,28 +122,40 @@
 
         .info-btn {
             position: absolute;
-            top: 20px; 
+            top: 15px;
             right: 25px;
-            width: 45px;
-            height: 45px;
-            background: none;
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
+            width: 50px;
+            height: 50px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
             padding: 0;
-            font-size: 1.2em;
+            font-size: 1.5em;
             font-weight: bold;
             text-decoration: none;
+            box-shadow: 0 4px 12px rgba(41, 128, 185, 0.4);
         }
         .info-btn:hover {
-            background-color: var(--primary-color);
-            color: var(--widget-background);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #3498db;
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(41, 128, 185, 0.5);
+        }
+
+        @keyframes shake-it {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
+            75% { transform: rotate(-10deg); }
+        }
+
+        .animate-attention {
+            animation: shake-it 0.7s ease-in-out 2;
         }
 
         .modal-overlay {
@@ -220,10 +217,9 @@
             padding-left: 10px;
         }
 
-        /* NOUVEAU STYLE POUR LE MESSAGE IMPORTANT */
         .important-message {
-            background-color: #fceae9; /* Fond rouge pâle */
-            color: var(--danger-color); /* Texte rouge */
+            background-color: #fceae9;
+            color: var(--danger-color);
             border: 1px solid var(--danger-color);
             padding: 15px;
             border-radius: 8px;
@@ -238,7 +234,31 @@
             margin-right: 10px;
             line-height: 1;
         }
-        /* FIN NOUVEAU STYLE */
+
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            margin-bottom: 25px;
+            font-size: 0.85em;
+            text-align: left;
+            line-height: 1.5;
+            color: var(--text-color);
+        }
+        .checkbox-container input {
+            margin-top: 2px;
+            margin-right: 10px;
+            transform: scale(1.15);
+            cursor: pointer;
+        }
+        .checkbox-container a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .checkbox-container a:hover {
+            text-decoration: underline;
+        }
 
         footer {
             text-align: center;
@@ -258,58 +278,75 @@
     </div>
 
     <a href="main.html" class="back-arrow" title="Retour">←</a>
-    
+
     <button class="info-btn" id="open-modal-btn" title="Ouvrir le tutoriel">?</button>
 
     <main class="content">
         <div class="data-widget">
             <form id="data-form">
-                <textarea id="raw-text" placeholder="Collez les données du portail ici... 
-(Appuyez sur le bouton Aide pour un tutoriel)"></textarea>
-                
-                <!-- Texte d'acceptation implicite -->
-                <p class="terms-acceptance">
-                    En cliquant sur "Enregistrer et continuer", vous acceptez les <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
-                </p>
+                <textarea id="raw-text" placeholder="Collez les données du portail ici...
+(Appuyez sur le bouton Aide pour un tutoriel en haut à droite.)" onkeydown="return event.ctrlKey || event.metaKey"></textarea>
+
+                //<div class="checkbox-container">
+                    //<input type="checkbox" id="terms-checkbox" required>
+                    //<label for="terms-checkbox">
+                        //En cochant, vous acceptez les <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
+                    //</label>
+                //</div>
 
                 <button type="submit" id="submit-btn" class="btn" disabled>Enregistrer et continuer</button>
             </form>
         </div>
     </main>
-    
-    <div class="modal-overlay" id="tutorial-modal">
-    <div class="modal-content">
-        <span class="modal-close" id="close-modal-btn">&times;</span>
-        <h3>Comment utiliser l'outil</h3>
-        
-        <!-- Message important et reformulé -->
-        <div class="important-message">
-            <span class="icon">⚠</span>
-            <span>
-                <strong>Important!</strong> Pour avoir des informations à jour, vous devez refaire les étapes 1 à 5 souvent.
-            </span>
-        </div>
-        
-        <p>1. Allez dans la section "Travaux" du portail.</p>
-        <p>2. Faites les touches <strong>CTRL + A</strong> pour tout sélectionner.</p>
-        <p>3. Faites <strong>CTRL + C</strong> pour copier la sélection.</p>
-        <p>4. Collez le texte dans la zone ci-dessus avec <strong>CTRL + V</strong>.</p>
-        <p>5. Cliquez sur <strong>Enregistrer et continuer</strong>.</p>
-        <p>6. <strong>Répétez les étapes 1 à 5</strong> pour chaque étape (2e, 3e).</p>
-    </div>
-</div>
 
-<footer>*jauge de la moyenne</footer>
-                
+    <div class="modal-overlay" id="tutorial-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="close-modal-btn">&times;</span>
+            <h3>Comment utiliser l'outil</h3>
+
+            <div class="important-message">
+                <span class="icon">⚠</span>
+                <span>
+                    <strong>Important!</strong> Pour avoir des informations à jour, vous devez refaire les étapes 1 à 5 souvent.
+                </span>
+            </div>
+
+            <p>1. Allez dans la section "Travaux" du portail.</p>
+            <p>2. Faites les touches <strong>CTRL + A</strong> pour tout sélectionner.</p>
+            <p>3. Faites <strong>CTRL + C</strong> pour copier la sélection.</p>
+            <p>4. Collez le texte dans la zone ci-dessus avec <strong>CTRL + V</strong>.</p>
+            <p>5. Cliquez sur <strong>Enregistrer et continuer</strong>.</p>
+            <p>6. <strong>Répétez les étapes 1 à 5</strong> pour chaque étape (2e, 3e).</p>
+        </div>
+    </div>
+
+    <footer>
+    <p>*jauge de la moyenne</p>
+            <p style="font-style: normal; margin-top: 8px;">
+                Pour toute question, préoccupation ou pour signaler un bogue, veuillez contacter :
+                <a href="mailto:notabot.chat@gmail.com" style="font-style: normal;">notabot.chat@gmail.com</a>
+            </p>
+        </footer>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const infoBtn = document.getElementById('open-modal-btn');
+            if (infoBtn) {
+                infoBtn.classList.add('animate-attention');
+
+                setTimeout(() => {
+                    infoBtn.classList.remove('animate-attention');
+                }, 14000);
+            }
+        });
+
         const openModalBtn = document.getElementById('open-modal-btn');
         const closeModalBtn = document.getElementById('close-modal-btn');
         const tutorialModal = document.getElementById('tutorial-modal');
-        
+
         const openModal = () => tutorialModal.classList.add('active');
         const closeModal = () => tutorialModal.classList.remove('active');
-        
+
         openModalBtn.addEventListener('click', openModal);
         closeModalBtn.addEventListener('click', closeModal);
         tutorialModal.addEventListener('click', (e) => { if (e.target === tutorialModal) closeModal(); });
@@ -318,22 +355,37 @@
         const submitBtn = document.getElementById('submit-btn');
         const dataForm = document.getElementById('data-form');
         const rawTextArea = document.getElementById('raw-text');
+        const termsCheckbox = document.getElementById('terms-checkbox');
+        
+        rawTextArea.addEventListener('paste', () => {
+            setTimeout(updateSubmitButtonState, 0);
+        });
 
-        const checkTextarea = () => {
-            submitBtn.disabled = rawTextArea.value.trim().length === 0;
+        const updateSubmitButtonState = () => {
+            const isTextPresent = rawTextArea.value.trim().length > 0;
+            const isChecked = termsCheckbox.checked;
+
+            submitBtn.disabled = !(isTextPresent && isChecked);
         };
 
-        checkTextarea();
-        rawTextArea.addEventListener('input', checkTextarea);
+        updateSubmitButtonState();
+        rawTextArea.addEventListener('input', updateSubmitButtonState);
+        termsCheckbox.addEventListener('change', updateSubmitButtonState);
 
         dataForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const rawText = rawTextArea.value;
+
+            if (!termsCheckbox.checked) {
+                alert("Vous devez accepter les conditions d'utilisation et la politique de confidentialité.");
+                return;
+            }
+
             if (!rawText.trim()) {
                 alert("Veuillez coller des données avant d'enregistrer.");
                 return;
             }
-            
+
             const parsedResult = parsePortalData(rawText);
             if (!parsedResult.nom || !parsedResult.etapeData) {
                 alert("Erreur lors de l'analyse des données. Le nom ou le numéro d'étape n'a pas pu être trouvé. Vérifiez le texte collé.");
@@ -356,7 +408,7 @@
             const POND_REGEX = /^\d{1,3}$/;
             const DATE_REGEX = /^\d{4}-\d{2}-\d{2}/;
             const RESULT_REGEX = /^(\d{1,3},\d\s\/\s\d{1,3}\s\(.+\)|[A-DF][+-]?)$/;
-            
+
             const createNewAssignment = () => ({ textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' });
 
             const parseAssignments = (lines) => {
@@ -391,7 +443,7 @@
                             currentAssignment.assignedDate = trimmedLine.split('à')[0].trim();
                         }
                         currentAssignment.dueDate = trimmedLine;
-                    } else { 
+                    } else {
                         if (currentAssignment.pond || currentAssignment.assignedDate) {
                             finalizeAssignment();
                             currentAssignment = createNewAssignment();
