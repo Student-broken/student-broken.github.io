@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await handleLockStatus();
   
   if (!isSystemLocked) {
-    await loadLeaderboardData();
+    await initializeDashboard(); // Use the actual initialization function
   }
 });
 
@@ -309,7 +309,7 @@ function setupPasswordLock() {
         passwordInput.value = '';
         isSystemLocked = false;
         unfreezeAllFunctions();
-        await loadLeaderboardData();
+        await initializeDashboard(); // Use the actual initialization function
       } else {
         errorDiv.textContent = 'Mot de passe incorrect. Veuillez réessayer.';
         passwordInput.value = '';
@@ -379,11 +379,6 @@ function preventAction(e) {
     return false;
   }
 }
-
-// Stub function - replace with your actual implementation
-async function loadLeaderboardData() {
-  console.log('Loading leaderboard data...');
-}
 </script>
 
     
@@ -435,8 +430,8 @@ async function loadLeaderboardData() {
                 </div>
                 <!-- Graph Ghost -->
                 <div class="stat-widget graph-widget">
-                    <div class="ghost ghost-graph-title"></div>
-                    <div class="ghost ghost-graph"></div>
+                    <h3 class="widget-title" style="text-align:center;">Performance par Étape</h3>
+                    <div class="graph-container"><canvas id="performanceChart"></canvas></div>
                 </div>
                 <!-- Small Widgets Ghost -->
                 <div class="stat-widget small-widget">
@@ -549,25 +544,26 @@ async function loadLeaderboardData() {
         let currentRanks = {}; 
         let chartInstance = null;
         
+        // NEW V9 logic of notifyClassView adapted to Apps Script
         async function notifyClassView(userCode, userRandom) {
+            if (!userRandom) return;
+            
             const formData = new FormData();
             formData.append('userCode', userCode);
             formData.append('user_random', userRandom);
-            formData.append('class_view', 'TRUE'); // Set the flag to true
+            formData.append('class_view', 'TRUE'); // Set the flag for the Apps Script backend
 
             try {
-                const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
-                const data = await response.json();
-                if (data.result === 'success') {
-                    console.log('Successfully notified leaderboard view.');
-                } else {
-                    console.error('Failed to notify leaderboard view:', data.error);
-                }
+                // Use the existing SCRIPT_URL POST method
+                await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+                console.log('Successfully notified leaderboard view.');
             } catch (error) {
-                console.error("Network error during view notification:", error);
+                // This might fail if the user has never synced data, which is fine.
+                console.log("Could not update view status (user might be new or network error): ", error.message);
             }
         }
 
+        // NEW V9 logic of initializeDashboard adapted to Apps Script fetch
         async function initializeDashboard() {
             const localData = JSON.parse(localStorage.getItem('jdlmData')) || {};
             const userCode = (localData.nom || '').replace(/\s+/g, '').toLowerCase();
@@ -579,18 +575,25 @@ async function loadLeaderboardData() {
                 return;
             }
             
+            // 1. Notify the view (adapted from V9 call)
             await notifyClassView(userCode, userRandom);
 
             try {
+                // 2. Execute the query (Apps Script fetch all data and filter in JS, as backend is not a true database query)
                 const response = await fetch(SCRIPT_URL);
                 if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
                 const allData = await response.json();
+                
                 if (allData.error) throw new Error(`Script error: ${allData.error}`);
-
+                
+                // 3. Filter results to match the V9 where("niveau", "==", selectedLevel) logic
+                const levelData = allData.filter(d => d.niveau === selectedLevel);
+                
                 const oldRanks = JSON.parse(localStorage.getItem('jdlmRankHistory')) || {};
                 
-                document.getElementById('term-select').addEventListener('change', () => renderDashboard(allData, userRandom, selectedLevel, oldRanks));
-                renderDashboard(allData, userRandom, selectedLevel, oldRanks);
+                // 4. Set up listener and initial render
+                document.getElementById('term-select').addEventListener('change', () => renderDashboard(levelData, userRandom, selectedLevel, oldRanks));
+                renderDashboard(levelData, userRandom, selectedLevel, oldRanks);
 
             } catch (error) {
                 console.error("Fetch Error:", error);
@@ -598,13 +601,13 @@ async function loadLeaderboardData() {
             }
         }
 
+
         // --- UPDATED: This function now accepts userRandom instead of userCode ---
-        function renderDashboard(allData, userRandom, selectedLevel, oldRanks) {
+        function renderDashboard(levelData, userRandom, selectedLevel, oldRanks) {
             currentRanks = {}; 
             const termSelect = document.getElementById('term-select');
             const selectedTermKey = termSelect.value;
             const selectedTermText = termSelect.options[termSelect.selectedIndex].text;
-            const levelData = allData.filter(d => d.niveau === selectedLevel);
             
             if (levelData.length === 0) {
                 dashboardContainer.innerHTML = `<div class="no-data">Aucune donnée de classement n'a encore été enregistrée pour ce niveau.</div>`;
@@ -764,7 +767,6 @@ async function loadLeaderboardData() {
                 options: { responsive: true, scales: { y: { min: 0, max: 100, ticks: { callback: value => `${value}%` } } }, plugins: { legend: { position: 'top' } } }
             });
         }
-        document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
 </body>
 </html>
