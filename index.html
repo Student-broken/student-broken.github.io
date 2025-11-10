@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - JDLM*</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
     :root {
         --primary-color: #3498db;
@@ -136,7 +136,6 @@
         box-sizing: border-box;
         padding: 14px;
         margin-bottom: 12px;
-        margin-top: 12px;
         border: none;
         border-radius: 8px;
         font-size: 1em;
@@ -169,55 +168,8 @@
         background-color: #212f3c;
     }
 
-    .terms-text {
-        margin-top: 20px;
-        font-size: 0.85em;
-        color: var(--footer-grey);
-        line-height: 1.5;
-    }
-
-    .terms-text a {
-        color: var(--primary-color);
-        text-decoration: none;
-    }
-
-    .terms-text a:hover {
-        text-decoration: underline;
-    }
-
     #signup-flow, #login-flow {
         display: none;
-    }
-
-    /* NOUVEAU: Styles pour l'état désactivé et la case à cocher */
-    .btn[disabled] {
-        background-color: var(--light-grey); /* Couleur grise pour l'état désactivé */
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
-
-    .btn:hover:not(.btn[disabled]) {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-    }
-
-    /* Style pour la case à cocher */
-    .checkbox-container {
-        display: flex;
-        align-items: flex-start; /* Aligner au début du texte long */
-        justify-content: flex-start;
-        margin-top: 20px;
-        font-size: 0.9em;
-        text-align: left;
-        line-height: 1.5;
-    }
-
-    .checkbox-container input {
-        margin-top: 2px; /* Ajustement vertical */
-        margin-right: 10px;
-        transform: scale(1.15);
-        cursor: pointer;
     }
 </style>
 </head>
@@ -228,46 +180,22 @@
     <main class="content">
         <div class="login-widget">
             <div class="logo-container">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
             </div>
 
             <div id="signup-flow">
                 <h2>Bienvenue sur JDLM*</h2>
                 <p class="subtitle">Créez un compte pour commencer.</p>
-                <form id="signup-form">
-                    <button type="submit" id="signup-btn" class="btn btn-primary" disabled>S'inscrire</button>
-                </form>
-                
-                <div class="checkbox-container">
-                    <input type="checkbox" id="signup-terms-checkbox" required>
-                    <label for="signup-terms-checkbox">
-                        J'ai lu et j'accepte les <a href="conditions.html" target="_blank">Conditions d'utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
-                    </label>
-                </div>
-                </div>
+                <a href="data.html" class="btn btn-primary">S’inscrire</a>
+            </div>
 
             <div id="login-flow">
                 <h2 class="welcome-back">Bon retour,</h2>
                 <div id="userNameDisplay" class="user-name"></div>
-                <form id="login-form">
-                    <button type="submit" id="login-main-btn" class="btn btn-primary" disabled>Accéder à l'outil</button>
-                </form>
-                <form id="modify-data-form">
-                    <button type="submit" id="modify-data-btn" class="btn btn-secondary" disabled>Modifier mes données</button>
-                </form>
-                
-                <div class="checkbox-container">
-                    <input type="checkbox" id="login-terms-checkbox" required>
-                    <label for="login-terms-checkbox">
-                        J'ai lu et j'accepte les <a href="conditions.html" target="_blank">Conditions d'utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité.</a>.
-                        
-                    </label>
-                    <br>
-                    
-                </div>
-                </div>
-
-        
+                <a href="main.html" class="btn btn-primary">Accéder à l'outil</a>
+                <a href="data.html" class="btn btn-secondary">Modifier mes données</a>
+            </div>
+        </div>
     </main>
 
     <footer>*jauge de la moyenne</footer>
@@ -278,59 +206,20 @@
             const loginFlow = document.getElementById('login-flow');
             const userNameDisplay = document.getElementById('userNameDisplay');
 
-            // Éléments d'inscription
-            const signupBtn = document.getElementById('signup-btn');
-            const signupCheckbox = document.getElementById('signup-terms-checkbox');
-            const signupForm = document.getElementById('signup-form');
-
-            // Éléments de connexion
-            const loginMainBtn = document.getElementById('login-main-btn');
-            const modifyDataBtn = document.getElementById('modify-data-btn');
-            const modifyDataForm = document.getElementById('modify-data-form');
-            const loginCheckbox = document.getElementById('login-terms-checkbox');
-            const loginForm = document.getElementById('login-form');
-
-            // Fonction pour gérer l'état du bouton et la navigation
-            const setupFormLogic = (button, checkbox, form, targetURL) => {
-                
-                // 1. Mettre à jour l'état du bouton au changement de la case à cocher
-                checkbox.addEventListener('change', () => {
-                    button.disabled = !checkbox.checked;
-                });
-                
-                // S'assurer que le bouton est désactivé au chargement initial
-                button.disabled = !checkbox.checked;
-
-                // 2. Empêcher l'envoi du formulaire et rediriger manuellement
-                form.addEventListener('submit', (event) => {
-                    event.preventDefault();
-                    if (checkbox.checked) {
-                        window.location.href = targetURL;
-                    }
-                });
-            };
-
             try {
                 const jdlmData = JSON.parse(localStorage.getItem('jdlmData'));
                 if (jdlmData && jdlmData.nom) {
                     userNameDisplay.textContent = jdlmData.nom;
                     loginFlow.style.display = 'block';
-                    
-                    // Logique pour les boutons de Connexion
-                    setupFormLogic(loginMainBtn, loginCheckbox, loginForm, 'main.html');
-                    setupFormLogic(modifyDataBtn, loginCheckbox, modifyDataForm, 'data.html');
                 } else {
                     signupFlow.style.display = 'block';
-                    
-                    // Logique pour le bouton d'Inscription
-                    setupFormLogic(signupBtn, signupCheckbox, signupForm, 'data.html');
                 }
             } catch (error) {
                 console.error("Could not parse jdlmData from localStorage:", error);
                 signupFlow.style.display = 'block';
-                setupFormLogic(signupBtn, signupCheckbox, signupForm, 'data.html');
             }
         });
     </script>
-    </body>
+
+</body>
 </html>
