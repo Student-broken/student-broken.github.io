@@ -56,39 +56,33 @@
         .error-message { color: var(--danger-color); background-color: #fdd; border: 1px solid var(--danger-color); border-radius: 8px; }
         footer { text-align: center; padding: 25px; font-size: 0.8em; color: #95a5a6; font-style: italic; flex-shrink: 0;}
         
-        /* ===== NEW LOADER ===== */
-        .loader {
-          width: 50px;
-          aspect-ratio: 1;
-          display: grid;
-          margin: auto; /* This keeps the loader centered */
+        /* ===== GHOST LOADER STYLES ===== */
+        .ghost-loading .stat-widget { border-color: transparent; }
+        .ghost {
+            background-color: #e0e6eb;
+            border-radius: 8px;
+            animation: shimmer 1.5s infinite linear;
+            background-image: linear-gradient(90deg, #e0e6eb 0px, #f0f4f7 40px, #e0e6eb 80px);
+            background-size: 600px;
         }
-        .loader:before,
-        .loader:after {
-          content: "";
-          grid-area: 1/1;
-          margin: 0 0 15px 15px;
-          --c:#0000 calc(100%/3),#046D8B 0 calc(2*100%/3),#0000 0;
-          --c1:linear-gradient(90deg,var(--c));
-          --c2:linear-gradient( 0deg,var(--c));
-          background: var(--c1),var(--c2),var(--c1),var(--c2);
-          background-size: 300% 4px,4px 300%;
-          background-repeat: no-repeat;
-          animation: l12 1s infinite linear;
+
+        @keyframes shimmer {
+            0% { background-position: -150px; }
+            100% { background-position: 450px; }
         }
-        .loader:after {
-          margin: 15px 15px 0 0;
-          transform: scale(-1,-1);
-        }
-        @keyframes l12 {
-          0%   {background-position: 50%  0,100% 100%,0    100%,0 0}
-          25%  {background-position: 0    0,100% 50% ,0    100%,0 0}
-          50%  {background-position: 0    0,100% 0   ,50%  100%,0 0}
-          75%  {background-position: 0    0,100% 0   ,100% 100%,0 50%}
-         75.01%{background-position: 100% 0,100% 0   ,100% 100%,0 50%}
-          100% {background-position: 50%  0,100% 0   ,100% 100%,0 100%}
-        }
-        /* ===== END NEW LOADER ===== */
+
+        .ghost-title { width: 60%; height: 24px; margin: 0 auto 15px; }
+        .ghost-title-sm { width: 70%; height: 20px; margin: 0 auto 10px; }
+        .ghost-value { width: 40%; height: 50px; margin: 0 auto 15px; }
+        .ghost-value-sm { width: 50%; height: 35px; margin: 0 auto 10px; }
+        .ghost-rank { width: 50%; height: 20px; margin: 0 auto; }
+        .ghost-rank-sm { width: 60%; height: 18px; margin: 0 auto; }
+        .ghost-subtitle { width: 40%; height: 16px; margin: 0 auto 8px; }
+        .ghost-line { width: 100%; height: 35px; margin-bottom: 8px; }
+        .ghost-line.is-user-ghost { background-color: #d0dae2; background-image: linear-gradient(90deg, #d0dae2 0px, #e1e8ed 40px, #d0dae2 80px); }
+        .ghost-graph-title { width: 40%; height: 22px; margin: 0 auto 20px; }
+        .ghost-graph { width: 100%; height: 250px; }
+        /* ===== END GHOST LOADER STYLES ===== */
 
         .stacked-avg-widget { justify-content: center; }
         .avg-half { text-align: center; }
@@ -408,7 +402,65 @@ async function loadLeaderboardData() {
             </select>
         </div>
         <div id="dashboard-container">
-             <div class="loader"></div>
+            <div class="dashboard-grid ghost-loading" id="dashboard-ghost-loader">
+                <!-- Main Widget Ghost -->
+                <div class="stat-widget main-avg-widget">
+                    <div class="widget-header">
+                        <div class="ghost ghost-title"></div>
+                        <div class="ghost ghost-value"></div>
+                        <div class="ghost ghost-rank"></div>
+                    </div>
+                    <div class="mini-leaderboard-container">
+                        <div class="ghost ghost-line"></div>
+                        <div class="ghost ghost-line"></div>
+                        <div class="ghost ghost-line is-user-ghost"></div>
+                        <div class="ghost ghost-line"></div>
+                        <div class="ghost ghost-line"></div>
+                    </div>
+                </div>
+                <!-- Overall Averages Ghost -->
+                <div class="stat-widget overall-avg-widget">
+                    <div class="avg-half" style="border-bottom: 1px solid var(--light-grey); padding-bottom: 15px; margin-bottom: 15px;">
+                        <div class="ghost ghost-title-sm"></div>
+                        <div class="ghost ghost-subtitle"></div>
+                        <div class="ghost ghost-value-sm"></div>
+                        <div class="ghost ghost-rank-sm"></div>
+                    </div>
+                     <div class="avg-half">
+                        <div class="ghost ghost-title-sm"></div>
+                        <div class="ghost ghost-subtitle"></div>
+                        <div class="ghost ghost-value-sm"></div>
+                        <div class="ghost ghost-rank-sm"></div>
+                    </div>
+                </div>
+                <!-- Graph Ghost -->
+                <div class="stat-widget graph-widget">
+                    <div class="ghost ghost-graph-title"></div>
+                    <div class="ghost ghost-graph"></div>
+                </div>
+                <!-- Small Widgets Ghost -->
+                <div class="stat-widget small-widget">
+                    <div class="widget-header">
+                        <div class="ghost ghost-title-sm"></div>
+                        <div class="ghost ghost-value-sm"></div>
+                        <div class="ghost ghost-rank-sm"></div>
+                    </div>
+                </div>
+                 <div class="stat-widget small-widget">
+                    <div class="widget-header">
+                        <div class="ghost ghost-title-sm"></div>
+                        <div class="ghost ghost-value-sm"></div>
+                        <div class="ghost ghost-rank-sm"></div>
+                    </div>
+                </div>
+                 <div class="stat-widget small-widget">
+                    <div class="widget-header">
+                        <div class="ghost ghost-title-sm"></div>
+                        <div class="ghost ghost-value-sm"></div>
+                        <div class="ghost ghost-rank-sm"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
     <footer>*jauge de la moyenne</footer>
