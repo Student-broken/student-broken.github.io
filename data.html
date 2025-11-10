@@ -96,21 +96,9 @@
             outline: none;
         }
         
-        .terms-acceptance {
-            font-size: 0.85em;
-            text-align: center;
-            margin-bottom: 25px;
-            color: var(--text-color);
-        }
-        .terms-acceptance a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .terms-acceptance a:hover {
-            text-decoration: underline;
-        }
-
+        /* Modifié: Remplacé par .checkbox-container pour la structure et la mise en page */
+        /* .terms-acceptance { ... } */
+        
         .btn {
             display: block;
             width: 100%;
@@ -130,7 +118,7 @@
             transform: translateY(-1px);
         }
         .btn:disabled {
-            background-color: var(--light-grey);
+            background-color: var(--light-grey); /* CHANGEMENT: Nouvelle couleur pour l'état désactivé */
             cursor: not-allowed;
             opacity: 0.8;
         }
@@ -250,6 +238,33 @@
             line-height: 1;
         }
 
+        /* NOUVEAUX STYLES POUR LA CASE À COCHER */
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            margin-bottom: 25px; /* Déplacé ici pour l'espacement du bouton */
+            font-size: 0.85em;
+            text-align: left;
+            line-height: 1.5;
+            color: var(--text-color);
+        }
+        .checkbox-container input {
+            margin-top: 2px;
+            margin-right: 10px;
+            transform: scale(1.15);
+            cursor: pointer;
+        }
+        .checkbox-container a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .checkbox-container a:hover {
+            text-decoration: underline;
+        }
+        /* FIN NOUVEAUX STYLES */
+
         footer {
             text-align: center;
             padding: 15px;
@@ -277,9 +292,12 @@
                 <textarea id="raw-text" placeholder="Collez les données du portail ici... 
 (Appuyez sur le bouton Aide pour un tutoriel en haut à droite.)"></textarea>
                 
-                <p class="terms-acceptance">
-                    En cliquant sur "Enregistrer et continuer", vous acceptez les <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
-                </p>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="terms-checkbox" required>
+                    <label for="terms-checkbox">
+                        En cliquant sur "Enregistrer et continuer", vous acceptez les <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
+                    </label>
+                </div>
 
                 <button type="submit" id="submit-btn" class="btn" disabled>Enregistrer et continuer</button>
             </form>
@@ -342,17 +360,32 @@
         const submitBtn = document.getElementById('submit-btn');
         const dataForm = document.getElementById('data-form');
         const rawTextArea = document.getElementById('raw-text');
+        const termsCheckbox = document.getElementById('terms-checkbox'); // NOUVEAU: Référence à la case à cocher
 
-        const checkTextarea = () => {
-            submitBtn.disabled = rawTextArea.value.trim().length === 0;
+        // Fonction pour vérifier la présence de texte ET le statut de la case à cocher
+        const updateSubmitButtonState = () => {
+            const isTextPresent = rawTextArea.value.trim().length > 0;
+            const isChecked = termsCheckbox.checked;
+            
+            // Le bouton est activé uniquement si le texte est présent ET la case est cochée
+            submitBtn.disabled = !(isTextPresent && isChecked);
         };
 
-        checkTextarea();
-        rawTextArea.addEventListener('input', checkTextarea);
+        // Écoute des événements sur la zone de texte et la case à cocher
+        updateSubmitButtonState(); // Vérification initiale
+        rawTextArea.addEventListener('input', updateSubmitButtonState);
+        termsCheckbox.addEventListener('change', updateSubmitButtonState); // NOUVEAU: Écouter le changement sur la case à cocher
 
         dataForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const rawText = rawTextArea.value;
+
+            // Ajout d'une vérification de sécurité supplémentaire pour les termes
+            if (!termsCheckbox.checked) {
+                alert("Vous devez accepter les conditions d'utilisation et la politique de confidentialité.");
+                return;
+            }
+
             if (!rawText.trim()) {
                 alert("Veuillez coller des données avant d'enregistrer.");
                 return;
