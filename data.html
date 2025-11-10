@@ -285,12 +285,12 @@
         <div class="data-widget">
             <form id="data-form">
                 <textarea id="raw-text" placeholder="Collez les données du portail ici...
-(Appuyez sur le bouton Aide pour un tutoriel en haut à droite.)" readonly></textarea>
+(Appuyez sur le bouton Aide pour un tutoriel en haut à droite.)" onkeydown="return event.ctrlKey || event.metaKey"></textarea>
 
                 <div class="checkbox-container">
                     <input type="checkbox" id="terms-checkbox" required>
                     <label for="terms-checkbox">
-                        En cliquant sur "Enregistrer et continuer", vous acceptez les <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
+                        En cochant, vous acceptez les <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
                     </label>
                 </div>
 
@@ -356,15 +356,9 @@
         const dataForm = document.getElementById('data-form');
         const rawTextArea = document.getElementById('raw-text');
         const termsCheckbox = document.getElementById('terms-checkbox');
-
-        // Allow pasting into the readonly textarea
-        rawTextArea.addEventListener('paste', function(e) {
-            this.removeAttribute('readonly');
-            // Timeout to allow the paste to happen before making it readonly again
-            setTimeout(() => {
-                this.setAttribute('readonly', true);
-                updateSubmitButtonState();
-            }, 10);
+        
+        rawTextArea.addEventListener('paste', () => {
+            setTimeout(updateSubmitButtonState, 0);
         });
 
         const updateSubmitButtonState = () => {
