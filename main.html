@@ -974,22 +974,7 @@ async function loadDashboardData() {
 
         console.log(force ? "Force-syncing data..." : "Data has changed. Syncing automatically...");
         
-        const formData = new FormData();
-        for (const key in dataPayload) {
-            formData.append(key, dataPayload[key]);
-        }
-        
-        fetch(SCRIPT_URL, { method: 'POST', body: formData })
-        .then(response => response.json())
-        .then(data => {
-            if(data.result === 'success') {
-                console.log("Sync successful for user:", data.userCode);
-                sessionStorage.setItem('lastDataFingerprint', dataFingerprint);
-            } else {
-                console.error("Script Error:", data.error);
-            }
-        })
-        .catch(error => console.error("Network Error:", error));
+
 
         return true;
     }
