@@ -198,9 +198,9 @@
 
 <!-- JAVASCRIPT -->
 <script>
-//const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
-//const UNLOCK_KEY = 'leaderboardUnlocked';
-//const LOCK_STATUS_KEY = 'lastLockStatus';
+const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
+const UNLOCK_KEY = 'leaderboardUnlocked';
+const LOCK_STATUS_KEY = 'lastLockStatus';
 
 let isSystemLocked = true; // Global flag to freeze all functions
 
@@ -448,14 +448,36 @@ async function loadLeaderboardData() {
 
 
 
-    <div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
+   <div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
     <p>Utilisateur enregistré : <strong id="current-user-display">x</strong></p>
     <p id="log-status">Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>Failed to fetch</strong></p>
 </div>
 
 <script>
-    // !! IMPORTANT !! REMPLACEZ CETTE URL PAR VOTRE URL DE DÉPLOIEMENT DE L'APPLICATION WEB LOGGING
+
+
+// IT NOW USES SHA256 FOR LOGGING, NO USER IS TRACKED ANYMORE
+
+    
+    // !! IMPORTANT !! REMPLACEZ CETTE URL PAR VOTRE URL DE DÉPLOIEMENT DE L'APPLICATION WEB
     const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec"; 
+
+    // Fonction utilitaire pour convertir un ArrayBuffer en chaîne hexadécimale
+    function arrayBufferToHex(buffer) {
+        return Array.prototype.map.call(new Uint8Array(buffer), x => (('00' + x.toString(16)).slice(-2))).join('');
+    }
+
+    // Nouvelle fonction pour calculer le hachage SHA-256
+    async function hashSha256(message) {
+        // Encode le message en ArrayBuffer (Uint8Array)
+        const msgBuffer = new TextEncoder().encode(message);
+        
+        // Calcule le hachage
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        
+        // Convertit l'ArrayBuffer en chaîne hexadécimale
+        return arrayBufferToHex(hashBuffer);
+    }
 
     // Fonction pour récupérer le nom de l'utilisateur (utilisant la variable 'nom')
     function getUserName() {
@@ -474,13 +496,13 @@ async function loadLeaderboardData() {
         return 'Anonyme'; 
     }
 
-    // Fonction principale pour enregistrer la visite
+    // Fonction principale pour enregistrer la visite (mise à jour pour le hachage)
     async function logUserVisit() {
         const userName = getUserName();
         const logStatus = document.getElementById('log-status');
         const userDisplay = document.getElementById('current-user-display');
 
-        // Mise à jour de l'affichage utilisateur (peut être Anonyme)
+        // Mise à jour de l'affichage utilisateur (NON HACHÉ pour l'affichage local)
         userDisplay.textContent = userName;
 
         if (LOGGING_API_URL === "VOTRE_LOGGING_API_URL_ICI" || LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
@@ -489,8 +511,11 @@ async function loadLeaderboardData() {
         }
 
         try {
-            // Envoi du nom d'utilisateur (qui sera 'Anonyme' si non trouvé) au paramètre 'name' de l'Apps Script
-            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userName)}`;
+            // ⭐️ ÉTAPE CLÉ : HACHAGE du nom d'utilisateur avant l'envoi
+            const hashedName = await hashSha256(userName);
+            
+            // Envoi du nom d'utilisateur HACHÉ (SHA-256) au paramètre 'name' de l'Apps Script
+            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(hashedName)}`;
 
             const response = await fetch(fullUrl, {
                 method: 'GET',
@@ -509,7 +534,7 @@ async function loadLeaderboardData() {
                 const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 
-                logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>.`;
+                logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>. (Nom haché)`;
             } else {
                 logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie).";
             }
