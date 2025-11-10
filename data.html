@@ -56,9 +56,8 @@
         }
         .back-arrow {
             position: absolute;
-            top: 50%;
+            top: 20px;
             left: 25px;
-            transform: translateY(-50%);
             font-size: 2.2em;
             color: var(--secondary-color);
             text-decoration: none;
@@ -67,7 +66,7 @@
         }
         .back-arrow:hover {
             color: var(--primary-color);
-            transform: translateY(-50%) scale(1.05);
+            transform: scale(1.05);
         }
         .data-widget {
             background-color: var(--widget-background);
@@ -113,7 +112,7 @@
         }
         .btn:not(:disabled):hover {
             background-color: #3498db;
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
         .btn:disabled {
             background-color: var(--light-grey);
@@ -123,9 +122,8 @@
 
         .info-btn {
             position: absolute;
-            top: 50%;
+            top: 15px;
             right: 25px;
-            transform: translateY(-50%);
             width: 50px;
             height: 50px;
             background-color: var(--primary-color);
@@ -145,15 +143,15 @@
         }
         .info-btn:hover {
             background-color: #3498db;
-            transform: translateY(-50%) scale(1.05);
+            transform: scale(1.05);
             box-shadow: 0 6px 15px rgba(41, 128, 185, 0.5);
         }
 
         @keyframes shake-it {
-            0%, 100% { transform: translateY(-50%) rotate(0deg); }
-            25% { transform: translateY(-50%) rotate(-15deg); }
-            50% { transform: translateY(-50%) rotate(15deg); }
-            75% { transform: translateY(-50%) rotate(-10deg); }
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
+            75% { transform: rotate(-10deg); }
         }
 
         .animate-attention {
@@ -250,7 +248,7 @@
         .checkbox-container input {
             margin-top: 2px;
             margin-right: 10px;
-            transform: scale(1.5);
+            transform: scale(1.15);
             cursor: pointer;
         }
         .checkbox-container a {
@@ -287,7 +285,7 @@
         <div class="data-widget">
             <form id="data-form">
                 <textarea id="raw-text" placeholder="Collez les données du portail ici...
-(Appuyez sur le bouton Aide pour un tutoriel en haut à droite.)"></textarea>
+(Appuyez sur le bouton Aide pour un tutoriel en haut à droite.)" onkeydown="return event.ctrlKey || event.metaKey"></textarea>
 
                 <div class="checkbox-container">
                     <input type="checkbox" id="terms-checkbox" required>
@@ -338,7 +336,7 @@
 
                 setTimeout(() => {
                     infoBtn.classList.remove('animate-attention');
-                }, 4000);
+                }, 14000);
             }
         });
 
@@ -410,9 +408,8 @@
             const POND_REGEX = /^\d{1,3}$/;
             const DATE_REGEX = /^\d{4}-\d{2}-\d{2}/;
             const RESULT_REGEX = /^(\d{1,3},\d\s\/\s\d{1,3}\s\(.+\)|[A-DF][+-]?)$/;
-            
-            // MODIFICATION 1: Initialize pond as null instead of ''
-            const createNewAssignment = () => ({ textBuffer: [], category: '', work: '', pond: null, assignedDate: '', dueDate: '', completedDate: '', result: '' });
+
+            const createNewAssignment = () => ({ textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' });
 
             const parseAssignments = (lines) => {
                 let assignments = [];
@@ -420,8 +417,7 @@
                 let currentAssignment = createNewAssignment();
 
                 const finalizeAssignment = () => {
-                    // MODIFICATION 2: Check for null
-                    if (currentAssignment.textBuffer.length === 0 && currentAssignment.pond === null) return;
+                    if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond) return;
                     const buffer = currentAssignment.textBuffer;
                     if (buffer.length === 1) {
                         currentAssignment.work = buffer[0];
@@ -441,19 +437,14 @@
                         finalizeAssignment();
                         currentAssignment = createNewAssignment();
                     } else if (POND_REGEX.test(trimmedLine)) {
-                        // MODIFICATION 3: Parse pond to a number immediately
-                        currentAssignment.pond = parseFloat(trimmedLine);
+                        currentAssignment.pond = trimmedLine;
                     } else if (DATE_REGEX.test(trimmedLine)) {
-                         if (!currentAssignment.assignedDate) {
+                        if (!currentAssignment.assignedDate) {
                             currentAssignment.assignedDate = trimmedLine.split('à')[0].trim();
-                        } else if (!currentAssignment.dueDate) {
-                            currentAssignment.dueDate = trimmedLine.split('à')[0].trim();
-                        } else {
-                            currentAssignment.completedDate = trimmedLine.split('à')[0].trim();
                         }
+                        currentAssignment.dueDate = trimmedLine;
                     } else {
-                        // MODIFICATION 4: Check against null, which works for 0
-                        if (currentAssignment.pond !== null || currentAssignment.assignedDate) {
+                        if (currentAssignment.pond || currentAssignment.assignedDate) {
                             finalizeAssignment();
                             currentAssignment = createNewAssignment();
                         }
@@ -475,7 +466,6 @@
 
                 for (const block of competencyBlocks) {
                     const blockLines = block.trim().split('\n');
-                    if (blockLines.length < 2) continue;
                     const compName = blockLines.shift();
                     const cleanLines = blockLines.filter(line => line.trim() && !line.includes('Catégorie\tTravail\tPond.'));
                     const competencyData = {
