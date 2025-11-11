@@ -139,8 +139,8 @@
     </div>
 
     <main class="maintenance-container">
-        <h1>Site Temporairement Indisponible</h1>
-        <p>
+        <h1 id="main-title">Site Temporairement Indisponible</h1>
+        <p id="main-message">
             Notre site est actuellement en phase d'approbation et est temporairement inaccessible. Nous estimons un retour en ligne dans environ une semaine. Merci de votre patience.
         </p>
         
@@ -174,30 +174,50 @@
     </footer>
 
     <script>
+        // If true, will display a shutdown message 
+        const SHUTDOWN_UNTIL_FURTHER_NOTICE = false;
+
+        // If true, the countdown will stop 2 days before the 
+        // This is only effective if SHUTDOWN_UNTIL_FURTHER_NOTICE is false.
+        const PAUSE_COUNTDOWN_NEAR_END = true;
+
         document.addEventListener('DOMContentLoaded', () => {
+            const titleEl = document.getElementById('main-title');
+            const messageEl = document.getElementById('main-message');
+            const countdownEl = document.getElementById('countdown');
+            const stoppedMessageEl = document.getElementById('countdown-stopped-message');
+
+            if (SHUTDOWN_UNTIL_FURTHER_NOTICE) {
+                // Display shutdown message and hide countdown elements
+                titleEl.textContent = 'Site en Maintenance';
+                messageEl.textContent = 'Le site est actuellement en maintenance pour une durée indéterminée et sera de retour prochainement. Merci de votre compréhension.';
+                countdownEl.classList.add('hidden');
+                stoppedMessageEl.classList.add('hidden');
+                return; // Stop the script here
+            }
+
             // Date de fin : 18 novembre 2025 à 7h00, heure de Montréal (EST = UTC-5)
             const endDate = new Date('2025-11-18T07:00:00.000-05:00').getTime();
 
-            // Date d'arrêt : 3 jours avant la date de fin
-            const stopDate = endDate - (3 * 24 * 60 * 60 * 1000);
+            // Date d'arrêt : 2 jours avant la date de fin
+            const stopDate = endDate - (2 * 24 * 60 * 60 * 1000);
 
             const daysEl = document.getElementById('days');
             const hoursEl = document.getElementById('hours');
             const minutesEl = document.getElementById('minutes');
             const secondsEl = document.getElementById('seconds');
-            const stoppedMessageEl = document.getElementById('countdown-stopped-message');
 
             const countdownInterval = setInterval(() => {
                 const now = new Date().getTime();
                 
-                // Vérifier si on a atteint la date d'arrêt
-                if (now >= stopDate) {
-                    daysEl.textContent = '3';
+                // Check if we should pause the countdown (if the constant is true)
+                if (PAUSE_COUNTDOWN_NEAR_END && now >= stopDate) {
+                    daysEl.textContent = '2';
                     hoursEl.textContent = '00';
                     minutesEl.textContent = '00';
                     secondsEl.textContent = '00';
                     stoppedMessageEl.classList.remove('hidden');
-                    clearInterval(countdownInterval); // Arrêter le décompte
+                    clearInterval(countdownInterval); // Stop the countdown
                     return;
                 }
 
@@ -209,6 +229,10 @@
                     hoursEl.textContent = '00';
                     minutesEl.textContent = '00';
                     secondsEl.textContent = '00';
+                    // Optionally, update the main message to indicate the site is back
+                    titleEl.textContent = "Le site est de retour !";
+                    messageEl.textContent = "Merci pour votre patience. Vous pouvez maintenant accéder à nos services.";
+                    countdownEl.classList.add('hidden');
                     return;
                 }
 
