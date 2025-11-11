@@ -665,7 +665,7 @@ async function loadLeaderboardData() {
 
 
 
-    <div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
+  <div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
     <p>Utilisateur enregistré : <strong id="current-user-display">x</strong></p>
     <p id="log-status">Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>Failed to fetch</strong></p>
 </div>
@@ -676,11 +676,10 @@ async function loadLeaderboardData() {
 
     // Fonction pour récupérer le nom de l'utilisateur (utilisant la variable 'nom')
     function getUserName() {
-        // Tente de récupérer le nom depuis localStorage.
+        // Cette fonction n'est conservée que pour mettre à jour le display local
         try {
             const userData = JSON.parse(localStorage.getItem('jdlmData'));
             
-            // On vérifie que userData existe et que la propriété 'nom' existe et n'est pas vide
             if (userData && userData.nom && userData.nom.trim() !== "") {
                 return userData.nom;
             }
@@ -691,9 +690,9 @@ async function loadLeaderboardData() {
         return 'Anonyme'; 
     }
 
-    // Fonction principale pour enregistrer la visite
+    // Fonction principale pour enregistrer le ping de performance
     async function logUserVisit() {
-        const userName = getUserName();
+        const userName = getUserName(); // Utilisé uniquement pour l'affichage local
         const logStatus = document.getElementById('log-status');
         const userDisplay = document.getElementById('current-user-display');
 
@@ -705,28 +704,49 @@ async function loadLeaderboardData() {
             return;
         }
 
-        try {
-            // Envoi du nom d'utilisateur (qui sera 'Anonyme' si non trouvé) au paramètre 'name' de l'Apps Script
-            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userName)}`;
+        // ⭐️ Démarrer le chronomètre
+        const startTime = performance.now();
 
-            const response = await fetch(fullUrl, {
+        try {
+            // Envoi de la requête
+            // Note: Nous n'envoyons AUCUN paramètre 'name' ici, juste pour le ping initial.
+            // Le calcul du temps sera basé sur la fin de cette requête.
+            const response = await fetch(LOGGING_API_URL, {
                 method: 'GET',
                 mode: 'cors' 
             });
             
-            if (!response.ok) {
-                throw new Error(`Erreur réseau: Statut ${response.status}`);
+            // ⭐️ Arrêter le chronomètre après la fin de la requête
+            const endTime = performance.now();
+            const pingTimeMs = (endTime - startTime).toFixed(2); // Temps en millisecondes avec 2 décimales
+
+            // ---------------------------------------------------------------
+            // ⭐️ NOUVELLE REQUÊTE: Envoi du Ping Time à la variable 'name'
+            // Ceci simule le comportement du logger qui enregistre la latence
+            // ---------------------------------------------------------------
+            
+            const pingUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(pingTimeMs)}`;
+
+            const pingResponse = await fetch(pingUrl, {
+                method: 'GET',
+                mode: 'cors' 
+            });
+
+
+            if (!pingResponse.ok) {
+                // S'il y a un problème avec la deuxième requête (ping), nous le traitons
+                throw new Error(`Erreur réseau (Ping Log): Statut ${pingResponse.status}`);
             }
 
-            const result = await response.json();
+            const result = await pingResponse.json();
 
             if (result.success) {
-                // Si l'enregistrement est réussi, affiche l'heure locale du client
+                // Si l'enregistrement est réussi, affiche l'heure locale du client et le temps de ping
                 const now = new Date();
                 const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 
-                logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>.`;
+                logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>. Ping Loggué : <strong>${pingTimeMs} ms</strong>.`;
             } else {
                 logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie).";
             }
