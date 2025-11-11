@@ -275,7 +275,6 @@
         renderAll();
     });
 
-    // --- Modal Logic (Unchanged) ---
     const classementBtn = document.getElementById('classement-btn');
     const classementModal = document.getElementById('classement-modal');
     const termsCheckbox = document.getElementById('terms-checkbox');
@@ -295,20 +294,18 @@
     // --- CORRECTED DYNAMIC INPUT LOGIC ---
     const tabContents = document.getElementById('tab-contents');
 
-    // Handles LIVE updates for both Pond and Grade inputs as the user types
     tabContents.addEventListener('input', (e) => {
         const target = e.target;
         if (target.classList.contains('pond-input-field')) {
             target.classList.toggle('modified-input', target.value !== target.defaultValue);
-            renderSidePanel(); // Recalculate average immediately
+            renderSidePanel(); 
         }
         if (target.classList.contains('grade-input-field')) {
-            target.classList.add('modified-input'); // Mark as modified
-            renderSidePanel(); // Recalculate average immediately
+            target.classList.add('modified-input'); 
+            renderSidePanel(); 
         }
     });
 
-    // Handles switching from display text to input field on click
     tabContents.addEventListener('click', (e) => {
         const gradeDisplay = e.target.closest('.grade-display');
         if (gradeDisplay) {
@@ -348,9 +345,9 @@
             if (e.key === 'Enter' || e.key === 'Escape') {
                 e.preventDefault();
                 if (e.key === 'Escape') {
-                    e.target.value = ''; // On Escape, clear input to revert
+                    e.target.value = '';
                 }
-                e.target.blur(); // Trigger focusout to finalize state
+                e.target.blur(); 
             }
         }
     });
@@ -376,7 +373,6 @@ function calculateSubjectAverage(subject) {
             let grade = null;
             let weight = NaN;
 
-            // This logic correctly checks if a user input is visible and has a value
             if (gradeInput && !gradeInput.classList.contains('hidden') && gradeInput.value.trim() !== '') {
                 grade = parseFloat(gradeInput.value);
             } else {
@@ -446,7 +442,6 @@ function renderSubjectTable(subject) {
                 }
             }
             const pondValue = assign.pond ? `value="${assign.pond}"` : '';
-            // CORRECTED LINE: Added data-row-id to the grade input field
             assignRow.innerHTML = `<td>${assign.category || '<span class="no-data">-</span>'}</td><td>${assign.work || '<span class="no-data">-</span>'}</td><td><input type="number" class="pond-input-field" ${pondValue} data-row-id="${uniqueId}" min="0" max="100" placeholder="--"></td><td>${assign.assignedDate || '<span class="no-data">-</span>'}</td><td>${assign.dueDate.replace('à','') || '<span class="no-data">-</span>'}</td><td>${assign.completedDate || '<span class="no-data">-</span>'}</td><td><div class="grade-container" data-row-id="${uniqueId}" data-original-result="${assign.result || ''}"><span class="grade-display">${formattedResult}</span><input type="number" class="grade-input-field hidden" data-row-id="${uniqueId}" min="0" max="100"></div></td>`;
             tbody.appendChild(assignRow);
         });
