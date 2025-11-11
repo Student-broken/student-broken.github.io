@@ -476,6 +476,13 @@ async function loadLeaderboardData() {
     // !! IMPORTANT !! REMPLACEZ CETTE URL PAR VOTRE URL DE DÉPLOIEMENT DE L'APPLICATION WEB LOGGING
     const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbzdirAh8ZXPgVPqndPTi2ToW8bHOe3fGTq0AwAvlOizh33TYkj4xI_cqFN64zO6uDKOjA/exec"; 
 
+
+//CE API DE PREND PAS LE NOM OU DES DONNÉS. IL ATTRIBUE UN CODE RANDOM À CHAQUE USAGER AFIN QU'ON PUISSE SAVOIR LA QUANTITÉE D'USAGERS
+//AINSI QUE L'HEURE RELIÉ. NOTRE INFRASTRUCTURE EST DÉJÀ SURCHARGÉ AVEC PLUS DE 5 SECONDES DE LOADING TIME POUR LE CLASSEMENT.
+
+
+
+    
     // Fonction pour générer ou récupérer l'ID unique du client
     function getClientId() {
         let clientId = localStorage.getItem('client_id');
