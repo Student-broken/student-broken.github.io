@@ -714,7 +714,7 @@ async function loadLeaderboardData() {
 <script>
         // --- API & CONFIGURATION CONSTANTS ---
         const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
-        const CONFIG_API_URL = "https://script.google.com/macros/s/AKfycbwALGQnDY6FbJOBCb7L34lQ-60PHxT-B4Rkqj2f7smG_8hZU1YZLwVuhftphSBS32lG8Q/exec";
+        const CONFIG_API_URL = "https://script.google.com/macros/s/AKfycbzbUCsprgtdAKhn0CRfkwZdAM6qPXF_NGJH7401-xzt2dKY2YHlpmgRxS3dWtphhQmkkA/exec";
         const CONFIG_CACHE_KEY = 'jdlmConfigCache';
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5JYFE5JDLycaa4cCCsA57K-2Pka-CoHatWTr1685mQDiJtv_3IcrYDFhS2vkhsOet/exec";
 
@@ -770,14 +770,21 @@ async function loadLeaderboardData() {
 
         async function syncSecuritySetting() {
             try {
-                const response = await fetch(CONFIG_API_URL);
+                // THE CACHE-BUSTING FIX IS HERE: We add a unique timestamp to the URL.
+                const url = `${CONFIG_API_URL}?v=${new Date().getTime()}`;
+                
+                const response = await fetch(url);
                 if (!response.ok) throw new Error(`Network error: ${response.status}`);
+                
                 const data = await response.json();
+                
                 if (data.success) {
                     const remoteValue = data.useHashing;
                     if (remoteValue !== USE_HASHED_USERCODE) {
-                        console.log(`Remote security setting changed. Updating to: Hashing ${remoteValue ? 'ON' : 'OFF'}.`);
+                        console.log(`%cRemote security setting changed. Updating to: Hashing ${remoteValue ? 'ON' : 'OFF'}.`, "color: blue; font-weight: bold;");
                         USE_HASHED_USERCODE = remoteValue;
+                    } else {
+                        console.log("Remote security setting confirmed. No change needed.");
                     }
                     localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify({ useHashing: remoteValue }));
                 } else {
