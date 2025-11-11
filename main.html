@@ -767,158 +767,51 @@ async function loadLeaderboardData() {
     </script>
 
     <script>
+        const USE_HASHED_USERCODE = false;
+        const gradeMap = { 'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90}, 'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75}, 'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60}, 'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45} };
+        const defaultUnits = { sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2, }, sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 } };
+        const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière", };
+        let jdlmData, activeTab = 'etape1';
 
-// Configuration URLs
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5JYFE5JDLycaa4cCCsA57K-2Pka-CoHatWTr1685mQDiJtv_3IcrYDFhS2vkhsOet/exec";
-const CONFIG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwckF9Mih-SKVtz6GWUlxRUcImF-0j1h92a0bg-aDjzPJlVzI5nfzabQht9fVhEsYnH/exec";
+        document.addEventListener('DOMContentLoaded', () => {
+            logUserVisit();
+            checkLogoutTimer();
+            jdlmData = JSON.parse(localStorage.getItem('jdlmData')) || {};
 
-// Dynamic hashing configuration (fetched from Google Sheets)
-let USE_HASHED_USERCODE = false;
+            if (!jdlmData.user_random) {
+                jdlmData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
+                localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
+            }
 
-// Constants
-const gradeMap = { 'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90}, 'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75}, 'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60}, 'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45} };
-const defaultUnits = { sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2, }, sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 } };
-const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière", };
+            if (!jdlmData.nom) {
+                document.getElementById('tab-contents').innerHTML = "<p>Aucune donnée disponible. Veuillez ajouter les données.</p>";
+                return;
+            }
+            localStorage.setItem('jdlmLastActive', Date.now().toString());
+            loadSettings();
+            setupEventListeners();
+            renderAll();
+        });
 
-let jdlmData, activeTab = 'etape1';
+        function checkLogoutTimer() { const lastActiveTime = localStorage.getItem('jdlmLastActive'); const ONE_HOUR = 3600000; if (lastActiveTime && (Date.now() - parseInt(lastActiveTime)) > ONE_HOUR) { window.location.href = 'index.html'; } setInterval(() => { const checkTime = localStorage.getItem('jdlmLastActive'); if (checkTime && (Date.now() - parseInt(checkTime)) > ONE_HOUR) { window.location.href = 'index.html'; } }, 300000); }
 
-// Fetch hashing configuration from separate Google Sheets Web App
-async function fetchHashingConfig() {
-    try {
-        const response = await fetch(CONFIG_SCRIPT_URL);
-        const data = await response.json();
-        
-        if (data.error) {
-            console.error("Config script error:", data.error);
-            return;
-        }
-        
-        if (typeof data.USE_HASHED_USERCODE === 'boolean') {
-            USE_HASHED_USERCODE = data.USE_HASHED_USERCODE;
-            console.log("Hashing config loaded from S2:", USE_HASHED_USERCODE);
-        }
-    } catch (error) {
-        console.error("Failed to fetch hashing config:", error);
-    }
-}
+function setupEventListeners() {
+    document.querySelectorAll('.tab-btn').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelector('.tab-btn.active').classList.remove('active');
+            tab.classList.add('active');
+            document.querySelector('.tab-content.active').classList.remove('active');
+            activeTab = tab.dataset.tab;
+            document.getElementById(activeTab).classList.add('active');
+            renderSidePanel();
+        });
+    });
 
-// Get user code from name (NOT hashed yet - just normalized)
-function getUserCode() {
-    const nom = (jdlmData || {}).nom;
-    if (!nom) return null;
-    return nom.replace(/\s+/g, '').toLowerCase();
-}
-
-// Hash the user code (name only) with SHA-256
-async function hashUserCode(userCode) {
-    const HASH_PEPPER = '$$$$$';
-    if (!userCode || !crypto.subtle) return userCode;
-    
-    try {
-        const encoder = new TextEncoder();
-        const dataToHash = userCode + HASH_PEPPER;
-        const data = encoder.encode(dataToHash);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    } catch (error) {
-        console.error('Hashing failed:', error);
-        return userCode;
-    }
-}
-
-// Send ranking data to Google Sheets
-async function sendRankingData(force = false) {
-    const hasAgreed = localStorage.getItem('hasAgreedToRanking') === 'true';
-    if (!force && !hasAgreed) { return true; }
-
-    const niveau = document.getElementById('niveau-secondaire').value;
-    let userCode = getUserCode(); // Get normalized name
-    const userRandom = (jdlmData || {}).user_random;
-
-    if (!userCode || !niveau || !userRandom) {
-        if (force) alert("Veuillez sélectionner votre niveau (Secondaire 4 ou 5) avant de consulter le classement.");
-        return false;
-    }
-
-    // ONLY hash the userCode (name) if the config says so
-    if (USE_HASHED_USERCODE) {
-        userCode = await hashUserCode(userCode);
-        console.log("Name hashed for privacy");
-    } else {
-        console.log("Name sent unhashed");
-    }
-
-    localStorage.setItem('jdlmNiveau', niveau);
-    const averages = calculateAverages('defaut');
-    const mathAvg = getAggregatedSubjectAverage(averages.subjectAverages, ['MAT', 'CST', 'SN']);
-    const englishAvg = getAggregatedSubjectAverage(averages.subjectAverages, ['ELA', 'ESL', 'EESL']);
-    const frenchAvg = getAggregatedSubjectAverage(averages.subjectAverages, ['FRA']);
-
-    // Build payload - userCode is either hashed or unhashed depending on config
-    const dataPayload = {
-        userCode: userCode, // This is the ONLY field that gets hashed
-        user_random: userRandom, // NOT hashed
-        niveau: niveau, // NOT hashed
-        avg_generale: averages.globalAverage ? averages.globalAverage.toFixed(2) : '',
-        avg_etape1: averages.termAverages.etape1 ? averages.termAverages.etape1.toFixed(2) : '',
-        avg_etape2: averages.termAverages.etape2 ? averages.termAverages.etape2.toFixed(2) : '',
-        avg_etape3: averages.termAverages.etape3 ? averages.termAverages.etape3.toFixed(2) : '',
-        avg_math: mathAvg ? mathAvg.toFixed(2) : '',
-        avg_anglais: englishAvg ? englishAvg.toFixed(2) : '',
-        avg_francais: frenchAvg ? frenchAvg.toFixed(2) : '',
-        last_updated: new Date().toISOString()
-    };
-
-    const dataFingerprint = JSON.stringify(dataPayload);
-    const lastSentFingerprint = sessionStorage.getItem('lastDataFingerprint');
-
-    if (!force && dataFingerprint === lastSentFingerprint) { return true; }
-
-    const formData = new FormData();
-    for (const key in dataPayload) { 
-        formData.append(key, dataPayload[key]); 
-    }
-
-    try {
-        const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
-        const data = await response.json();
-        if (data.result === 'success') {
-            console.log("Sync successful for user:", USE_HASHED_USERCODE ? '[HASHED]' : data.userCode);
-            sessionStorage.setItem('lastDataFingerprint', dataFingerprint);
-        } else {
-            console.error("Script Error:", data.error);
-        }
-    } catch (error) {
-        console.error("Network Error:", error);
-    }
-    return true;
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', async () => {
-    // Fetch hashing configuration FIRST
-    await fetchHashingConfig();
-    
-    logUserVisit();
-    checkLogoutTimer();
-    jdlmData = JSON.parse(localStorage.getItem('jdlmData')) || {};
-
-    if (!jdlmData.user_random) {
-        jdlmData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
+    document.getElementById('niveau-secondaire').addEventListener('change', (e) => {
+        jdlmData.settings = { ...jdlmData.settings, niveau: e.target.value };
         localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
-    }
-
-    if (!jdlmData.nom) {
-        document.getElementById('tab-contents').innerHTML = "<p>Aucune donnée disponible. Veuillez ajouter les données.</p>";
-        return;
-    }
-    
-    localStorage.setItem('jdlmLastActive', Date.now().toString());
-    loadSettings();
-    setupEventListeners();
-    renderAll();
-});
+        renderAll();
+    });
 
     const classementBtn = document.getElementById('classement-btn');
     const classementModal = document.getElementById('classement-modal');
