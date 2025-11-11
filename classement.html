@@ -473,101 +473,89 @@ async function loadLeaderboardData() {
 </div>
 
 <script>
-    // !! IMPORTANT !! REMPLACEZ CETTE URL PAR VOTRE URL DE DÉPLOIEMENT DE L'APPLICATION WEB LOGGING
-    const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbzdirAh8ZXPgVPqndPTi2ToW8bHOe3fGTq0AwAvlOizh33TYkj4xI_cqFN64zO6uDKOjA/exec"; 
+    // NOTE: L'URL doit pointer vers votre déploiement final (terminé par /exec).
+    const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbwINdZPpR1Ft20UKbAqVt8Y91-AwLjFQ7IdxK4O4dNPw3mIRXCuaIsPVQVysF6YvnjKQw/exec";
+    const HEARTBEAT_INTERVAL_MS = 1 * 60 * 1000; // 1 minute
+    const LOCAL_STORAGE_ID_KEY = 'jdlm_client_id'; // Clé de persistance de l'ID
 
+    // --- LOGIQUE DE PERSISTENCE DE L'ID CLIENT ---
+    const dataContainer = typeof jdlmData !== 'undefined' ? jdlmData : {};
+    let userRandomCode = dataContainer.user_random || null;
 
-//CE API DE PREND PAS LE NOM OU DES DONNÉS. IL ATTRIBUE UN CODE RANDOM À CHAQUE USAGER AFIN QU'ON PUISSE SAVOIR LA QUANTITÉE D'USAGERS
-//AINSI QUE L'HEURE RELIÉ. NOTRE INFRASTRUCTURE EST DÉJÀ SURCHARGÉ AVEC PLUS DE 5 SECONDES DE LOADING TIME POUR LE CLASSEMENT.
-
-
-
-    
-    // Fonction pour générer ou récupérer l'ID unique du client
-    function getClientId() {
-        let clientId = localStorage.getItem('client_id');
-        if (!clientId) {
-            clientId = 'user-' + Date.now() + Math.floor(Math.random() * 99999);
-            localStorage.setItem('client_id', clientId);
-        }
-        return clientId;
-    }
-
-    // Utilisé pour l'affichage local du nom seulement
-    function getUserName() {
-        try {
-            const userData = JSON.parse(localStorage.getItem('jdlmData'));
-            if (userData && userData.nom && userData.nom.trim() !== "") {
-                return userData.nom;
+    if (!userRandomCode) {
+        // Tenter de récupérer l'ID persistant
+        userRandomCode = localStorage.getItem(LOCAL_STORAGE_ID_KEY);
+        
+        if (!userRandomCode) {
+            // Créer un nouvel ID unique si aucun n'est trouvé
+            userRandomCode = 'unknown-' + Math.random().toString(36).substring(2, 9);
+            // Stocker le nouvel ID
+            try {
+                localStorage.setItem(LOCAL_STORAGE_ID_KEY, userRandomCode);
+            } catch (e) {
+                // Ignore les erreurs de localStorage en mode privé
+                console.warn("Impossible d'utiliser localStorage, l'ID sera généré à chaque chargement.");
             }
-        } catch (e) {}
-        return 'Anonyme'; 
+        }
     }
-
-    // ⭐️ Fonction pour signaler le départ (Utilise sendBeacon)
-    function logUserExit() {
-        const clientId = getClientId();
-        // Le paramètre 'event=exit' indique au serveur de décrémenter
-        const exitUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(clientId)}&event=exit`;
-
-        // sendBeacon est non bloquant, idéal pour la fermeture, mais ne garantit pas la livraison
-        navigator.sendBeacon(exitUrl);
-    }
-
-    // ⭐️ Fonction pour signaler l'arrivée (Utilise fetch)
-    async function logUserVisit() {
-        const clientId = getClientId();
+    // ------------------------------------------
+    
+    /**
+     * Enregistre l'état de l'utilisateur (entrée/sortie) ou sert de "battement de cœur".
+     * @param {string} eventType 'entry' pour l'arrivée ou le heartbeat, 'exit' pour la sortie.
+     */
+    async function logUserActivity(eventType = 'entry') {
         const logStatus = document.getElementById('log-status');
         const userDisplay = document.getElementById('current-user-display');
 
-        userDisplay.textContent = getUserName(); // Mise à jour de l'affichage local
+        userDisplay.textContent = userRandomCode;
 
-        if (LOGGING_API_URL === "VOTRE_LOGGING_API_URL_ICI" || LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
+        if (LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
             logStatus.textContent = "Erreur: Veuillez définir l'URL de l'API Logging.";
             return;
         }
 
         try {
-            // Le paramètre 'event=entry' indique au serveur d'incrémenter (ou d'enregistrer la présence)
-            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(clientId)}&event=entry`;
-
-            const response = await fetch(fullUrl, {
-                method: 'GET',
-                mode: 'cors' 
-            });
+            // AJOUT de l'horodatage (ts) pour le nettoyage côté serveur
+            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}&event=${eventType}&ts=${new Date().getTime()}`;
+            const response = await fetch(fullUrl, { method: 'GET', mode: 'cors' });
             
-            if (!response.ok) {
-                throw new Error(`Erreur réseau: Statut ${response.status}`);
-            }
-
+            if (!response.ok) { throw new Error(`Erreur réseau: Statut ${response.status}`); }
             const result = await response.json();
 
-            if (result.success && result.userCount !== undefined) {
+            if (result.success) {
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 
-                logStatus.innerHTML = `Visite enregistrée à ${timeStr}. Utilisateurs Actifs (Comptage risqué): <strong>${result.userCount}</strong>.`;
+                let statusText = '';
+                if (eventType === 'entry') {
+                    statusText = `✅ Actif enregistré (${timeStr}). **${result.userCount} utilisateurs actifs au total.**`;
+                } else if (eventType === 'exit') {
+                    statusText = `🚪 Déconnexion signalée (${timeStr}).`;
+                }
+                logStatus.innerHTML = statusText; 
             } else {
-                logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie ou compte manquant).";
+                logStatus.innerHTML = `❌ Échec de l'enregistrement (${eventType}).`;
             }
-
         } catch (error) {
-            console.error("Erreur lors de l'enregistrement de la visite :", error);
-            logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement : <strong>${error.message}</strong>`;
+            console.error(`Erreur lors de l'activité (${eventType}) :`, error);
+            logStatus.innerHTML = `⚠️ Erreur lors de la connexion au serveur d'enregistrement. Vérifiez la console (F12).`;
         }
     }
-
-    // ⭐️ Déclenche l'enregistrement à l'arrivée
-    document.addEventListener('DOMContentLoaded', logUserVisit);
-
-    // ⭐️ Déclenche l'enregistrement au départ (utilisation de sendBeacon)
-    window.addEventListener('beforeunload', logUserExit);
     
-    // Fallback pour les changements de visibilité (lorsque l'utilisateur ferme l'onglet)
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-            logUserExit();
-        }
+    // --- LOGIQUE DE DÉMARRAGE ET DE FIN ---
+
+    logUserActivity('entry'); 
+    
+    const heartbeat = setInterval(() => {
+        logUserActivity('entry');
+    }, HEARTBEAT_INTERVAL_MS);
+    
+    window.addEventListener('beforeunload', () => {
+        // AJOUT de l'horodatage (ts) pour le nettoyage côté serveur
+        const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}&event=exit&ts=${new Date().getTime()}`;
+        navigator.sendBeacon(fullUrl);
+        clearInterval(heartbeat);
     });
 </script>
 
