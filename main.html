@@ -269,7 +269,6 @@ async function handleLockStatus() {
     unfreezeAllFunctions();
   }
 
-  // Auto-sync every 60 seconds
   setInterval(async () => {
     const newStatus = await getLockStatus();
     const currentStatus = sessionStorage.getItem(LOCK_STATUS_KEY);
@@ -283,7 +282,6 @@ async function handleLockStatus() {
   }, 60000);
 }
 
-// Get lock status from API
 async function getLockStatus() {
   try {
     const response = await fetch(`${PASSWORD_API_URL}?action=getLockStatus`);
@@ -291,18 +289,16 @@ async function getLockStatus() {
     return result.isLocked === true;
   } catch (error) {
     console.error('Erreur lors de la récupération du statut de verrouillage:', error);
-    return true; // Default to locked on error
+    return true; 
   }
 }
 
-// Password lock system
 function setupPasswordLock() {
   const passwordLock = document.getElementById('password-lock');
   const passwordInput = document.getElementById('password-input');
   const submitBtn = document.getElementById('password-submit-btn');
   const errorDiv = document.getElementById('password-error');
 
-  // If already unlocked in session, don't show lock
   if (sessionStorage.getItem(UNLOCK_KEY) === 'true') {
     passwordLock.classList.remove('show');
     isSystemLocked = false;
@@ -310,7 +306,6 @@ function setupPasswordLock() {
     return;
   }
 
-  // Password verification
   const checkPassword = async () => {
     const password = passwordInput.value;
     if (!password) {
@@ -716,102 +711,28 @@ async function loadLeaderboardData() {
 
        
     
-    <script>
-        const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
-//CE API DE PREND PAS LE NOM OU DES DONNÉS. IL ATTRIBUE UN CODE RANDOM À CHAQUE USAGER AFIN QU'ON PUISSE SAVOIR LA QUANTITÉE D'USAGERS
-//AINSI QUE L'HEURE RELIÉ. NOTRE INFRASTRUCTURE EST DÉJÀ SURCHARGÉ AVEC PLUS DE 5 SECONDES DE LOADING TIME POUR LE CLASSEMENT.
-
-
-        
-        async function logUserVisit() {
-            const userRandomCode = (jdlmData && jdlmData.user_random) ? jdlmData.user_random : 'unknown';
-            const logStatus = document.getElementById('log-status');
-            const userDisplay = document.getElementById('current-user-display');
-
-            userDisplay.textContent = userRandomCode;
-
-            if (LOGGING_API_URL === "VOTRE_LOGGING_API_URL_ICI" || LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
-                logStatus.textContent = "Erreur: Veuillez définir l'URL de l'API Logging.";
-                return;
-            }
-
-            try {
-                const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}`;
-                const response = await fetch(fullUrl, { method: 'GET', mode: 'cors' });
-                if (!response.ok) { throw new Error(`Erreur réseau: Statut ${response.status}`); }
-                const result = await response.json();
-
-                if (result.success) {
-                    const now = new Date();
-                    const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
-                    const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>.`;
-                } else {
-                    logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie).";
-                }
-            } catch (error) {
-                console.error("Erreur lors de l'enregistrement de la visite :", error);
-                logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>${error.message}</strong>`;
-            }
-        }
-    </script>
-
 <script>
+        // --- API & CONFIGURATION CONSTANTS ---
+        const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
         const CONFIG_API_URL = "https://script.google.com/macros/s/AKfycbzbUCsprgtdAKhn0CRfkwZdAM6qPXF_NGJH7401-xzt2dKY2YHlpmgRxS3dWtphhQmkkA/exec";
         const CONFIG_CACHE_KEY = 'jdlmConfigCache';
-        let USE_HASHED_USERCODE = false;
-        function loadSecuritySetting() {
-            try {
-                const cachedConfig = localStorage.getItem(CONFIG_CACHE_KEY);
-                if (cachedConfig) {
-                    const config = JSON.parse(cachedConfig);
-                    USE_HASHED_USERCODE = config.useHashing;
-                    console.log(`Security setting loaded from cache: Hashing is ${USE_HASHED_USERCODE ? 'ON' : 'OFF'}.`);
-                } else {
-                    console.log(`No cached security setting found. Defaulting to: Hashing ${USE_HASHED_USERCODE ? 'ON' : 'OFF'}.`);
-                }
-            } catch (error) {
-                console.error("Failed to load security setting from cache.", error);
-                USE_HASHED_USERCODE = true;
-            }
-        }
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5JYFE5JDLycaa4cCCsA57K-2Pka-CoHatWTr1685mQDiJtv_3IcrYDFhS2vkhsOet/exec";
 
-
-        async function syncSecuritySetting() {
-            try {
-                const response = await fetch(CONFIG_API_URL);
-                if (!response.ok) throw new Error(`Network response was not ok: ${response.status}`);
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    const remoteHashingValue = data.useHashing;
-                    if (remoteHashingValue !== USE_HASHED_USERCODE) {
-                        console.log(`Remote security setting changed. Updating to: Hashing ${remoteHashingValue ? 'ON' : 'OFF'}.`);
-                        USE_HASHED_USERCODE = remoteHashingValue;
-                    } else {
-                        console.log("Remote security setting confirmed. No change needed.");
-                    }
-                    localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify({ useHashing: remoteHashingValue }));
-                } else {
-                    console.error("Failed to sync config from sheet:", data.error);
-                }
-            } catch (error) {
-                console.error("Error syncing security setting:", error);
-            }
-        }
-
-
+        let USE_HASHED_USERCODE = false; 
         const gradeMap = { 'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90}, 'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75}, 'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60}, 'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45} };
         const defaultUnits = { sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2, }, sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 } };
         const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière", };
         let jdlmData, activeTab = 'etape1';
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadSecuritySetting();
+            loadSecuritySetting(); 
             syncSecuritySetting(); 
+            logUserVisit();        
+      
+            initializeApp();
+        });
 
-            logUserVisit();
+        function initializeApp() {
             checkLogoutTimer();
             jdlmData = JSON.parse(localStorage.getItem('jdlmData')) || {};
 
@@ -828,7 +749,55 @@ async function loadLeaderboardData() {
             loadSettings();
             setupEventListeners();
             renderAll();
-        });
+        }
+
+        function loadSecuritySetting() {
+            try {
+                const cachedConfig = localStorage.getItem(CONFIG_CACHE_KEY);
+                if (cachedConfig) {
+                    USE_HASHED_USERCODE = JSON.parse(cachedConfig).useHashing;
+                    console.log(`Security setting loaded from cache: Hashing is ${USE_HASHED_USERCODE ? 'ON' : 'OFF'}.`);
+                } else {
+                    console.log(`No cached security setting. Defaulting to: Hashing ON.`);
+                }
+            } catch (error) {
+                console.error("Failed to load security setting from cache.", error);
+                USE_HASHED_USERCODE = true; 
+            }
+        }
+
+
+        async function syncSecuritySetting() {
+            try {
+                const response = await fetch(CONFIG_API_URL);
+                if (!response.ok) throw new Error(`Network error: ${response.status}`);
+                const data = await response.json();
+                if (data.success) {
+                    const remoteValue = data.useHashing;
+                    if (remoteValue !== USE_HASHED_USERCODE) {
+                        console.log(`Remote security setting changed. Updating to: Hashing ${remoteValue ? 'ON' : 'OFF'}.`);
+                        USE_HASHED_USERCODE = remoteValue;
+                    }
+                    localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify({ useHashing: remoteValue }));
+                } else {
+                    console.error("Failed to sync config from sheet:", data.error);
+                }
+            } catch (error) {
+                console.error("Error syncing security setting:", error);
+            }
+        }
+
+
+        async function logUserVisit() {
+            const userRandomCode = (JSON.parse(localStorage.getItem('jdlmData')) || {}).user_random || 'unknown';
+            try {
+                const response = await fetch(`${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}`, { method: 'GET', mode: 'cors' });
+                if (!response.ok) throw new Error(`Network error: ${response.status}`);
+                await response.json();
+            } catch (error) {
+                console.error("Error logging visit:", error);
+            }
+        }
 
         function checkLogoutTimer() { const lastActiveTime = localStorage.getItem('jdlmLastActive'); const ONE_HOUR = 3600000; if (lastActiveTime && (Date.now() - parseInt(lastActiveTime)) > ONE_HOUR) { window.location.href = 'index.html'; } setInterval(() => { const checkTime = localStorage.getItem('jdlmLastActive'); if (checkTime && (Date.now() - parseInt(checkTime)) > ONE_HOUR) { window.location.href = 'index.html'; } }, 300000); }
 
@@ -985,7 +954,6 @@ async function loadLeaderboardData() {
             return table;
         }
         
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5JYFE5JDLycaa4cCCsA57K-2Pka-CoHatWTr1685mQDiJtv_3IcrYDFhS2vkhsOet/exec";
         function getUserCode() { const nom = (jdlmData || {}).nom; if (!nom) return null; return nom.replace(/\s+/g, '').toLowerCase(); }
         
         async function hashUserCode(userCode) {
