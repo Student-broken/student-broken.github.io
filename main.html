@@ -118,6 +118,304 @@
     </style>
 </head>
 <body>
+
+
+
+
+<!-- CSS -->
+<style>
+.legal-text {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 15px;
+    line-height: 1.4;
+    text-align: center;
+    padding: 0 10px;
+}
+
+.legal-text a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.legal-text a:hover {
+    text-decoration: underline;
+    color: #0056b3;
+}
+
+.password-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(44, 62, 80, 1);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 1s ease;
+    flex-direction: column;
+}
+
+.overlay-content {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+.overlay-content h3 {
+    color: #2980b9;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+}
+
+.overlay-content input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1.1em;
+    box-sizing: border-box;
+}
+
+.overlay-content button {
+    width: 100%;
+    padding: 12px;
+    background-color: #2980b9;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.overlay-content button:hover {
+    background-color: #1e6fa3;
+}
+
+.error-message {
+    color: #e74c3c;
+    margin-top: 15px;
+    font-weight: bold;
+    min-height: 20px;
+}
+
+.hidden {
+    display: none !important;
+}
+</style>
+
+<!-- HTML -->
+<div class="password-overlay" id="password-lock">
+    <div class="overlay-content">
+        <h3>🔒 Accès Restreint</h3>
+        <p>Nous sommes désolés pour le désagrément. L'accès est actuellement restreint pour des raisons de sécurité et de développement. Veuillez contacter un administrateur pour un accès immédiat.</p>
+        <input type="password" id="password-input" placeholder="Mot de passe" required>
+        <button id="password-submit-btn">Déverrouiller</button>
+        <p class="legal-text">
+            La lecture de nos 
+            <a href="confidentialite.html" target="_blank">politiques de confidentialité</a> 
+            ainsi que nos 
+            <a href="conditions.html" target="_blank">Conditions d'utilisations</a> 
+            est obligatoire pour vos fins d'utilisations. En utilisant ce site, vous acceptez ces conditions. Sinon, fermez la page.
+        </p>
+        <div class="error-message" id="password-error"></div>
+    </div>
+</div>
+
+<!-- JAVASCRIPT -->
+<script>
+const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
+const UNLOCK_KEY = 'leaderboardUnlocked';
+const LOCK_STATUS_KEY = 'lastLockStatus';
+
+let isSystemLocked = true; // Global flag to freeze all functions
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await handleLockStatus();
+  
+  // Only proceed with other functions if unlocked
+  if (!isSystemLocked) {
+    await loadLeaderboardData();
+  }
+});
+
+// Check lock status
+async function handleLockStatus() {
+  const isLocked = await getLockStatus();
+  const storedStatus = sessionStorage.getItem(LOCK_STATUS_KEY);
+
+  if (storedStatus === null || storedStatus !== String(isLocked)) {
+    sessionStorage.removeItem(UNLOCK_KEY);
+    sessionStorage.setItem(LOCK_STATUS_KEY, String(isLocked));
+  }
+
+  if (isLocked) {
+    isSystemLocked = true;
+    setupPasswordLock();
+    freezeAllFunctions();
+  } else {
+    isSystemLocked = false;
+    document.getElementById('password-lock').classList.add('hidden');
+    sessionStorage.setItem(UNLOCK_KEY, 'true');
+    unfreezeAllFunctions();
+  }
+
+  // Auto-sync every 60 seconds
+  setInterval(async () => {
+    const newStatus = await getLockStatus();
+    const currentStatus = sessionStorage.getItem(LOCK_STATUS_KEY);
+
+    if (String(newStatus) !== currentStatus) {
+      console.log('🔄 Statut du verrouillage changé. Actualisation...');
+      sessionStorage.removeItem(UNLOCK_KEY);
+      sessionStorage.setItem(LOCK_STATUS_KEY, String(newStatus));
+      location.reload();
+    }
+  }, 60000);
+}
+
+// Get lock status from API
+async function getLockStatus() {
+  try {
+    const response = await fetch(`${PASSWORD_API_URL}?action=getLockStatus`);
+    const result = await response.json();
+    return result.isLocked === true;
+  } catch (error) {
+    console.error('Erreur lors de la récupération du statut de verrouillage:', error);
+    return true; // Default to locked on error
+  }
+}
+
+// Password lock system
+function setupPasswordLock() {
+  const passwordLock = document.getElementById('password-lock');
+  const passwordInput = document.getElementById('password-input');
+  const submitBtn = document.getElementById('password-submit-btn');
+  const errorDiv = document.getElementById('password-error');
+
+  // If already unlocked in session, hide immediately
+  if (sessionStorage.getItem(UNLOCK_KEY) === 'true') {
+    passwordLock.classList.add('hidden');
+    isSystemLocked = false;
+    unfreezeAllFunctions();
+    return;
+  }
+
+  // Password verification
+  const checkPassword = async () => {
+    const password = passwordInput.value;
+    if (!password) {
+      errorDiv.textContent = 'Veuillez entrer un mot de passe.';
+      return;
+    }
+
+    submitBtn.textContent = 'Vérification...';
+    errorDiv.textContent = '';
+    submitBtn.disabled = true;
+
+    try {
+      const fullUrl = `${PASSWORD_API_URL}?action=checkPassword&password=${encodeURIComponent(password)}`;
+      const response = await fetch(fullUrl);
+      const result = await response.json();
+
+      if (result.success === true) {
+        passwordLock.classList.add('hidden');
+        sessionStorage.setItem(UNLOCK_KEY, 'true');
+        passwordInput.value = '';
+        isSystemLocked = false;
+        unfreezeAllFunctions();
+        await loadLeaderboardData();
+      } else {
+        errorDiv.textContent = 'Mot de passe incorrect. Veuillez réessayer.';
+        passwordInput.value = '';
+      }
+    } catch (error) {
+      console.error('Erreur API de mot de passe:', error);
+      errorDiv.textContent = 'Erreur de connexion au serveur de vérification.';
+    } finally {
+      submitBtn.textContent = 'Déverrouiller';
+      submitBtn.disabled = false;
+    }
+  };
+
+  // Event listeners
+  submitBtn.addEventListener('click', checkPassword);
+  passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      checkPassword();
+    }
+  });
+}
+
+// Freeze all non-lock functions
+function freezeAllFunctions() {
+  // Disable all buttons except password-related
+  document.querySelectorAll('button, a.btn, select, input').forEach(el => {
+    if (!el.closest('#password-lock')) {
+      el.disabled = true;
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.5';
+    }
+  });
+
+  // Block navigation
+  document.querySelectorAll('a').forEach(link => {
+    if (!link.closest('#password-lock')) {
+      link.addEventListener('click', preventAction, true);
+    }
+  });
+
+  // Block all interactive elements
+  document.body.style.pointerEvents = 'none';
+  document.getElementById('password-lock').style.pointerEvents = 'all';
+}
+
+// Unfreeze all functions
+function unfreezeAllFunctions() {
+  document.querySelectorAll('button, a.btn, select, input').forEach(el => {
+    el.disabled = false;
+    el.style.pointerEvents = '';
+    el.style.opacity = '';
+  });
+
+  document.querySelectorAll('a').forEach(link => {
+    link.removeEventListener('click', preventAction, true);
+  });
+
+  document.body.style.pointerEvents = '';
+}
+
+// Prevent action when locked
+function preventAction(e) {
+  if (isSystemLocked) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+}
+
+// Stub function - replace with your actual implementation
+async function loadLeaderboardData() {
+  console.log('Loading leaderboard data...');
+}
+</script>
+
+
+
+
+
+    
     <div class="site-header-container">
         <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
         <header class="site-header">Outil JDLM*</header>
