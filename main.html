@@ -50,7 +50,7 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .subject-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; background: var(--widget-background); box-shadow: var(--shadow-widget); border-radius: 12px; overflow: hidden; }
-        .subject-table th, .subject-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        .subject-table th, .subject-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
         .subject-table thead tr:first-child th { padding: 18px 18px; font-size: 1.1em; background-color: var(--secondary-color); }
         .subject-table th { background-color: #34495e; color: white; font-size: 14px; }
         .subject-table tbody tr:hover td { background-color: #f7f9fb; }
@@ -76,524 +76,48 @@
         .unite-item input, .unite-item span { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
         .unite-item span { background-color: var(--widget-darker-color); font-weight: bold; border: none; }
         .unite-item input:focus { border-color: var(--primary-color); outline: none; }
+        .legal-text { font-size: 0.75rem; color: #6c757d; margin-top: 15px; line-height: 1.4; text-align: center; padding: 0 10px; }
+        .legal-text a { color: #007bff; text-decoration: none; font-weight: 500; }
+        .legal-text a:hover { text-decoration: underline; color: #0056b3; }
+        .hidden { display: none !important; }
+        .pond-input-field, .grade-input-field {
+            text-align: center;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            padding: 6px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .pond-input-field { width: 50px; }
+        .grade-input-field { width: 80px; box-sizing: border-box; }
+        .pond-input-field:focus, .grade-input-field:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
+        }
+        .modified-input {
+            border-color: var(--primary-color) !important;
+            background-color: #eaf2f8;
+        }
+        .grade-display {
+            cursor: pointer;
+            min-height: 30px;
+            display: inline-block;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            user-select: none; /* Prevents text selection from interfering with click */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+        }
+        .grade-display:hover {
+            background-color: #f0f4f7;
+        }
+        .grade-container {
+            min-height: 30px;
+        }
     </style>
 </head>
 <body>
-
-
-<!-- CSS -->
-<!-- CSS -->
-<style>
-.legal-text {
-    font-size: 0.75rem;
-    color: #6c757d;
-    margin-top: 15px;
-    line-height: 1.4;
-    text-align: center;
-    padding: 0 10px;
-}
-
-.legal-text a {
-    color: #007bff;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.legal-text a:hover {
-    text-decoration: underline;
-    color: #0056b3;
-}
-
-.password-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(44, 62, 80, 1);
-    z-index: 10000;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    transition: opacity 1s ease;
-    flex-direction: column;
-}
-
-.password-overlay.show {
-    display: flex;
-}
-
-.overlay-content {
-    background-color: #ffffff;
-    padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-}
-
-.overlay-content h3 {
-    color: #2980b9;
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.5em;
-}
-
-.overlay-content input[type="password"] {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 15px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 1.1em;
-    box-sizing: border-box;
-}
-
-.overlay-content button {
-    width: 100%;
-    padding: 12px;
-    background-color: #2980b9;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1em;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.overlay-content button:hover {
-    background-color: #1e6fa3;
-}
-
-.error-message {
-    color: #e74c3c;
-    margin-top: 15px;
-    font-weight: bold;
-    min-height: 20px;
-}
-
-.hidden {
-    display: none !important;
-}
-</style>
-
-<!-- HTML -->
-<div class="password-overlay" id="password-lock">
-    <div class="overlay-content">
-        <h3>🔒 Accès Restreint</h3>
-        <p>Nous sommes désolés pour le désagrément. L'accès est actuellement restreint pour des raisons de sécurité et de développement. Veuillez contacter un administrateur pour un accès immédiat.</p>
-        <input type="password" id="password-input" placeholder="Mot de passe" required>
-        <button id="password-submit-btn">Déverrouiller</button>
-        <p class="legal-text">
-            La lecture de nos 
-            <a href="confidentialite.html" target="_blank">politiques de confidentialité</a> 
-            ainsi que nos 
-            <a href="conditions.html" target="_blank">Conditions d'utilisations</a> 
-            est obligatoire pour vos fins d'utilisations. En utilisant ce site, vous acceptez ces conditions. Sinon, fermez la page.
-        </p>
-        <div class="error-message" id="password-error"></div>
-    </div>
-</div>
-
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forced Announcement Popup</title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Custom styles for smooth transitions */
-        .popup-transition {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-    </style>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        'primary-blue': '#107c92',
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="font-sans bg-gray-50 min-h-screen">
-
-    <!-- 1. FULL POPUP MODAL (Hidden/Shown based on state) -->
-    <!-- The inset-0 property ensures it covers the entire screen, regardless of other content. -->
-    <div id="forced-popup" class="fixed inset-0 z-50 bg-gray-900/70 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 popup-transition" style="display: none;">
-        
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mt-12 transform scale-100 opacity-100 popup-transition" id="popup-content">
-            
-            <!-- Header -->
-            <div class="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 bg-primary-blue rounded-t-xl">
-                <h2 class="text-xl font-semibold text-white">ANNONCE IMPORTANTE</h2>
-                <button id="close-popup-btn" class="text-white hover:text-gray-200 transition" aria-label="Minimize announcement">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            
-            <!-- Content & Loading State -->
-            <div class="p-4 sm:p-6">
-                <div id="loading-state" class="flex items-center space-x-2 text-primary-blue">
-                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p>Chargement du message...</p>
-                </div>
-                
-                <div id="popup-message-container" class="hidden">
-                    <p id="popup-message" class="text-gray-700 leading-relaxed whitespace-pre-line"></p>
-                </div>
-                
-                <div id="error-state" class="hidden bg-red-50 border border-red-200 text-red-700 p-3 rounded mt-3">
-                    <p class="font-medium">Error:</p>
-                    <p class="text-sm">Could not load the message. Please check the API source.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. MINIMIZED PANEL (Collapsed state) -->
-    <div id="minimized-panel" class="fixed left-0 top-1/2 -translate-y-1/2 z-50 transform -translate-x-full popup-transition" style="display: none;">
-        <button id="restore-popup-btn" class="flex items-center p-3 bg-primary-blue text-white rounded-r-xl shadow-lg hover:bg-opacity-90 transition transform hover:translate-x-1" aria-label="Restore announcement">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
-            </svg>
-            <span class="text-sm font-medium whitespace-nowrap">Mise à Jour</span>
-        </button>
-    </div>
-
-    <script>
-        const forcedPopup = document.getElementById('forced-popup');
-        const popupContent = document.getElementById('popup-content');
-        const closeBtn = document.getElementById('close-popup-btn');
-        const popupMessageElement = document.getElementById('popup-message');
-        const loadingState = document.getElementById('loading-state');
-        const errorState = document.getElementById('error-state');
-        const messageContainer = document.getElementById('popup-message-container');
-        const minimizedPanel = document.getElementById('minimized-panel');
-        const restoreBtn = document.getElementById('restore-popup-btn');
-
-        const SESSION_KEY = 'announcementMinimized';
-
-        /**
-         * Fetches the announcement message from the Google Sheets web app API.
-         * The Google App Script should return a JSON object with a 'message' field.
-         * * @returns {Promise<string>} The message content.
-         */
-        async function fetchMessage() {
-            // ⚠️ IMPORTANT: REPLACE THIS URL with your actual Google Sheets Web App URL.
-            const GS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzQhgU6ypNAEoR6QlX0PI_wlrEfvGwVP8pKvj91EYwquZ309Hqk5xAtFIs0uzyUAe_c/exec';
-            
-            try {
-                const response = await fetch(GS_WEB_APP_URL);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                
-                // Assuming your Google App Script returns a JSON object like:
-                // { status: "success", message: "Your Q8-9 content" }
-                if (data && data.message) {
-                    return data.message;
-                } else {
-                    throw new Error("API response was valid but lacked a 'message' field.");
-                }
-
-            } catch (error) {
-                console.error("Error fetching message from API:", error.message);
-                // Throw the error so the calling function (initPopup) can handle the error state UI
-                throw error; 
-            }
-        }
-
-        /**
-         * Sets the display mode to the minimized panel on the left.
-         */
-        function minimizePopup() {
-            // Hide full popup
-            forcedPopup.style.opacity = '0';
-            forcedPopup.style.pointerEvents = 'none';
-
-            // Show minimized panel with slide-in transition
-            minimizedPanel.style.display = 'block';
-            minimizedPanel.style.transform = 'translateX(0)';
-
-            // Set session flag so it doesn't reappear on refresh
-            sessionStorage.setItem(SESSION_KEY, 'true');
-        }
-        
-        /**
-         * Restores the full modal popup.
-         */
-        function restorePopup() {
-            // Hide minimized panel with slide-out transition
-            minimizedPanel.style.transform = 'translateX(-100%)';
-            setTimeout(() => {
-                minimizedPanel.style.display = 'none';
-            }, 300); // Matches CSS transition duration
-
-            // Show full popup
-            forcedPopup.style.display = 'flex';
-            setTimeout(() => {
-                forcedPopup.style.opacity = '1';
-                forcedPopup.style.pointerEvents = 'auto';
-            }, 10); // Small delay to trigger transition
-            
-            // Remove session flag
-            sessionStorage.removeItem(SESSION_KEY);
-        }
-
-        /**
-         * Initializes the popup state and fetches content.
-         */
-        async function initPopup() {
-            try {
-                // 1. Fetch content
-                const message = await fetchMessage();
-                
-                // Hide loading, show message
-                loadingState.classList.add('hidden');
-                popupMessageElement.textContent = message;
-                messageContainer.classList.remove('hidden');
-
-                // 2. Check session state (force appearance unless minimized)
-                const isMinimized = sessionStorage.getItem(SESSION_KEY) === 'true';
-
-                if (isMinimized) {
-                    // Start in minimized state (for current session only)
-                    minimizedPanel.style.display = 'block';
-                    minimizedPanel.style.transform = 'translateX(0)';
-                } else {
-                    // Force display of the full modal
-                    forcedPopup.style.display = 'flex';
-                    // Apply opacity and pointer-events after display is set for smooth fading
-                    setTimeout(() => {
-                        forcedPopup.style.opacity = '1';
-                        forcedPopup.style.pointerEvents = 'auto';
-                    }, 10);
-                }
-
-            } catch (error) {
-                // This catches the error thrown from fetchMessage (API failed)
-                console.error("Failed to initialize announcement:", error);
-                loadingState.classList.add('hidden');
-                errorState.classList.remove('hidden');
-                
-                // Still force show the popup to display the error to the user
-                forcedPopup.style.display = 'flex';
-                setTimeout(() => {
-                    forcedPopup.style.opacity = '1';
-                    forcedPopup.style.pointerEvents = 'auto';
-                }, 10);
-            }
-        }
-
-        // Attach Event Listeners
-        window.addEventListener('load', () => {
-            initPopup();
-            closeBtn.addEventListener('click', minimizePopup);
-            restoreBtn.addEventListener('click', restorePopup);
-        });
-
-    </script>
-</body>
-
-
-<!-- JAVASCRIPT -->
-<script>
-const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
-const UNLOCK_KEY = 'leaderboardUnlocked';
-const LOCK_STATUS_KEY = 'lastLockStatus';
-
-let isSystemLocked = true; // Global flag to freeze all functions
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await handleLockStatus();
-  
-  // Only proceed with other functions if unlocked
-  if (!isSystemLocked) {
-    await loadLeaderboardData();
-  }
-});
-
-// Check lock status
-async function handleLockStatus() {
-  const isLocked = await getLockStatus();
-  const storedStatus = sessionStorage.getItem(LOCK_STATUS_KEY);
-
-  if (storedStatus === null || storedStatus !== String(isLocked)) {
-    sessionStorage.removeItem(UNLOCK_KEY);
-    sessionStorage.setItem(LOCK_STATUS_KEY, String(isLocked));
-  }
-
-  if (isLocked) {
-    isSystemLocked = true;
-    document.getElementById('password-lock').classList.add('show');
-    setupPasswordLock();
-    freezeAllFunctions();
-  } else {
-    isSystemLocked = false;
-    sessionStorage.setItem(UNLOCK_KEY, 'true');
-    unfreezeAllFunctions();
-  }
-
-  // Auto-sync every 60 seconds
-  setInterval(async () => {
-    const newStatus = await getLockStatus();
-    const currentStatus = sessionStorage.getItem(LOCK_STATUS_KEY);
-
-    if (String(newStatus) !== currentStatus) {
-      console.log('🔄 Statut du verrouillage changé. Actualisation...');
-      sessionStorage.removeItem(UNLOCK_KEY);
-      sessionStorage.setItem(LOCK_STATUS_KEY, String(newStatus));
-      location.reload();
-    }
-  }, 60000);
-}
-
-// Get lock status from API
-async function getLockStatus() {
-  try {
-    const response = await fetch(`${PASSWORD_API_URL}?action=getLockStatus`);
-    const result = await response.json();
-    return result.isLocked === true;
-  } catch (error) {
-    console.error('Erreur lors de la récupération du statut de verrouillage:', error);
-    return true; // Default to locked on error
-  }
-}
-
-// Password lock system
-function setupPasswordLock() {
-  const passwordLock = document.getElementById('password-lock');
-  const passwordInput = document.getElementById('password-input');
-  const submitBtn = document.getElementById('password-submit-btn');
-  const errorDiv = document.getElementById('password-error');
-
-  // If already unlocked in session, don't show lock
-  if (sessionStorage.getItem(UNLOCK_KEY) === 'true') {
-    passwordLock.classList.remove('show');
-    isSystemLocked = false;
-    unfreezeAllFunctions();
-    return;
-  }
-
-  // Password verification
-  const checkPassword = async () => {
-    const password = passwordInput.value;
-    if (!password) {
-      errorDiv.textContent = 'Veuillez entrer un mot de passe.';
-      return;
-    }
-
-    submitBtn.textContent = 'Vérification...';
-    errorDiv.textContent = '';
-    submitBtn.disabled = true;
-
-    try {
-      const fullUrl = `${PASSWORD_API_URL}?action=checkPassword&password=${encodeURIComponent(password)}`;
-      const response = await fetch(fullUrl);
-      const result = await response.json();
-
-      if (result.success === true) {
-        passwordLock.classList.remove('show');
-        sessionStorage.setItem(UNLOCK_KEY, 'true');
-        passwordInput.value = '';
-        isSystemLocked = false;
-        unfreezeAllFunctions();
-        await loadLeaderboardData();
-      } else {
-        errorDiv.textContent = 'Mot de passe incorrect. Veuillez réessayer.';
-        passwordInput.value = '';
-      }
-    } catch (error) {
-      console.error('Erreur API de mot de passe:', error);
-      errorDiv.textContent = 'Erreur de connexion au serveur de vérification.';
-    } finally {
-      submitBtn.textContent = 'Déverrouiller';
-      submitBtn.disabled = false;
-    }
-  };
-
-  // Event listeners
-  submitBtn.addEventListener('click', checkPassword);
-  passwordInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      checkPassword();
-    }
-  });
-}
-
-// Freeze all non-lock functions
-function freezeAllFunctions() {
-  // Disable all buttons except password-related
-  document.querySelectorAll('button, a.btn, select, input').forEach(el => {
-    if (!el.closest('#password-lock')) {
-      el.disabled = true;
-      el.style.pointerEvents = 'none';
-      el.style.opacity = '0.5';
-    }
-  });
-
-  // Block navigation
-  document.querySelectorAll('a').forEach(link => {
-    if (!link.closest('#password-lock')) {
-      link.addEventListener('click', preventAction, true);
-    }
-  });
-
-  // Block all interactive elements
-  document.body.style.pointerEvents = 'none';
-  document.getElementById('password-lock').style.pointerEvents = 'all';
-}
-
-// Unfreeze all functions
-function unfreezeAllFunctions() {
-  document.querySelectorAll('button, a.btn, select, input').forEach(el => {
-    el.disabled = false;
-    el.style.pointerEvents = '';
-    el.style.opacity = '';
-  });
-
-  document.querySelectorAll('a').forEach(link => {
-    link.removeEventListener('click', preventAction, true);
-  });
-
-  document.body.style.pointerEvents = '';
-}
-
-// Prevent action when locked
-function preventAction(e) {
-  if (isSystemLocked) {
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-  }
-}
-
-// Stub function - replace with your actual implementation
-async function loadLeaderboardData() {
-  console.log('Loading leaderboard data...');
-}
-</script>
-
-
-    
     <div class="site-header-container">
         <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
         <header class="site-header">Outil JDLM*</header>
@@ -658,252 +182,538 @@ async function loadLeaderboardData() {
         <br>
         <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>
         <p style="font-style: normal; margin-top: 8px;">
-                Pour toute question, préoccupation ou pour signaler un bogue, veuillez contacter : 
+                Pour toute question, préoccupation ou pour signaler un bogue, veuillez contacter :
                 <a href="mailto:notabot.chat@gmail.com" style="font-style: normal;">notabot.chat@gmail.com</a>
             </p>
     </footer>
 
+    <div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
+        <p>Utilisateur enregistré : <strong id="current-user-display">x</strong></p>
+        <p id="log-status">Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>Failed to fetch</strong></p>
+    </div>
 
 
 
-<div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
-    <p>Calculating amount of users : <strong id="current-user-display">x</strong></p>
-    <p id="log-status">Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>Failed to fetch</strong></p>
-</div>
 
-<script>
-    // !! IMPORTANT !! REMPLACEZ CETTE URL PAR VOTRE URL DE DÉPLOIEMENT DE L'APPLICATION WEB LOGGING
-    const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbzdirAh8ZXPgVPqndPTi2ToW8bHOe3fGTq0AwAvlOizh33TYkj4xI_cqFN64zO6uDKOjA/exec"; 
 
-    // Fonction pour générer ou récupérer l'ID unique du client
-    function getClientId() {
-        let clientId = localStorage.getItem('client_id');
-        if (!clientId) {
-            clientId = 'user-' + Date.now() + Math.floor(Math.random() * 99999);
-            localStorage.setItem('client_id', clientId);
-        }
-        return clientId;
-    }
 
-    // Utilisé pour l'affichage local du nom seulement
-    function getUserName() {
-        try {
-            const userData = JSON.parse(localStorage.getItem('jdlmData'));
-            if (userData && userData.nom && userData.nom.trim() !== "") {
-                return userData.nom;
-            }
-        } catch (e) {}
-        return 'Anonyme'; 
-    }
 
-    // ⭐️ Fonction pour signaler le départ (Utilise sendBeacon)
-    function logUserExit() {
-        const clientId = getClientId();
-        // Le paramètre 'event=exit' indique au serveur de décrémenter
-        const exitUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(clientId)}&event=exit`;
 
-        // sendBeacon est non bloquant, idéal pour la fermeture, mais ne garantit pas la livraison
-        navigator.sendBeacon(exitUrl);
-    }
 
-    // ⭐️ Fonction pour signaler l'arrivée (Utilise fetch)
-    async function logUserVisit() {
-        const clientId = getClientId();
-        const logStatus = document.getElementById('log-status');
-        const userDisplay = document.getElementById('current-user-display');
 
-        userDisplay.textContent = getUserName(); // Mise à jour de l'affichage local
 
-        if (LOGGING_API_URL === "VOTRE_LOGGING_API_URL_ICI" || LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
-            logStatus.textContent = "Erreur: Veuillez définir l'URL de l'API Logging.";
-            return;
-        }
 
-        try {
-            // Le paramètre 'event=entry' indique au serveur d'incrémenter (ou d'enregistrer la présence)
-            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(clientId)}&event=entry`;
 
-            const response = await fetch(fullUrl, {
-                method: 'GET',
-                mode: 'cors' 
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Erreur réseau: Statut ${response.status}`);
-            }
 
-            const result = await response.json();
 
-            if (result.success && result.userCount !== undefined) {
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                
-                logStatus.innerHTML = `Visite enregistrée à ${timeStr}. Utilisateurs Actifs (Comptage risqué): <strong>${result.userCount}</strong>.`;
-            } else {
-                logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie ou compte manquant).";
-            }
-
-        } catch (error) {
-            console.error("Erreur lors de l'enregistrement de la visite :", error);
-            logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement : <strong>${error.message}</strong>`;
-        }
-    }
-
-    // ⭐️ Déclenche l'enregistrement à l'arrivée
-    document.addEventListener('DOMContentLoaded', logUserVisit);
-
-    // ⭐️ Déclenche l'enregistrement au départ (utilisation de sendBeacon)
-    window.addEventListener('beforeunload', logUserExit);
     
-    // Fallback pour les changements de visibilité (lorsque l'utilisateur ferme l'onglet)
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-            logUserExit();
-        }
-    });
-</script>
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forced Announcement Popup</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for smooth transitions */
+        .popup-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-blue': '#107c92',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans bg-gray-50 min-h-screen">
+
+    <!-- 1. FULL POPUP MODAL (Hidden/Shown based on state) -->
+    <div id="forced-popup" class="fixed inset-0 z-50 bg-gray-900/70 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 popup-transition" style="display: none; opacity: 0; pointer-events: none;">
+        
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mt-12 transform scale-100 opacity-100 popup-transition" id="popup-content">
+            
+            <!-- Header -->
+            <div class="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 bg-primary-blue rounded-t-xl">
+                <h2 class="text-xl font-semibold text-white">IMPORTANT ANNOUNCEMENT</h2>
+                <button id="close-popup-btn" class="text-white hover:text-gray-200 transition" aria-label="Minimize announcement">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Content & Loading State -->
+            <div class="p-4 sm:p-6">
+                <div id="loading-state" class="flex items-center space-x-2 text-primary-blue">
+                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p>Loading message...</p>
+                </div>
+                
+                <div id="popup-message-container" class="hidden">
+                    <p id="popup-message" class="text-gray-700 leading-relaxed whitespace-pre-line"></p>
+                </div>
+                
+                <div id="error-state" class="hidden bg-red-50 border border-red-200 text-red-700 p-3 rounded mt-3">
+                    <p class="font-medium">Error:</p>
+                    <p class="text-sm">Could not load the message.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MINIMIZED PANEL (Collapsed state) -->
+    <div id="minimized-panel" class="fixed left-0 bottom-5 z-50 transform -translate-x-full popup-transition" style="display: none;">
+        <button id="restore-popup-btn" class="flex items-center p-3 bg-primary-blue text-white rounded-r-xl shadow-lg hover:bg-opacity-90 transition" aria-label="Restore announcement">
+            <!-- MODIFIED: SVG path is now complete and includes the dot for the "i" -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+            </svg>
+        </button>
+    </div>
 
     <script>
+        const forcedPopup = document.getElementById('forced-popup');
+        const popupContent = document.getElementById('popup-content');
+        const closeBtn = document.getElementById('close-popup-btn');
+        const popupMessageElement = document.getElementById('popup-message');
+        const loadingState = document.getElementById('loading-state');
+        const errorState = document.getElementById('error-state');
+        const messageContainer = document.getElementById('popup-message-container');
+        const minimizedPanel = document.getElementById('minimized-panel');
+        const restoreBtn = document.getElementById('restore-popup-btn');
+
+        const SESSION_KEY = 'announcementMinimized';
+
+        /**
+         * Fetches the announcement message from a specified API.
+         * @returns {Promise<string>} The message content.
+         */
+        async function fetchMessage() {
+            // ⚠️ IMPORTANT: REPLACE THIS URL with your actual Google Sheets Web App URL.
+            const GS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzQhgU6ypNAEoR6QlX0PI_wlrEfvGwVP8pKvj91EYwquZ309Hqk5xAtFIs0uzyUAe_c/exec';
+            
+            try {
+                const response = await fetch(GS_WEB_APP_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                if (data && data.message) {
+                    return data.message;
+                } else {
+                    throw new Error("API response was valid but lacked a 'message' field.");
+                }
+            } catch (error) {
+                console.error("Error fetching message from API:", error.message);
+                throw error; 
+            }
+        }
+
+        /**
+         * Sets the display mode to the minimized panel.
+         */
+        function minimizePopup() {
+            // Hide full popup
+            forcedPopup.style.opacity = '0';
+            forcedPopup.style.pointerEvents = 'none';
+
+            // Show minimized panel with slide-in transition
+            minimizedPanel.style.display = 'block';
+            setTimeout(() => {
+                minimizedPanel.style.transform = 'translateX(0)';
+            }, 10);
+
+            sessionStorage.setItem(SESSION_KEY, 'true');
+        }
+        
+        /**
+         * Restores the full modal popup from the minimized state.
+         */
+        function restorePopup() {
+            // Hide minimized panel with slide-out transition
+            minimizedPanel.style.transform = 'translateX(-100%)';
+            
+            // Show full popup
+            forcedPopup.style.display = 'flex';
+            setTimeout(() => {
+                forcedPopup.style.opacity = '1';
+                forcedPopup.style.pointerEvents = 'auto';
+            }, 10); 
+            
+            sessionStorage.removeItem(SESSION_KEY);
+        }
+
+        /**
+         * Initializes the popup state and fetches content.
+         */
+        async function initPopup() {
+            try {
+                // 1. Fetch content
+                const message = await fetchMessage();
+                
+                loadingState.classList.add('hidden');
+                popupMessageElement.textContent = message;
+                messageContainer.classList.remove('hidden');
+
+                // 2. Check session state
+                const isMinimized = sessionStorage.getItem(SESSION_KEY) === 'true';
+
+                if (isMinimized) {
+                    minimizedPanel.style.display = 'block';
+                    setTimeout(() => {
+                       minimizedPanel.style.transform = 'translateX(0)';
+                    }, 10);
+                } else {
+                    forcedPopup.style.display = 'flex';
+                    setTimeout(() => {
+                        forcedPopup.style.opacity = '1';
+                        forcedPopup.style.pointerEvents = 'auto';
+                    }, 10);
+                }
+
+            } catch (error) {
+                console.error("Failed to initialize announcement:", error);
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+                
+                // Show the popup to display the error
+                forcedPopup.style.display = 'flex';
+                setTimeout(() => {
+                    forcedPopup.style.opacity = '1';
+                    forcedPopup.style.pointerEvents = 'auto';
+                }, 10);
+            }
+        }
+
+        // Attach Event Listeners
+        window.addEventListener('load', () => {
+            initPopup();
+            closeBtn.addEventListener('click', minimizePopup);
+            restoreBtn.addEventListener('click', restorePopup);
+        });
+
+    </script>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
+    
+    <script>
+        const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
+
+        async function logUserVisit() {
+            const userRandomCode = (jdlmData && jdlmData.user_random) ? jdlmData.user_random : 'unknown';
+            const logStatus = document.getElementById('log-status');
+            const userDisplay = document.getElementById('current-user-display');
+
+            userDisplay.textContent = userRandomCode;
+
+            if (LOGGING_API_URL === "VOTRE_LOGGING_API_URL_ICI" || LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
+                logStatus.textContent = "Erreur: Veuillez définir l'URL de l'API Logging.";
+                return;
+            }
+
+            try {
+                const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}`;
+                const response = await fetch(fullUrl, { method: 'GET', mode: 'cors' });
+                if (!response.ok) { throw new Error(`Erreur réseau: Statut ${response.status}`); }
+                const result = await response.json();
+
+                if (result.success) {
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>.`;
+                } else {
+                    logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie).";
+                }
+            } catch (error) {
+                console.error("Erreur lors de l'enregistrement de la visite :", error);
+                logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>${error.message}</strong>`;
+            }
+        }
+    </script>
+
+    <script>
+        const USE_HASHED_USERCODE = true;
         const gradeMap = { 'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90}, 'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75}, 'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60}, 'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45} };
         const defaultUnits = { sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2, }, sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 } };
         const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière", };
         let jdlmData, activeTab = 'etape1';
-        
-        document.addEventListener('DOMContentLoaded', () => { 
-            checkLogoutTimer(); 
-            jdlmData = JSON.parse(localStorage.getItem('jdlmData')) || {}; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            logUserVisit();
+            checkLogoutTimer();
+            jdlmData = JSON.parse(localStorage.getItem('jdlmData')) || {};
 
             if (!jdlmData.user_random) {
                 jdlmData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
                 localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
             }
 
-            if (!jdlmData.nom) { 
-                document.getElementById('tab-contents').innerHTML = "<p>Aucune donnée disponible. Veuillez ajouter les données.</p>"; 
-                return; 
-            } 
-            localStorage.setItem('jdlmLastActive', Date.now().toString()); 
-            loadSettings(); 
-            setupEventListeners(); 
+            if (!jdlmData.nom) {
+                document.getElementById('tab-contents').innerHTML = "<p>Aucune donnée disponible. Veuillez ajouter les données.</p>";
+                return;
+            }
+            localStorage.setItem('jdlmLastActive', Date.now().toString());
+            loadSettings();
+            setupEventListeners();
             renderAll();
         });
 
         function checkLogoutTimer() { const lastActiveTime = localStorage.getItem('jdlmLastActive'); const ONE_HOUR = 3600000; if (lastActiveTime && (Date.now() - parseInt(lastActiveTime)) > ONE_HOUR) { window.location.href = 'index.html'; } setInterval(() => { const checkTime = localStorage.getItem('jdlmLastActive'); if (checkTime && (Date.now() - parseInt(checkTime)) > ONE_HOUR) { window.location.href = 'index.html'; } }, 300000); }
-        
+
         function setupEventListeners() {
-            document.querySelectorAll('.tab-btn').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelector('.tab-btn.active').classList.remove('active');
-                    tab.classList.add('active');
-                    document.querySelector('.tab-content.active').classList.remove('active');
-                    activeTab = tab.dataset.tab;
-                    document.getElementById(activeTab).classList.add('active');
-                    renderSidePanel();
-                });
-            });
+    document.querySelectorAll('.tab-btn').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelector('.tab-btn.active').classList.remove('active');
+            tab.classList.add('active');
+            document.querySelector('.tab-content.active').classList.remove('active');
+            activeTab = tab.dataset.tab;
+            document.getElementById(activeTab).classList.add('active');
+            renderSidePanel();
+        });
+    });
 
-            document.getElementById('niveau-secondaire').addEventListener('change', (e) => {
-                jdlmData.settings = { ...jdlmData.settings, niveau: e.target.value };
-                localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
-                renderAll();
-            });
+    document.getElementById('niveau-secondaire').addEventListener('change', (e) => {
+        jdlmData.settings = { ...jdlmData.settings, niveau: e.target.value };
+        localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
+        renderAll();
+    });
 
-            // --- Classement Button and Modal Logic ---
-            const classementBtn = document.getElementById('classement-btn');
-            const classementModal = document.getElementById('classement-modal');
-            const termsCheckbox = document.getElementById('terms-checkbox');
-            const classementProceedBtn = document.getElementById('classement-proceed-btn');
-            const classementCancelBtn = document.getElementById('classement-cancel-btn');
+    const classementBtn = document.getElementById('classement-btn');
+    const classementModal = document.getElementById('classement-modal');
+    const termsCheckbox = document.getElementById('terms-checkbox');
+    const classementProceedBtn = document.getElementById('classement-proceed-btn');
+    const classementCancelBtn = document.getElementById('classement-cancel-btn');
+    classementBtn.addEventListener('click', async () => { if (localStorage.getItem('hasAgreedToRanking') === 'true') { const canProceed = await sendRankingData(true); if (canProceed) { window.location.href = 'classement.html'; } } else { classementModal.classList.add('active'); } });
+    termsCheckbox.addEventListener('change', () => { classementProceedBtn.disabled = !termsCheckbox.checked; });
+    classementCancelBtn.addEventListener('click', () => { classementModal.classList.remove('active'); });
+    classementProceedBtn.addEventListener('click', async () => { if (termsCheckbox.checked) { localStorage.setItem('hasAgreedToRanking', 'true'); classementModal.classList.remove('active'); const canProceed = await sendRankingData(true); if (canProceed) { window.location.href = 'classement.html'; } } });
+    classementModal.addEventListener('click', (e) => { if (e.target === classementModal) { classementModal.classList.remove('active'); }});
+    const unitesModal = document.getElementById('unites-modal');
+    document.getElementById('unites-btn').addEventListener('click', () => { populateUnitesModal(); unitesModal.classList.add('active'); });
+    document.getElementById('close-unites-modal').addEventListener('click', () => { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); });
+    unitesModal.addEventListener('click', (e) => { if (e.target === unitesModal) { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); } });
+    document.getElementById('unites-mode').addEventListener('change', (e) => { jdlmData.settings = { ...jdlmData.settings, unitesMode: e.target.value }; localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); populateUnitesModal(); });
+    
+    // --- CORRECTED DYNAMIC INPUT LOGIC ---
+    const tabContents = document.getElementById('tab-contents');
 
-            classementBtn.addEventListener('click', function() {
-                if (localStorage.getItem('hasAgreedToRanking') === 'true') {
-                    const canProceed = sendRankingData(true);
-                    if (canProceed) {
-                        window.location.href = 'classement.html';
-                    }
-                } else {
-                    classementModal.classList.add('active');
-                }
-            });
-
-            termsCheckbox.addEventListener('change', () => {
-                classementProceedBtn.disabled = !termsCheckbox.checked;
-            });
-
-            classementCancelBtn.addEventListener('click', () => {
-                classementModal.classList.remove('active');
-            });
-
-            classementProceedBtn.addEventListener('click', () => {
-                if (termsCheckbox.checked) {
-                    localStorage.setItem('hasAgreedToRanking', 'true');
-                    classementModal.classList.remove('active');
-                    const canProceed = sendRankingData(true);
-                    if (canProceed) {
-                        window.location.href = 'classement.html';
-                    }
-                }
-            });
-            
-            classementModal.addEventListener('click', (e) => {
-                if (e.target === classementModal) {
-                    classementModal.classList.remove('active');
-                }
-            });
-
-
-            // --- Unités Modal Logic ---
-            const unitesModal = document.getElementById('unites-modal');
-            document.getElementById('unites-btn').addEventListener('click', () => { populateUnitesModal(); unitesModal.classList.add('active'); });
-            document.getElementById('close-unites-modal').addEventListener('click', () => { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); });
-            unitesModal.addEventListener('click', (e) => { if (e.target === unitesModal) { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); } });
-            document.getElementById('unites-mode').addEventListener('change', (e) => { jdlmData.settings = { ...jdlmData.settings, unitesMode: e.target.value }; localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); populateUnitesModal(); });
+    tabContents.addEventListener('input', (e) => {
+        const target = e.target;
+        if (target.classList.contains('pond-input-field')) {
+            target.classList.toggle('modified-input', target.value !== target.defaultValue);
+            renderSidePanel(); 
         }
-        
+        if (target.classList.contains('grade-input-field')) {
+            target.classList.add('modified-input'); 
+            renderSidePanel(); 
+        }
+    });
+
+    tabContents.addEventListener('click', (e) => {
+        const gradeDisplay = e.target.closest('.grade-display');
+        if (gradeDisplay) {
+            const container = gradeDisplay.closest('.grade-container');
+            const inputField = container.querySelector('.grade-input-field');
+            const originalResult = container.dataset.originalResult;
+            const numericGrade = getNumericGrade(originalResult);
+            
+            gradeDisplay.classList.add('hidden');
+            inputField.classList.remove('hidden');
+            
+            inputField.value = numericGrade !== null ? numericGrade.toFixed(2) : '';
+            inputField.focus();
+            inputField.select();
+        }
+    });
+
+    // Handles switching back from input to display if input is left empty
+    tabContents.addEventListener('focusout', (e) => {
+        const inputField = e.target;
+        if (inputField.classList.contains('grade-input-field')) {
+            if (inputField.value.trim() === '') {
+                const container = inputField.closest('.grade-container');
+                const displaySpan = container.querySelector('.grade-display');
+                
+                inputField.classList.add('hidden');
+                displaySpan.classList.remove('hidden');
+                inputField.classList.remove('modified-input');
+                renderSidePanel(); // Recalculate when reverting to original
+            }
+        }
+    });
+
+    // Handles keyboard shortcuts for the grade input
+    tabContents.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('grade-input-field')) {
+            if (e.key === 'Enter' || e.key === 'Escape') {
+                e.preventDefault();
+                if (e.key === 'Escape') {
+                    e.target.value = '';
+                }
+                e.target.blur(); 
+            }
+        }
+    });
+}
+
         function loadSettings() { const settings = jdlmData.settings || {}; document.getElementById('niveau-secondaire').value = settings.niveau || ''; document.getElementById('unites-mode').value = settings.unitesMode || 'defaut'; }
         function saveCustomUnits() { if (document.getElementById('unites-mode').value !== 'perso') return; let customUnites = {}; document.querySelectorAll('.unite-item input').forEach(input => { customUnites[input.dataset.code] = parseFloat(input.value) || 1; }); jdlmData.settings.customUnites = customUnites; localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); }
-        function getNumericGrade(result) { if (!result) return null; const trimmedResult = result.trim(); if (gradeMap[trimmedResult]) { const { min, max } = gradeMap[trimmedResult]; return (min + max) / 2; } const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/); if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const maxScore = parseFloat(scoreMatch[2].replace(',', '.')); if (!isNaN(score) && !isNaN(maxScore) && maxScore > 0) { return (score / maxScore) * 100; } } return null; }
-        function calculateSubjectAverage(subject) { let totalWeightedGrade = 0; let totalCompetencyWeight = 0; subject.competencies.forEach(comp => { const compWeightMatch = comp.name.match(/\((\d+)%\)/); if (!compWeightMatch) return; const compWeight = parseFloat(compWeightMatch[1]); let totalAssignmentGrade = 0; let totalAssignmentWeight = 0; comp.assignments.forEach(assign => { const grade = getNumericGrade(assign.result); const weight = parseFloat(assign.pond); if (grade !== null && !isNaN(weight)) { totalAssignmentGrade += grade * weight; totalAssignmentWeight += weight; } }); if (totalAssignmentWeight > 0) { const competencyAverage = totalAssignmentGrade / totalAssignmentWeight; totalWeightedGrade += competencyAverage * compWeight; totalCompetencyWeight += compWeight; } }); return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null; }
+        function getNumericGrade(result) { if (!result) return null; const trimmedResult = result.trim(); if (gradeMap[trimmedResult]) { const { min, max } = gradeMap[trimmedResult]; return (min + max) / 2; } const percentageMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*%/); if (percentageMatch) { return parseFloat(percentageMatch[1].replace(',', '.')); } const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/); if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const maxScore = parseFloat(scoreMatch[2].replace(',', '.')); if (!isNaN(score) && !isNaN(maxScore) && maxScore > 0) { return (score / maxScore) * 100; } } return null; }
+        
+function calculateSubjectAverage(subject) {
+    let totalWeightedGrade = 0;
+    let totalCompetencyWeight = 0;
+    subject.competencies.forEach((comp, compIndex) => {
+        const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+        if (!compWeightMatch) return;
+        const compWeight = parseFloat(compWeightMatch[1]);
+        let totalAssignmentGrade = 0;
+        let totalAssignmentWeight = 0;
+        comp.assignments.forEach((assign, assignIndex) => {
+            const uniqueId = `${subject.code}-${compIndex}-${assignIndex}`;
+            const pondInput = document.querySelector(`.pond-input-field[data-row-id="${uniqueId}"]`);
+            const gradeInput = document.querySelector(`.grade-input-field[data-row-id="${uniqueId}"]`);
+            let grade = null;
+            let weight = NaN;
+
+            if (gradeInput && !gradeInput.classList.contains('hidden') && gradeInput.value.trim() !== '') {
+                grade = parseFloat(gradeInput.value);
+            } else {
+                grade = getNumericGrade(assign.result);
+            }
+
+            if (pondInput && pondInput.value.trim() !== '') {
+                weight = parseFloat(pondInput.value);
+            } else {
+                weight = parseFloat(assign.pond);
+            }
+
+            if (grade !== null && !isNaN(grade) && !isNaN(weight) && weight > 0) {
+                totalAssignmentGrade += grade * weight;
+                totalAssignmentWeight += weight;
+            }
+        });
+        if (totalAssignmentWeight > 0) {
+            const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
+            totalWeightedGrade += competencyAverage * compWeight;
+            totalCompetencyWeight += compWeight;
+        }
+    });
+    return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
+}
+        
         function getUnits(overrideMode = null) { const settings = jdlmData.settings || {}; const niveau = settings.niveau; const mode = overrideMode || settings.unitesMode || 'defaut'; if (mode === 'sans') return new Proxy({}, { get: () => 1 }); if (mode === 'perso') return settings.customUnites || {}; if (mode === 'defaut' && niveau && defaultUnits[niveau]) { return defaultUnits[niveau]; } return {}; }
         function calculateAverages(overrideMode = null) { const units = getUnits(overrideMode); const settings = jdlmData.settings || {}; const niveau = settings.niveau; const mode = overrideMode || settings.unitesMode || 'defaut'; let allTermAverages = {}; let allSubjectAverages = {}; const defaultSubjectUnit = 2; ['etape1', 'etape2', 'etape3'].forEach(etape => { if (!jdlmData[etape]) return; let termWeightedSum = 0; let termUnitSum = 0; allSubjectAverages[etape] = {}; jdlmData[etape].forEach(subject => { const average = calculateSubjectAverage(subject); const codePrefix = subject.code.substring(0,3); allSubjectAverages[etape][codePrefix] = { name: subjectList[codePrefix] || subject.name, average: average }; let unit; if (mode === 'defaut' && !niveau) { unit = null; } else if (mode === 'sans' || mode === 'perso') { unit = units[codePrefix] ?? 1; } else if (mode === 'defaut') { unit = units[codePrefix] ?? defaultSubjectUnit; } if (average !== null && unit !== null && niveau) { termWeightedSum += average * unit; termUnitSum += unit; } }); allTermAverages[etape] = termUnitSum > 0 ? termWeightedSum / termUnitSum : null; }); let globalWeightedSum = 0; let globalTermCount = 0; Object.values(allTermAverages).forEach(avg => { if (avg !== null) { globalWeightedSum += avg; globalTermCount++; } }); return { subjectAverages: allSubjectAverages, termAverages: allTermAverages, globalAverage: globalTermCount > 0 ? globalWeightedSum / globalTermCount : null }; }
-        
-        function renderAll() { 
-            renderTermTables(); 
+
+        function renderAll() {
+            renderTermTables();
             renderSidePanel();
-            sendRankingData(false); // Automatic, non-forced sync
+            sendRankingData(false);
         }
 
         function renderTermTables() { renderTermData(jdlmData.etape1, document.getElementById('etape1')); renderTermData(jdlmData.etape2, document.getElementById('etape2')); renderTermData(jdlmData.etape3, document.getElementById('etape3')); }
         function renderSidePanel() { const averages = calculateAverages(); const niveau = (jdlmData.settings || {}).niveau; const globalAvgEl = document.getElementById('moyenne-generale'); const termAvgEl = document.getElementById('moyenne-etape'); globalAvgEl.classList.toggle('invalid', !niveau); termAvgEl.classList.toggle('invalid', !niveau); const formatAvg = (avg) => avg !== null ? `<span class="grade-percentage">${avg.toFixed(2)}%</span>` : '--'; globalAvgEl.innerHTML = !niveau ? 'N/A' : formatAvg(averages.globalAverage); termAvgEl.innerHTML = !niveau ? 'N/A' : formatAvg(averages.termAverages[activeTab]); const subjectListEl = document.getElementById('subject-averages-list'); subjectListEl.innerHTML = ''; const activeTermSubjects = averages.subjectAverages[activeTab]; if (activeTermSubjects && Object.keys(activeTermSubjects).length > 0) { Object.entries(activeTermSubjects).forEach(([code, subj]) => { const li = document.createElement('li'); li.innerHTML = `<span>${subj.name}</span><strong>${formatAvg(subj.average)}</strong>`; subjectListEl.appendChild(li); }); } else { subjectListEl.innerHTML = '<li class="no-data">Aucune matière pour cette étape</li>'; } }
         function populateUnitesModal() { const listContainer = document.getElementById('unites-list'); const mode = document.getElementById('unites-mode').value; const settings = jdlmData.settings || {}; listContainer.innerHTML = ''; const allSubjects = new Map(); ['etape1', 'etape2', 'etape3'].forEach(etape => { if (jdlmData[etape]) { jdlmData[etape].forEach(subject => { const codePrefix = subject.code.substring(0,3); if (!allSubjects.has(codePrefix)) { allSubjects.set(codePrefix, subjectList[codePrefix] || subject.name); } }); } }); if (allSubjects.size === 0) { listContainer.innerHTML = '<div class="no-data">Aucune matière trouvée.</div>'; return; } const units = getUnits(); const defaultSubjectUnit = 2; allSubjects.forEach((name, code) => { const item = document.createElement('div'); item.className = 'unite-item'; let valueDisplay = ''; if (mode === 'perso') { const currentValue = (settings.customUnites || {})[code] || 1; valueDisplay = `<input type="number" data-code="${code}" value="${currentValue}" min="0" step="1">`; } else { let unitValue; if (mode === 'sans') { unitValue = 1; } else if (mode === 'defaut') { unitValue = units[code] ?? defaultSubjectUnit; } valueDisplay = `<span>${unitValue}</span>`; } item.innerHTML = `<label>${name} (${code})</label>${valueDisplay}`; listContainer.appendChild(item); }); }
         function renderTermData(termData, container) { container.innerHTML = ''; if (!termData || termData.length === 0) { container.innerHTML = '<p class="no-data">Aucune donnée pour cette étape.</p>'; return; } termData.forEach(subject => container.appendChild(renderSubjectTable(subject))); }
-        function renderSubjectTable(subject) { const table = document.createElement('table'); table.className = 'subject-table'; table.innerHTML = `<thead><tr><th colspan="7">${subject.code} - ${subject.name}</th></tr><tr><th>Catégorie</th><th>Travail</th><th>Pond.</th><th>Date assignée</th><th>Date due</th><th>Date complétée</th><th>Résultat</th></tr></thead><tbody></tbody>`; const tbody = table.querySelector('tbody'); subject.competencies.forEach(comp => { const compRow = document.createElement('tr'); compRow.className = 'competency-row'; compRow.innerHTML = `<td colspan="7">${comp.name}</td>`; tbody.appendChild(compRow); comp.assignments.forEach(assign => { const assignRow = document.createElement('tr'); const numGrade = getNumericGrade(assign.result); let formattedResult = '<span class="no-data">-</span>'; if (assign.result) { const isLetterGrade = !!gradeMap[assign.result.trim()]; const isSimplePercentage = assign.result.includes('%') && !assign.result.includes('/'); if (isLetterGrade && numGrade !== null) { formattedResult = `${assign.result} <i>(~<span class="grade-percentage">${numGrade.toFixed(1)}%</span>)</i>`; } else if (isSimplePercentage || assign.result.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/)) { formattedResult = assign.result.replace(/(\d+[,.]?\d*\s*\/.*|(\d+[,.]?\d*\s*%))/g, (match) => `<span class="grade-percentage">${match}</span>`); } else { formattedResult = assign.result; } } assignRow.innerHTML = `<td>${assign.category || '<span class="no-data">-</span>'}</td><td>${assign.work || '<span class="no-data">-</span>'}</td><td>${assign.pond || '<span class="no-data">-</span>'}</td><td>${assign.assignedDate || '<span class="no-data">-</span>'}</td><td>${assign.dueDate.replace('à','') || '<span class="no-data">-</span>'}</td><td>${assign.completedDate || '<span class="no-data">-</span>'}</td><td>${formattedResult}</td>`; tbody.appendChild(assignRow); }); }); return table; }
-
-
-
+function renderSubjectTable(subject) {
+    const table = document.createElement('table');
+    table.className = 'subject-table';
+    table.innerHTML = `<thead><tr><th colspan="7">${subject.code} - ${subject.name}</th></tr><tr><th>Catégorie</th><th>Travail</th><th>Pond.</th><th>Date assignée</th><th>Date due</th><th>Date complétée</th><th>Résultat</th></tr></thead><tbody></tbody>`;
+    const tbody = table.querySelector('tbody');
+    subject.competencies.forEach((comp, compIndex) => {
+        const compRow = document.createElement('tr');
+        compRow.className = 'competency-row';
+        compRow.innerHTML = `<td colspan="7">${comp.name}</td>`;
+        tbody.appendChild(compRow);
+        comp.assignments.forEach((assign, assignIndex) => {
+            const assignRow = document.createElement('tr');
+            const uniqueId = `${subject.code}-${compIndex}-${assignIndex}`;
+            const numGrade = getNumericGrade(assign.result);
+            let formattedResult = '<span class="no-data">-</span>';
+            if (assign.result) {
+                const trimmedResult = assign.result.trim();
+                const isLetterGrade = !!gradeMap[trimmedResult];
+                const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+                if (isLetterGrade && numGrade !== null) {
+                    formattedResult = `${trimmedResult} <i>(~<span class="grade-percentage">${numGrade.toFixed(1)}%</span>)</i>`;
+                } else if (scoreMatch && numGrade !== null) {
+                    formattedResult = `<span style="color: grey; font-size: 0.9em;">(${scoreMatch[0]})</span> <span class="grade-percentage">${numGrade.toFixed(1)}%</span>`;
+                } else if (trimmedResult.includes('%')) {
+                    formattedResult = `<span class="grade-percentage">${trimmedResult}</span>`;
+                } else {
+                    formattedResult = trimmedResult;
+                }
+            }
+            const pondValue = assign.pond ? `value="${assign.pond}"` : '';
+            assignRow.innerHTML = `<td>${assign.category || '<span class="no-data">-</span>'}</td><td>${assign.work || '<span class="no-data">-</span>'}</td><td><input type="number" class="pond-input-field" ${pondValue} data-row-id="${uniqueId}" min="0" max="100" placeholder="--"></td><td>${assign.assignedDate || '<span class="no-data">-</span>'}</td><td>${assign.dueDate.replace('à','') || '<span class="no-data">-</span>'}</td><td>${assign.completedDate || '<span class="no-data">-</span>'}</td><td><div class="grade-container" data-row-id="${uniqueId}" data-original-result="${assign.result || ''}"><span class="grade-display">${formattedResult}</span><input type="number" class="grade-input-field hidden" data-row-id="${uniqueId}" min="0" max="100"></div></td>`;
+            tbody.appendChild(assignRow);
+        });
+    });
+    return table;
+}
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5JYFE5JDLycaa4cCCsA57K-2Pka-CoHatWTr1685mQDiJtv_3IcrYDFhS2vkhsOet/exec";
-
         function getUserCode() { const nom = (jdlmData || {}).nom; if (!nom) return null; return nom.replace(/\s+/g, '').toLowerCase(); }
+        
+        async function hashUserCode(userCode) {
+            const HASH_PEPPER = '$$$$$';
+            if (!userCode || !crypto.subtle) return userCode;
+            try {
+                const encoder = new TextEncoder();
+                const dataToHash = userCode + HASH_PEPPER;
+                const data = encoder.encode(dataToHash);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (error) {
+                console.error('Hashing failed:', error);
+                return userCode;
+            }
+        }
+
         function getAggregatedSubjectAverage(allSubjectAverages, subjectCodes) { let totalSum = 0; let count = 0; ['etape1', 'etape2', 'etape3'].forEach(etape => { if (allSubjectAverages[etape]) { Object.entries(allSubjectAverages[etape]).forEach(([code, subjectData]) => { if (subjectCodes.includes(code) && subjectData.average !== null) { totalSum += subjectData.average; count++; } }); } }); return count > 0 ? totalSum / count : null; }
 
-        function sendRankingData(force = false) {
+        async function sendRankingData(force = false) {
             const hasAgreed = localStorage.getItem('hasAgreedToRanking') === 'true';
+            if (!force && !hasAgreed) { return true; }
 
-            // On an automatic call (from renderAll), if the user hasn't agreed, do not send data.
-            if (!force && !hasAgreed) {
-                console.log("User has not consented to data collection for ranking. Skipping automatic sync.");
-                return true; // Not an error, just skipping the sync.
-            }
-
-            // The rest of the function is only executed for forced calls (button clicks) or if the user has already agreed.
             const niveau = document.getElementById('niveau-secondaire').value;
-            const userCode = getUserCode();
+            let userCode = getUserCode();
             const userRandom = (jdlmData || {}).user_random;
 
             if (!userCode || !niveau || !userRandom) {
                 if (force) alert("Veuillez sélectionner votre niveau (Secondaire 4 ou 5) avant de consulter le classement.");
-                return false; // Cannot proceed
+                return false;
+            }
+
+            if (USE_HASHED_USERCODE) {
+                userCode = await hashUserCode(userCode);
             }
 
             localStorage.setItem('jdlmNiveau', niveau);
@@ -929,31 +739,24 @@ async function loadLeaderboardData() {
             const dataFingerprint = JSON.stringify(dataPayload);
             const lastSentFingerprint = sessionStorage.getItem('lastDataFingerprint');
 
-            if (!force && dataFingerprint === lastSentFingerprint) {
-                console.log("Data is unchanged since last sync. Skipping automatic send.");
-                return true;
-            }
-
-            console.log(force ? "Force-syncing data to leaderboard..." : "Data has changed. Syncing automatically to leaderboard...");
+            if (!force && dataFingerprint === lastSentFingerprint) { return true; }
 
             const formData = new FormData();
-            for (const key in dataPayload) {
-                formData.append(key, dataPayload[key]);
+            for (const key in dataPayload) { formData.append(key, dataPayload[key]); }
+
+            try {
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.result === 'success') {
+                    console.log("Sync successful for user:", data.userCode);
+                    sessionStorage.setItem('lastDataFingerprint', dataFingerprint);
+                } else {
+                    console.error("Script Error:", data.error);
+                }
+            } catch (error) {
+                console.error("Network Error:", error);
             }
-
-            fetch(SCRIPT_URL, { method: 'POST', body: formData })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.result === 'success') {
-                        console.log("Sync successful for user:", data.userCode);
-                        sessionStorage.setItem('lastDataFingerprint', dataFingerprint);
-                    } else {
-                        console.error("Script Error:", data.error);
-                    }
-                })
-                .catch(error => console.error("Network Error:", error));
-
-            return true; // Indicate that the process was able to start
+            return true;
         }
     </script>
 </body>
