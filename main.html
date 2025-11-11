@@ -424,7 +424,11 @@
     
     <script>
         const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
+//CE API DE PREND PAS LE NOM OU DES DONNÉS. IL ATTRIBUE UN CODE RANDOM À CHAQUE USAGER AFIN QU'ON PUISSE SAVOIR LA QUANTITÉE D'USAGERS
+//AINSI QUE L'HEURE RELIÉ. NOTRE INFRASTRUCTURE EST DÉJÀ SURCHARGÉ AVEC PLUS DE 5 SECONDES DE LOADING TIME POUR LE CLASSEMENT.
 
+
+        
         async function logUserVisit() {
             const userRandomCode = (jdlmData && jdlmData.user_random) ? jdlmData.user_random : 'unknown';
             const logStatus = document.getElementById('log-status');
