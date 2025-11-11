@@ -16,6 +16,7 @@
             --light-grey: #bdc3c7;
             --footer-grey: #95a5a6;
             --danger-color: #e74c3c;
+            --warning-red: #ff0000; /* Rouge vif pour l'avertissement */
             --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
         }
         body {
@@ -34,6 +35,17 @@
             border-bottom: 1px solid #e0e6eb;
             padding: 15px 0;
             position: relative;
+        }
+        
+        /* Style spécifique pour l'avertissement */
+        .disclaimer-banner {
+            color: var(--warning-red);
+            font-weight: bold;
+            text-align: center;
+            font-size: 0.9em;
+            margin: 0 0 10px 0; /* S'étend sur toute la largeur */
+            padding: 5px 20px;
+            line-height: 1.4;
         }
 
         .site-header {
@@ -274,6 +286,11 @@
 <body>
 
     <div class="site-header-container">
+        <!-- SECTION AVERTISSEMENT AJOUTÉE ICI -->
+        <div class="disclaimer-banner">
+            ⚠️ Ce site n'a aucune affiliation avec aucune école ou collège et n'envoie aucune information ailleurs que localement sur votre ordinateur. Ce site est un outil expérimental, pas pour consultation professionnelle.
+        </div>
+        
         <header class="site-header">Outil Moyenne*</header>
     </div>
 
@@ -409,22 +426,22 @@
 
             const createNewAssignment = () => ({ textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' });
 
+            const finalizeAssignment = () => {
+                if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond) return;
+                const buffer = currentAssignment.textBuffer;
+                if (buffer.length === 1) {
+                    currentAssignment.work = buffer[0];
+                } else if (buffer.length > 1) {
+                    currentAssignment.category = buffer[0];
+                    currentAssignment.work = buffer.slice(1).join('<br>');
+                }
+                assignments.push(currentAssignment);
+            };
+
             const parseAssignments = (lines) => {
                 let assignments = [];
                 if (lines.length === 0) return assignments;
                 let currentAssignment = createNewAssignment();
-
-                const finalizeAssignment = () => {
-                    if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond) return;
-                    const buffer = currentAssignment.textBuffer;
-                    if (buffer.length === 1) {
-                        currentAssignment.work = buffer[0];
-                    } else if (buffer.length > 1) {
-                        currentAssignment.category = buffer[0];
-                        currentAssignment.work = buffer.slice(1).join('<br>');
-                    }
-                    assignments.push(currentAssignment);
-                };
 
                 for (const line of lines) {
                     const trimmedLine = line.trim();
