@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de Bord - Outil JDLM</title>
+    <title>Tableau de Bord - Outil Moyenne</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
@@ -264,7 +264,7 @@
     
     <div class="site-header-container">
         <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
-        <header class="site-header">Outil JDLM*</header>
+        <header class="site-header">Outil Moyenne*</header>
         <!-- Bouton Ajouter des données déplacé dans le header -->
         <a href="data.html" class="btn btn-header-action">Ajouter des données</a>
     </div>
@@ -348,29 +348,29 @@
             'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français, Langue d'enseignement", 'ELA': "English Language Arts", 'EESL': "Enriched English as a Second Language", 'ESL': "English as a Second Language", 'SN': "Mathématique, Science Nature", 'CST': "Mathématique, Culture, Société et Technique", 'ST': "Science et Technologie", 'STE': "Science et Technologie de l'Environnement", 'HQC': "Histoire du Québec et du Canada", 'CCQ': "Culture et Citoyenneté Québécoise", 'EPS': "Éducation Physique et à la Santé", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière",
         };
         
-        let jdlmData, activeTab = 'etape1';
+        let MoyenneData, activeTab = 'etape1';
 
         document.addEventListener('DOMContentLoaded', () => {
             checkLogoutTimer();
-            jdlmData = JSON.parse(localStorage.getItem('jdlmData')) || {};
-            if (!jdlmData.nom) {
+            MoyenneData = JSON.parse(localStorage.getItem('MoyenneData')) || {};
+            if (!MoyenneData.nom) {
                 document.getElementById('tab-contents').innerHTML = "<p>Aucune donnée disponible. Veuillez ajouter les données.</p>";
                 return;
             }
-            localStorage.setItem('jdlmLastActive', Date.now().toString());
+            localStorage.setItem('MoyenneLastActive', Date.now().toString());
             loadSettings();
             setupEventListeners();
             renderAll();
         });
 
         function checkLogoutTimer() {
-            const lastActiveTime = localStorage.getItem('jdlmLastActive');
+            const lastActiveTime = localStorage.getItem('MoyenneLastActive');
             const ONE_HOUR = 60 * 60 * 1000;
             if (lastActiveTime && (Date.now() - parseInt(lastActiveTime)) > ONE_HOUR) {
                 window.location.href = 'index.html';
             }
             setInterval(() => {
-                const checkTime = localStorage.getItem('jdlmLastActive');
+                const checkTime = localStorage.getItem('MoyenneLastActive');
                  if (checkTime && (Date.now() - parseInt(checkTime)) > ONE_HOUR) {
                     window.location.href = 'index.html';
                 }
@@ -389,8 +389,8 @@
                 });
             });
             document.getElementById('niveau-secondaire').addEventListener('change', (e) => {
-                jdlmData.settings = { ...jdlmData.settings, niveau: e.target.value };
-                localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
+                MoyenneData.settings = { ...MoyenneData.settings, niveau: e.target.value };
+                localStorage.setItem('MoyenneData', JSON.stringify(MoyenneData));
                 renderAll();
             });
             const unitesModal = document.getElementById('unites-modal');
@@ -411,14 +411,14 @@
                 }
             });
             document.getElementById('unites-mode').addEventListener('change', (e) => {
-                jdlmData.settings = { ...jdlmData.settings, unitesMode: e.target.value };
-                localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
+                MoyenneData.settings = { ...MoyenneData.settings, unitesMode: e.target.value };
+                localStorage.setItem('MoyenneData', JSON.stringify(MoyenneData));
                 populateUnitesModal();
             });
         }
         
         function loadSettings() {
-            const settings = jdlmData.settings || {};
+            const settings = MoyenneData.settings || {};
             document.getElementById('niveau-secondaire').value = settings.niveau || '';
             document.getElementById('unites-mode').value = settings.unitesMode || 'defaut';
         }
@@ -429,8 +429,8 @@
             document.querySelectorAll('.unite-item input').forEach(input => {
                 customUnites[input.dataset.code] = parseFloat(input.value) || 1;
             });
-            jdlmData.settings.customUnites = customUnites;
-            localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
+            MoyenneData.settings.customUnites = customUnites;
+            localStorage.setItem('MoyenneData', JSON.stringify(MoyenneData));
         }
 
         function getNumericGrade(result) {
@@ -478,7 +478,7 @@
         }
         
         function getUnits() {
-            const settings = jdlmData.settings || {};
+            const settings = MoyenneData.settings || {};
             const niveau = settings.niveau;
             const mode = settings.unitesMode || 'defaut';
             
@@ -494,7 +494,7 @@
 
         function calculateAverages() {
             const units = getUnits();
-            const settings = jdlmData.settings || {};
+            const settings = MoyenneData.settings || {};
             const niveau = settings.niveau;
             const mode = settings.unitesMode || 'defaut';
             
@@ -504,11 +504,11 @@
             const defaultSubjectUnit = 2;
             
             ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                if (!jdlmData[etape]) return;
+                if (!MoyenneData[etape]) return;
                 let termWeightedSum = 0;
                 let termUnitSum = 0;
                 allSubjectAverages[etape] = {};
-                jdlmData[etape].forEach(subject => {
+                MoyenneData[etape].forEach(subject => {
                     const average = calculateSubjectAverage(subject);
                     const codePrefix = subject.code.substring(0,3);
                     allSubjectAverages[etape][codePrefix] = { name: subjectList[codePrefix] || subject.name, average: average };
@@ -550,14 +550,14 @@
         }
 
         function renderTermTables() {
-            renderTermData(jdlmData.etape1, document.getElementById('etape1'));
-            renderTermData(jdlmData.etape2, document.getElementById('etape2'));
-            renderTermData(jdlmData.etape3, document.getElementById('etape3'));
+            renderTermData(MoyenneData.etape1, document.getElementById('etape1'));
+            renderTermData(MoyenneData.etape2, document.getElementById('etape2'));
+            renderTermData(MoyenneData.etape3, document.getElementById('etape3'));
         }
         
         function renderSidePanel() {
             const averages = calculateAverages();
-            const niveau = (jdlmData.settings || {}).niveau;
+            const niveau = (MoyenneData.settings || {}).niveau;
             const globalAvgEl = document.getElementById('moyenne-generale');
             const termAvgEl = document.getElementById('moyenne-etape');
             
@@ -587,12 +587,12 @@
         function populateUnitesModal() {
             const listContainer = document.getElementById('unites-list');
             const mode = document.getElementById('unites-mode').value;
-            const settings = jdlmData.settings || {};
+            const settings = MoyenneData.settings || {};
             listContainer.innerHTML = '';
             const allSubjects = new Map();
             ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                if (jdlmData[etape]) {
-                    jdlmData[etape].forEach(subject => {
+                if (MoyenneData[etape]) {
+                    MoyenneData[etape].forEach(subject => {
                         const codePrefix = subject.code.substring(0,3);
                         if (!allSubjects.has(codePrefix)) {
                             allSubjects.set(codePrefix, subjectList[codePrefix] || subject.name);
