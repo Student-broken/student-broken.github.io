@@ -390,41 +390,93 @@
 </body>
        
     
-    <script>
-        const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
+   <script>
+    // NOTE: L'URL doit pointer vers votre déploiement final (terminé par /exec).
+    const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbwINdZPpR1Ft20UKbAqVt8Y91-AwLjFQ7IdxK4O4dNPw3mIRXCuaIsPVQVysF6YvnjKQw/exec";
+    const HEARTBEAT_INTERVAL_MS = 1 * 60 * 1000; // 1 minute
+    const LOCAL_STORAGE_ID_KEY = 'jdlm_client_id'; // Clé de persistance de l'ID
 
-        async function logUserVisit() {
-            const userRandomCode = (jdlmData && jdlmData.user_random) ? jdlmData.user_random : 'unknown';
-            const logStatus = document.getElementById('log-status');
-            const userDisplay = document.getElementById('current-user-display');
+    // --- LOGIQUE DE PERSISTENCE DE L'ID CLIENT ---
+    const dataContainer = typeof jdlmData !== 'undefined' ? jdlmData : {};
+    let userRandomCode = dataContainer.user_random || null;
 
-            userDisplay.textContent = userRandomCode;
-
-            if (LOGGING_API_URL === "VOTRE_LOGGING_API_URL_ICI" || LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
-                logStatus.textContent = "Erreur: Veuillez définir l'URL de l'API Logging.";
-                return;
-            }
-
+    if (!userRandomCode) {
+        // Tenter de récupérer l'ID persistant
+        userRandomCode = localStorage.getItem(LOCAL_STORAGE_ID_KEY);
+        
+        if (!userRandomCode) {
+            // Créer un nouvel ID unique si aucun n'est trouvé
+            userRandomCode = 'unknown-' + Math.random().toString(36).substring(2, 9);
+            // Stocker le nouvel ID
             try {
-                const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}`;
-                const response = await fetch(fullUrl, { method: 'GET', mode: 'cors' });
-                if (!response.ok) { throw new Error(`Erreur réseau: Statut ${response.status}`); }
-                const result = await response.json();
-
-                if (result.success) {
-                    const now = new Date();
-                    const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
-                    const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>.`;
-                } else {
-                    logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie).";
-                }
-            } catch (error) {
-                console.error("Erreur lors de l'enregistrement de la visite :", error);
-                logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>${error.message}</strong>`;
+                localStorage.setItem(LOCAL_STORAGE_ID_KEY, userRandomCode);
+            } catch (e) {
+                // Ignore les erreurs de localStorage en mode privé
+                console.warn("Impossible d'utiliser localStorage, l'ID sera généré à chaque chargement.");
             }
         }
-    </script>
+    }
+    // ------------------------------------------
+    
+    /**
+     * Enregistre l'état de l'utilisateur (entrée/sortie) ou sert de "battement de cœur".
+     * @param {string} eventType 'entry' pour l'arrivée ou le heartbeat, 'exit' pour la sortie.
+     */
+    async function logUserActivity(eventType = 'entry') {
+        const logStatus = document.getElementById('log-status');
+        const userDisplay = document.getElementById('current-user-display');
+
+        userDisplay.textContent = userRandomCode;
+
+        if (LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
+            logStatus.textContent = "Erreur: Veuillez définir l'URL de l'API Logging.";
+            return;
+        }
+
+        try {
+            // AJOUT de l'horodatage (ts) pour le nettoyage côté serveur
+            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}&event=${eventType}&ts=${new Date().getTime()}`;
+            const response = await fetch(fullUrl, { method: 'GET', mode: 'cors' });
+            
+            if (!response.ok) { throw new Error(`Erreur réseau: Statut ${response.status}`); }
+            const result = await response.json();
+
+            if (result.success) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                let statusText = '';
+                if (eventType === 'entry') {
+                    statusText = `✅ Actif enregistré (${timeStr}). **${result.userCount} utilisateurs actifs au total.**`;
+                } else if (eventType === 'exit') {
+                    statusText = `🚪 Déconnexion signalée (${timeStr}).`;
+                }
+                logStatus.innerHTML = statusText; 
+            } else {
+                logStatus.innerHTML = `❌ Échec de l'enregistrement (${eventType}).`;
+            }
+        } catch (error) {
+            console.error(`Erreur lors de l'activité (${eventType}) :`, error);
+            logStatus.innerHTML = `⚠️ Erreur lors de la connexion au serveur d'enregistrement. Vérifiez la console (F12).`;
+        }
+    }
+    
+    // --- LOGIQUE DE DÉMARRAGE ET DE FIN ---
+
+    logUserActivity('entry'); 
+    
+    const heartbeat = setInterval(() => {
+        logUserActivity('entry');
+    }, HEARTBEAT_INTERVAL_MS);
+    
+    window.addEventListener('beforeunload', () => {
+        // AJOUT de l'horodatage (ts) pour le nettoyage côté serveur
+        const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}&event=exit&ts=${new Date().getTime()}`;
+        navigator.sendBeacon(fullUrl);
+        clearInterval(heartbeat);
+    });
+</script>
+
 
     <script>
         const USE_HASHED_USERCODE = false;
