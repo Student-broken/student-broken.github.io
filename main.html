@@ -118,10 +118,7 @@
     </style>
 </head>
 <body>
-
-
-
-
+<!-- CSS -->
 <!-- CSS -->
 <style>
 .legal-text {
@@ -237,7 +234,7 @@
 </div>
 
 <script>
-const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbwFJU9sB3J7sif5XSth2lt0q1ySLb8hpgg3tB1Fx3GNTGWn_DL-K6n0ZU5bhY2ABIZI/exec";
+const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
 const UNLOCK_KEY = 'leaderboardUnlocked';
 const LOCK_STATUS_KEY = 'lastLockStatus';
 
@@ -414,11 +411,7 @@ async function loadLeaderboardData() {
 </script>
 
 
-
-
-
-
-
+    
     <div class="site-header-container">
         <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
         <header class="site-header">Outil JDLM*</header>
@@ -537,13 +530,6 @@ async function loadLeaderboardData() {
     </script>
 </head>
 <body class="font-sans bg-gray-50 min-h-screen">
-
-
-
-
-
-
-
 
     <!-- 1. FULL POPUP MODAL (Hidden/Shown based on state) -->
     <div id="forced-popup" class="fixed inset-0 z-50 bg-gray-900/70 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 popup-transition" style="display: none; opacity: 0; pointer-events: none;">
@@ -730,21 +716,15 @@ async function loadLeaderboardData() {
 
        
     
- <script>
-        // NOTE: Cet URL d'API est l'exemple temporaire. Assurez-vous d'utiliser votre URL déployée réelle.
-        const https://script.google.com/macros/s/AKfycbyzZnXTHJ9R_zY03whuwJB_gsbpQuFZrtOiGFirkcDMIgpjIxN1v8FcgESZztUd1kDVEA/exec = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
-        const HEARTBEAT_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
+    <script>
+        const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
+//CE API DE PREND PAS LE NOM OU DES DONNÉS. IL ATTRIBUE UN CODE RANDOM À CHAQUE USAGER AFIN QU'ON PUISSE SAVOIR LA QUANTITÉE D'USAGERS
+//AINSI QUE L'HEURE RELIÉ. NOTRE INFRASTRUCTURE EST DÉJÀ SURCHARGÉ AVEC PLUS DE 5 SECONDES DE LOADING TIME POUR LE CLASSEMENT.
 
-        // L'ID client est défini ici pour être utilisé par toutes les fonctions
-        // CORRECTION : Définit dataContainer si jdlmData n'existe pas pour éviter le ReferenceError.
-        const dataContainer = typeof jdlmData !== 'undefined' ? jdlmData : {};
-        const userRandomCode = (dataContainer.user_random) ? dataContainer.user_random : 'unknown';
 
-        /**
-         * Enregistre l'état de l'utilisateur (entrée/sortie) ou sert de "battement de cœur".
-         * @param {string} eventType 'entry' pour l'arrivée ou le heartbeat, 'exit' pour la sortie.
-         */
-        async function logUserActivity(eventType = 'entry') {
+        
+        async function logUserVisit() {
+            const userRandomCode = (jdlmData && jdlmData.user_random) ? jdlmData.user_random : 'unknown';
             const logStatus = document.getElementById('log-status');
             const userDisplay = document.getElementById('current-user-display');
 
@@ -756,53 +736,24 @@ async function loadLeaderboardData() {
             }
 
             try {
-                // Ajout du paramètre 'event'
-                const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}&event=${eventType}`;
+                const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}`;
                 const response = await fetch(fullUrl, { method: 'GET', mode: 'cors' });
-                
                 if (!response.ok) { throw new Error(`Erreur réseau: Statut ${response.status}`); }
                 const result = await response.json();
 
                 if (result.success) {
                     const now = new Date();
+                    const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
                     const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    
-                    let statusText = '';
-                    if (eventType === 'entry') {
-                        statusText = `Actif enregistré à ${timeStr}. Compte total : ${result.userCount}.`;
-                    } else if (eventType === 'exit') {
-                         statusText = `Déconnexion signalée à ${timeStr}.`;
-                    }
-                    logStatus.innerHTML = statusText;
+                    logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>.`;
                 } else {
-                    logStatus.textContent = `Échec de l'enregistrement (${eventType}).`;
+                    logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie).";
                 }
             } catch (error) {
-                console.error(`Erreur lors de l'activité (${eventType}) :`, error);
-                logStatus.innerHTML = `Erreur lors de la connexion au serveur d'enregistrement.`;
+                console.error("Erreur lors de l'enregistrement de la visite :", error);
+                logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>${error.message}</strong>`;
             }
         }
-        
-        // --- LOGIQUE DE DÉMARRAGE ET DE FIN ---
-
-        // 1. Enregistrement initial à l'ouverture de la page
-        logUserActivity('entry'); 
-        
-        // 2. Heartbeat toutes les 2 minutes (maintient le statut "entry")
-        const heartbeat = setInterval(() => {
-            logUserActivity('entry');
-        }, HEARTBEAT_INTERVAL_MS);
-        
-        // 3. Signal de sortie lors de la fermeture de la page
-        window.addEventListener('beforeunload', () => {
-            // Utiliser sendBeacon pour un envoi de données rapide et non bloquant lors de la fermeture de la page
-            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}&event=exit`;
-            navigator.sendBeacon(fullUrl);
-            
-            // Arrêter le heartbeat (optionnel, mais propre)
-            clearInterval(heartbeat);
-        });
-
     </script>
 
     <script>
