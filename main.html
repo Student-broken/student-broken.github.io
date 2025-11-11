@@ -487,7 +487,7 @@
 
         function checkLogoutTimer() { const lastActiveTime = localStorage.getItem('jdlmLastActive'); const ONE_HOUR = 3600000; if (lastActiveTime && (Date.now() - parseInt(lastActiveTime)) > ONE_HOUR) { window.location.href = 'index.html'; } setInterval(() => { const checkTime = localStorage.getItem('jdlmLastActive'); if (checkTime && (Date.now() - parseInt(checkTime)) > ONE_HOUR) { window.location.href = 'index.html'; } }, 300000); }
 
-        function setupEventListeners() {
+function setupEventListeners() {
     document.querySelectorAll('.tab-btn').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelector('.tab-btn.active').classList.remove('active');
@@ -510,77 +510,40 @@
     const termsCheckbox = document.getElementById('terms-checkbox');
     const classementProceedBtn = document.getElementById('classement-proceed-btn');
     const classementCancelBtn = document.getElementById('classement-cancel-btn');
-    classementBtn.addEventListener('click', async () => { if (localStorage.getItem('hasAgreedToRanking') === 'true') { const canProceed = await sendRankingData(true); if (canProceed) { window.location.href = 'classement.html'; } } else { classementModal.classList.add('active'); } });
+
+    classementBtn.addEventListener('click', async () => {
+        if (localStorage.getItem('hasAgreedToRanking') !== 'true') {
+            classementModal.classList.add('active');
+            return;
+        }
+
+        sendRankingData(true);
+
+        window.location.href = 'classement.html';
+    });
+
     termsCheckbox.addEventListener('change', () => { classementProceedBtn.disabled = !termsCheckbox.checked; });
     classementCancelBtn.addEventListener('click', () => { classementModal.classList.remove('active'); });
-    classementProceedBtn.addEventListener('click', async () => { if (termsCheckbox.checked) { localStorage.setItem('hasAgreedToRanking', 'true'); classementModal.classList.remove('active'); const canProceed = await sendRankingData(true); if (canProceed) { window.location.href = 'classement.html'; } } });
+    classementProceedBtn.addEventListener('click', async () => {
+        if (termsCheckbox.checked) {
+            localStorage.setItem('hasAgreedToRanking', 'true');
+            classementModal.classList.remove('active');
+            classementBtn.click();
+        }
+    });
     classementModal.addEventListener('click', (e) => { if (e.target === classementModal) { classementModal.classList.remove('active'); }});
+
     const unitesModal = document.getElementById('unites-modal');
     document.getElementById('unites-btn').addEventListener('click', () => { populateUnitesModal(); unitesModal.classList.add('active'); });
     document.getElementById('close-unites-modal').addEventListener('click', () => { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); });
     unitesModal.addEventListener('click', (e) => { if (e.target === unitesModal) { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); } });
     document.getElementById('unites-mode').addEventListener('change', (e) => { jdlmData.settings = { ...jdlmData.settings, unitesMode: e.target.value }; localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); populateUnitesModal(); });
     
-    // --- CORRECTED DYNAMIC INPUT LOGIC ---
     const tabContents = document.getElementById('tab-contents');
-
-    tabContents.addEventListener('input', (e) => {
-        const target = e.target;
-        if (target.classList.contains('pond-input-field')) {
-            target.classList.toggle('modified-input', target.value !== target.defaultValue);
-            renderSidePanel(); 
-        }
-        if (target.classList.contains('grade-input-field')) {
-            target.classList.add('modified-input'); 
-            renderSidePanel(); 
-        }
-    });
-
-    tabContents.addEventListener('click', (e) => {
-        const gradeDisplay = e.target.closest('.grade-display');
-        if (gradeDisplay) {
-            const container = gradeDisplay.closest('.grade-container');
-            const inputField = container.querySelector('.grade-input-field');
-            const originalResult = container.dataset.originalResult;
-            const numericGrade = getNumericGrade(originalResult);
-            
-            gradeDisplay.classList.add('hidden');
-            inputField.classList.remove('hidden');
-            
-            inputField.value = numericGrade !== null ? numericGrade.toFixed(2) : '';
-            inputField.focus();
-            inputField.select();
-        }
-    });
-
-    // Handles switching back from input to display if input is left empty
-    tabContents.addEventListener('focusout', (e) => {
-        const inputField = e.target;
-        if (inputField.classList.contains('grade-input-field')) {
-            if (inputField.value.trim() === '') {
-                const container = inputField.closest('.grade-container');
-                const displaySpan = container.querySelector('.grade-display');
-                
-                inputField.classList.add('hidden');
-                displaySpan.classList.remove('hidden');
-                inputField.classList.remove('modified-input');
-                renderSidePanel(); // Recalculate when reverting to original
-            }
-        }
-    });
-
-    // Handles keyboard shortcuts for the grade input
-    tabContents.addEventListener('keydown', (e) => {
-        if (e.target.classList.contains('grade-input-field')) {
-            if (e.key === 'Enter' || e.key === 'Escape') {
-                e.preventDefault();
-                if (e.key === 'Escape') {
-                    e.target.value = '';
-                }
-                e.target.blur(); 
-            }
-        }
-    });
+    tabContents.addEventListener('input', (e) => { const target = e.target; if (target.classList.contains('pond-input-field')) { target.classList.toggle('modified-input', target.value !== target.defaultValue); renderSidePanel(); } if (target.classList.contains('grade-input-field')) { target.classList.add('modified-input'); renderSidePanel(); } });
+    tabContents.addEventListener('click', (e) => { const gradeDisplay = e.target.closest('.grade-display'); if (gradeDisplay) { const container = gradeDisplay.closest('.grade-container'); const inputField = container.querySelector('.grade-input-field'); const originalResult = container.dataset.originalResult; const numericGrade = getNumericGrade(originalResult); gradeDisplay.classList.add('hidden'); inputField.classList.remove('hidden'); inputField.value = numericGrade !== null ? numericGrade.toFixed(2) : ''; inputField.focus(); inputField.select(); } });
+    tabContents.addEventListener('focusout', (e) => { const inputField = e.target; if (inputField.classList.contains('grade-input-field')) { if (inputField.value.trim() === '') { const container = inputField.closest('.grade-container'); const displaySpan = container.querySelector('.grade-display'); inputField.classList.add('hidden'); displaySpan.classList.remove('hidden'); inputField.classList.remove('modified-input'); renderSidePanel(); } } });
+    tabContents.addEventListener('keydown', (e) => { if (e.target.classList.contains('grade-input-field')) { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); if (e.key === 'Escape') { e.target.value = ''; } e.target.blur(); } } });
 }
 
         function loadSettings() { const settings = jdlmData.settings || {}; document.getElementById('niveau-secondaire').value = settings.niveau || ''; document.getElementById('unites-mode').value = settings.unitesMode || 'defaut'; }
