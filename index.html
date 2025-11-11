@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion - JDLM*</title>
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <title>Connexion - Moyenne*</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <style>
     :root {
         --primary-color: #3498db;
@@ -36,7 +36,6 @@
         transform: translateX(-50%);
         background: url('Carrou.jpg') no-repeat center center;
         background-size: cover;
-        filter: blur(4px);
         z-index: 0;
     }
 
@@ -184,7 +183,7 @@
             </div>
 
             <div id="signup-flow">
-                <h2>Bienvenue sur JDLM*</h2>
+                <h2>Bienvenue sur Moyenne*</h2>
                 <p class="subtitle">Créez un compte pour commencer.</p>
                 <a href="data.html" class="btn btn-primary">S’inscrire</a>
             </div>
@@ -207,15 +206,15 @@
             const userNameDisplay = document.getElementById('userNameDisplay');
 
             try {
-                const jdlmData = JSON.parse(localStorage.getItem('jdlmData'));
-                if (jdlmData && jdlmData.nom) {
-                    userNameDisplay.textContent = jdlmData.nom;
+                const MoyenneData = JSON.parse(localStorage.getItem('MoyenneData'));
+                if (MoyenneData && MoyenneData.nom) {
+                    userNameDisplay.textContent = MoyenneData.nom;
                     loginFlow.style.display = 'block';
                 } else {
                     signupFlow.style.display = 'block';
                 }
             } catch (error) {
-                console.error("Could not parse jdlmData from localStorage:", error);
+                console.error("Could not parse MoyenneData from localStorage:", error);
                 signupFlow.style.display = 'block';
             }
         });
