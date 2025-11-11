@@ -730,11 +730,21 @@ async function loadLeaderboardData() {
 
        
     
-    <script>
+ <script>
+        // NOTE: Cet URL d'API est l'exemple temporaire. Assurez-vous d'utiliser votre URL déployée réelle.
         const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
+        const HEARTBEAT_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
 
-        async function logUserVisit() {
-            const userRandomCode = (jdlmData && jdlmData.user_random) ? jdlmData.user_random : 'unknown';
+        // L'ID client est défini ici pour être utilisé par toutes les fonctions
+        // CORRECTION : Définit dataContainer si jdlmData n'existe pas pour éviter le ReferenceError.
+        const dataContainer = typeof jdlmData !== 'undefined' ? jdlmData : {};
+        const userRandomCode = (dataContainer.user_random) ? dataContainer.user_random : 'unknown';
+
+        /**
+         * Enregistre l'état de l'utilisateur (entrée/sortie) ou sert de "battement de cœur".
+         * @param {string} eventType 'entry' pour l'arrivée ou le heartbeat, 'exit' pour la sortie.
+         */
+        async function logUserActivity(eventType = 'entry') {
             const logStatus = document.getElementById('log-status');
             const userDisplay = document.getElementById('current-user-display');
 
@@ -746,24 +756,53 @@ async function loadLeaderboardData() {
             }
 
             try {
-                const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}`;
+                // Ajout du paramètre 'event'
+                const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}&event=${eventType}`;
                 const response = await fetch(fullUrl, { method: 'GET', mode: 'cors' });
+                
                 if (!response.ok) { throw new Error(`Erreur réseau: Statut ${response.status}`); }
                 const result = await response.json();
 
                 if (result.success) {
                     const now = new Date();
-                    const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
                     const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>.`;
+                    
+                    let statusText = '';
+                    if (eventType === 'entry') {
+                        statusText = `Actif enregistré à ${timeStr}. Compte total : ${result.userCount}.`;
+                    } else if (eventType === 'exit') {
+                         statusText = `Déconnexion signalée à ${timeStr}.`;
+                    }
+                    logStatus.innerHTML = statusText;
                 } else {
-                    logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie).";
+                    logStatus.textContent = `Échec de l'enregistrement (${eventType}).`;
                 }
             } catch (error) {
-                console.error("Erreur lors de l'enregistrement de la visite :", error);
-                logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>${error.message}</strong>`;
+                console.error(`Erreur lors de l'activité (${eventType}) :`, error);
+                logStatus.innerHTML = `Erreur lors de la connexion au serveur d'enregistrement.`;
             }
         }
+        
+        // --- LOGIQUE DE DÉMARRAGE ET DE FIN ---
+
+        // 1. Enregistrement initial à l'ouverture de la page
+        logUserActivity('entry'); 
+        
+        // 2. Heartbeat toutes les 2 minutes (maintient le statut "entry")
+        const heartbeat = setInterval(() => {
+            logUserActivity('entry');
+        }, HEARTBEAT_INTERVAL_MS);
+        
+        // 3. Signal de sortie lors de la fermeture de la page
+        window.addEventListener('beforeunload', () => {
+            // Utiliser sendBeacon pour un envoi de données rapide et non bloquant lors de la fermeture de la page
+            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}&event=exit`;
+            navigator.sendBeacon(fullUrl);
+            
+            // Arrêter le heartbeat (optionnel, mais propre)
+            clearInterval(heartbeat);
+        });
+
     </script>
 
     <script>
