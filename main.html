@@ -18,6 +18,7 @@
             --light-grey: #bdc3c7;
             --footer-grey: #95a5a6;
             --danger-color: #e74c3c;
+            --warning-red: #ff0000; /* Rouge vif pour l'avertissement */
             --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
             --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
         }
@@ -35,6 +36,17 @@
             padding: 15px 0;
             position: relative;
             margin-bottom: 20px;
+        }
+
+        /* Style spécifique pour l'avertissement */
+        .disclaimer-banner {
+            color: var(--warning-red);
+            font-weight: bold;
+            text-align: center;
+            font-size: 0.9em;
+            margin: 0 0 10px 0; /* Supprime le max-width et le margin auto horizontal pour s'étendre */
+            padding: 5px 20px; /* Ajout d'un petit padding horizontal pour l'esthétique */
+            line-height: 1.4;
         }
 
         .site-header {
@@ -179,7 +191,6 @@
             background-color: #3498db;
         }
 
-        /* NOUVEAU STYLE POUR LE BOUTON DANS LE HEADER */
         .btn-header-action {
             position: absolute;
             top: 50%;
@@ -258,14 +269,42 @@
         .unite-item input, .unite-item span { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
         .unite-item span { background-color: var(--widget-darker-color); font-weight: bold; border: none; }
         .unite-item input:focus { border-color: var(--primary-color); outline: none; }
+        
+        /* Responsive pour l'avertissement */
+        @media (max-width: 1100px) {
+            .disclaimer-banner {
+                padding: 5px 20px;
+                margin-bottom: 20px;
+            }
+            .site-header-container {
+                padding-top: 20px;
+                padding-bottom: 60px; /* Espace pour les boutons sur mobile */
+            }
+            .btn-header-action {
+                top: auto;
+                bottom: 15px;
+                right: 50%;
+                transform: translateX(50%);
+            }
+            .logout-arrow {
+                top: 25px;
+                transform: translateY(0); /* Ajustement pour être en haut à gauche */
+            }
+        }
     </style>
 </head>
 <body>
     
     <div class="site-header-container">
+        <!-- SECTION AVERTISSEMENT EN HAUT DE L'EN-TÊTE -->
+        <div class="disclaimer-banner">
+            ⚠️ Ce site n'a aucune affiliation avec aucune école ou collège et n'envoie aucune information ailleurs que localement sur votre ordinateur. Ce site est un outil expérimental, pas pour consultation professionnelle.
+        </div>
+        
         <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
+        
         <header class="site-header">Outil Moyenne*</header>
-        <!-- Bouton Ajouter des données déplacé dans le header -->
+        <!-- Bouton Ajouter des données -->
         <a href="data.html" class="btn btn-header-action">Ajouter des données</a>
     </div>
     
@@ -310,7 +349,6 @@
                     <li class="no-data">Aucune donnée</li>
                 </ul>
             </div>
-            <!-- Le bouton a été retiré d'ici -->
         </aside>
     </main>
 
