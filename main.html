@@ -767,7 +767,62 @@ async function loadLeaderboardData() {
     </script>
 
     <script>
-        const USE_HASHED_USERCODE = false;
+
+
+/ Replace the hardcoded constant with a dynamic variable
+let USE_HASHED_USERCODE = false; // Default value, will be fetched from Google Sheets
+
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5JYFE5JDLycaa4cCCsA57K-2Pka-CoHatWTr1685mQDiJtv_3IcrYDFhS2vkhsOet/exec";
+
+// ADD YOUR SEPARATE CONFIG WEB APP URL HERE
+const CONFIG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwckF9Mih-SKVtz6GWUlxRUcImF-0j1h92a0bg-aDjzPJlVzI5nfzabQht9fVhEsYnH/exec";
+
+// Function to fetch hashing configuration from the separate Google Sheets Web App
+async function fetchHashingConfig() {
+    try {
+        const response = await fetch(CONFIG_SCRIPT_URL);
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error("Config script error:", data.error);
+            // Keep default value (false) if there's an error
+            return;
+        }
+        
+        if (typeof data.USE_HASHED_USERCODE === 'boolean') {
+            USE_HASHED_USERCODE = data.USE_HASHED_USERCODE;
+            console.log("Hashing config loaded from S2:", USE_HASHED_USERCODE);
+        }
+    } catch (error) {
+        console.error("Failed to fetch hashing config:", error);
+        // Keep default value (false) if fetch fails
+    }
+}
+
+// Modified DOMContentLoaded event
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch hashing configuration first from the separate web app
+    await fetchHashingConfig();
+    
+    logUserVisit();
+    checkLogoutTimer();
+    jdlmData = JSON.parse(localStorage.getItem('jdlmData')) || {};
+
+    if (!jdlmData.user_random) {
+        jdlmData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
+        localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
+    }
+
+    if (!jdlmData.nom) {
+        document.getElementById('tab-contents').innerHTML = "<p>Aucune donnée disponible. Veuillez ajouter les données.</p>";
+        return;
+    }
+    localStorage.setItem('jdlmLastActive', Date.now().toString());
+    loadSettings();
+    setupEventListeners();
+    renderAll();
+});
+        
         const gradeMap = { 'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90}, 'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75}, 'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60}, 'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45} };
         const defaultUnits = { sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2, }, sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 } };
         const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière", };
