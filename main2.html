@@ -198,122 +198,17 @@
 
 
 
-   <body>
 
 
-<!-- CSS -->
-<style>
-.legal-text {
-    font-size: 0.75rem;
-    color: #6c757d;
-    margin-top: 15px;
-    line-height: 1.4;
-    text-align: center;
-    padding: 0 10px;
-}
 
-.legal-text a {
-    color: #007bff;
-    text-decoration: none;
-    font-weight: 500;
-}
 
-.legal-text a:hover {
-    text-decoration: underline;
-    color: #0056b3;
-}
 
-.password-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(44, 62, 80, 1);
-    z-index: 10000;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    transition: opacity 1s ease;
-    flex-direction: column;
-}
 
-.password-overlay.show {
-    display: flex;
-}
 
-.overlay-content {
-    background-color: #ffffff;
-    padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-}
 
-.overlay-content h3 {
-    color: #2980b9;
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.5em;
-}
+    
 
-.overlay-content input[type="password"] {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 15px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 1.1em;
-    box-sizing: border-box;
-}
 
-.overlay-content button {
-    width: 100%;
-    padding: 12px;
-    background-color: #2980b9;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1em;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.overlay-content button:hover {
-    background-color: #1e6fa3;
-}
-
-.error-message {
-    color: #e74c3c;
-    margin-top: 15px;
-    font-weight: bold;
-    min-height: 20px;
-}
-
-.hidden {
-    display: none !important;
-}
-</style>
-
-<!-- HTML -->
-<div class="password-overlay" id="password-lock">
-    <div class="overlay-content">
-        <h3>🔒 Accès Restreint</h3>
-        <p>Nous sommes désolés pour le désagrément. L'accès est actuellement restreint pour des raisons de sécurité et de développement. Veuillez contacter un administrateur pour un accès immédiat.</p>
-        <input type="password" id="password-input" placeholder="Mot de passe" required>
-        <button id="password-submit-btn">Déverrouiller</button>
-        <p class="legal-text">
-            La lecture de nos 
-            <a href="confidentialite.html" target="_blank">politiques de confidentialité</a> 
-            ainsi que nos 
-            <a href="conditions.html" target="_blank">Conditions d'utilisations</a> 
-            est obligatoire pour vos fins d'utilisations. En utilisant ce site, vous acceptez ces conditions. Sinon, fermez la page.
-        </p>
-        <div class="error-message" id="password-error"></div>
-    </div>
-</div>
 
 
 <head>
@@ -346,14 +241,13 @@
 <body class="font-sans bg-gray-50 min-h-screen">
 
     <!-- 1. FULL POPUP MODAL (Hidden/Shown based on state) -->
-    <!-- The inset-0 property ensures it covers the entire screen, regardless of other content. -->
-    <div id="forced-popup" class="fixed inset-0 z-50 bg-gray-900/70 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 popup-transition" style="display: none;">
+    <div id="forced-popup" class="fixed inset-0 z-50 bg-gray-900/70 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 popup-transition" style="display: none; opacity: 0; pointer-events: none;">
         
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mt-12 transform scale-100 opacity-100 popup-transition" id="popup-content">
             
             <!-- Header -->
             <div class="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 bg-primary-blue rounded-t-xl">
-                <h2 class="text-xl font-semibold text-white">ANNONCE IMPORTANTE</h2>
+                <h2 class="text-xl font-semibold text-white">IMPORTANT ANNOUNCEMENT</h2>
                 <button id="close-popup-btn" class="text-white hover:text-gray-200 transition" aria-label="Minimize announcement">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -368,7 +262,7 @@
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <p>Chargement du message...</p>
+                    <p>Loading message...</p>
                 </div>
                 
                 <div id="popup-message-container" class="hidden">
@@ -384,11 +278,11 @@
     </div>
 
     <!-- 2. MINIMIZED PANEL (Collapsed state) -->
-    <div id="minimized-panel" class="fixed left-0 top-1/2 -translate-y-1/2 z-50 transform -translate-x-full popup-transition" style="display: none;">
-        <button id="restore-popup-btn" class="flex items-center p-3 bg-primary-blue text-white rounded-r-xl shadow-lg hover:bg-opacity-90 transition transform hover:translate-x-1" aria-label="Restore announcement">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
-            </svg>
+    <!-- MODIFIED: Positioned in the bottom-left corner -->
+    <div id="minimized-panel" class="fixed left-0 bottom-5 z-50 transform -translate-x-full popup-transition" style="display: none;">
+        <!-- MODIFIED: Removed icon, adjusted padding to be longer, and removed hover transform -->
+        <button id="restore-popup-btn" class="flex items-center py-3 pl-3 pr-5 bg-primary-blue text-white rounded-r-xl shadow-lg hover:bg-opacity-90 transition" aria-label="Restore announcement">
+            <!-- Icon removed as requested -->
         </button>
     </div>
 
@@ -406,9 +300,8 @@
         const SESSION_KEY = 'announcementMinimized';
 
         /**
-         * Fetches the announcement message from the Google Sheets web app API.
-         * The Google App Script should return a JSON object with a 'message' field.
-         * * @returns {Promise<string>} The message content.
+         * Fetches the announcement message from a specified API.
+         * @returns {Promise<string>} The message content.
          */
         async function fetchMessage() {
             // ⚠️ IMPORTANT: REPLACE THIS URL with your actual Google Sheets Web App URL.
@@ -416,30 +309,22 @@
             
             try {
                 const response = await fetch(GS_WEB_APP_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
                 const data = await response.json();
-                
-                // Assuming your Google App Script returns a JSON object like:
-                // { status: "success", message: "Your Q8-9 content" }
                 if (data && data.message) {
                     return data.message;
                 } else {
                     throw new Error("API response was valid but lacked a 'message' field.");
                 }
-
             } catch (error) {
                 console.error("Error fetching message from API:", error.message);
-                // Throw the error so the calling function (initPopup) can handle the error state UI
                 throw error; 
             }
         }
 
         /**
-         * Sets the display mode to the minimized panel on the left.
+         * Sets the display mode to the minimized panel.
          */
         function minimizePopup() {
             // Hide full popup
@@ -448,30 +333,28 @@
 
             // Show minimized panel with slide-in transition
             minimizedPanel.style.display = 'block';
-            minimizedPanel.style.transform = 'translateX(0)';
+            // Use a timeout to allow the display property to apply before transitioning
+            setTimeout(() => {
+                minimizedPanel.style.transform = 'translateX(0)';
+            }, 10);
 
-            // Set session flag so it doesn't reappear on refresh
             sessionStorage.setItem(SESSION_KEY, 'true');
         }
         
         /**
-         * Restores the full modal popup.
+         * Restores the full modal popup from the minimized state.
          */
         function restorePopup() {
             // Hide minimized panel with slide-out transition
             minimizedPanel.style.transform = 'translateX(-100%)';
-            setTimeout(() => {
-                minimizedPanel.style.display = 'none';
-            }, 300); // Matches CSS transition duration
-
+            
             // Show full popup
             forcedPopup.style.display = 'flex';
             setTimeout(() => {
                 forcedPopup.style.opacity = '1';
                 forcedPopup.style.pointerEvents = 'auto';
-            }, 10); // Small delay to trigger transition
+            }, 10); 
             
-            // Remove session flag
             sessionStorage.removeItem(SESSION_KEY);
         }
 
@@ -483,22 +366,20 @@
                 // 1. Fetch content
                 const message = await fetchMessage();
                 
-                // Hide loading, show message
                 loadingState.classList.add('hidden');
                 popupMessageElement.textContent = message;
                 messageContainer.classList.remove('hidden');
 
-                // 2. Check session state (force appearance unless minimized)
+                // 2. Check session state
                 const isMinimized = sessionStorage.getItem(SESSION_KEY) === 'true';
 
                 if (isMinimized) {
-                    // Start in minimized state (for current session only)
                     minimizedPanel.style.display = 'block';
-                    minimizedPanel.style.transform = 'translateX(0)';
+                    setTimeout(() => {
+                       minimizedPanel.style.transform = 'translateX(0)';
+                    }, 10);
                 } else {
-                    // Force display of the full modal
                     forcedPopup.style.display = 'flex';
-                    // Apply opacity and pointer-events after display is set for smooth fading
                     setTimeout(() => {
                         forcedPopup.style.opacity = '1';
                         forcedPopup.style.pointerEvents = 'auto';
@@ -506,12 +387,11 @@
                 }
 
             } catch (error) {
-                // This catches the error thrown from fetchMessage (API failed)
                 console.error("Failed to initialize announcement:", error);
                 loadingState.classList.add('hidden');
                 errorState.classList.remove('hidden');
                 
-                // Still force show the popup to display the error to the user
+                // Show the popup to display the error
                 forcedPopup.style.display = 'flex';
                 setTimeout(() => {
                     forcedPopup.style.opacity = '1';
@@ -534,6 +414,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+       
     
     <script>
         const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
