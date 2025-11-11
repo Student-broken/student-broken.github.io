@@ -118,7 +118,10 @@
     </style>
 </head>
 <body>
-<!-- CSS -->
+
+
+
+
 <!-- CSS -->
 <style>
 .legal-text {
@@ -234,7 +237,7 @@
 </div>
 
 <script>
-const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbyCcsnvaCBeCYyCB44m2COAwKJLM_NAQm3ytE-QQ5zigYUeUSx6K7cFur3qT_rNLvZ6rQ/exec";
+const PASSWORD_API_URL = "https://script.google.com/macros/s/AKfycbwFJU9sB3J7sif5XSth2lt0q1ySLb8hpgg3tB1Fx3GNTGWn_DL-K6n0ZU5bhY2ABIZI/exec";
 const UNLOCK_KEY = 'leaderboardUnlocked';
 const LOCK_STATUS_KEY = 'lastLockStatus';
 
@@ -411,7 +414,11 @@ async function loadLeaderboardData() {
 </script>
 
 
-    
+
+
+
+
+
     <div class="site-header-container">
         <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
         <header class="site-header">Outil JDLM*</header>
@@ -530,6 +537,13 @@ async function loadLeaderboardData() {
     </script>
 </head>
 <body class="font-sans bg-gray-50 min-h-screen">
+
+
+
+
+
+
+
 
     <!-- 1. FULL POPUP MODAL (Hidden/Shown based on state) -->
     <div id="forced-popup" class="fixed inset-0 z-50 bg-gray-900/70 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 popup-transition" style="display: none; opacity: 0; pointer-events: none;">
@@ -716,92 +730,41 @@ async function loadLeaderboardData() {
 
        
     
-   <script>
-    // NOTE: L'URL doit pointer vers votre déploiement final (terminé par /exec).
-    const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbwINdZPpR1Ft20UKbAqVt8Y91-AwLjFQ7IdxK4O4dNPw3mIRXCuaIsPVQVysF6YvnjKQw/exec";
-    const HEARTBEAT_INTERVAL_MS = 1 * 60 * 1000; // 1 minute
-    const LOCAL_STORAGE_ID_KEY = 'jdlm_client_id'; // Clé de persistance de l'ID
+    <script>
+        const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec";
 
-    // --- LOGIQUE DE PERSISTENCE DE L'ID CLIENT ---
-    const dataContainer = typeof jdlmData !== 'undefined' ? jdlmData : {};
-    let userRandomCode = dataContainer.user_random || null;
+        async function logUserVisit() {
+            const userRandomCode = (jdlmData && jdlmData.user_random) ? jdlmData.user_random : 'unknown';
+            const logStatus = document.getElementById('log-status');
+            const userDisplay = document.getElementById('current-user-display');
 
-    if (!userRandomCode) {
-        // Tenter de récupérer l'ID persistant
-        userRandomCode = localStorage.getItem(LOCAL_STORAGE_ID_KEY);
-        
-        if (!userRandomCode) {
-            // Créer un nouvel ID unique si aucun n'est trouvé
-            userRandomCode = 'unknown-' + Math.random().toString(36).substring(2, 9);
-            // Stocker le nouvel ID
+            userDisplay.textContent = userRandomCode;
+
+            if (LOGGING_API_URL === "VOTRE_LOGGING_API_URL_ICI" || LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
+                logStatus.textContent = "Erreur: Veuillez définir l'URL de l'API Logging.";
+                return;
+            }
+
             try {
-                localStorage.setItem(LOCAL_STORAGE_ID_KEY, userRandomCode);
-            } catch (e) {
-                // Ignore les erreurs de localStorage en mode privé
-                console.warn("Impossible d'utiliser localStorage, l'ID sera généré à chaque chargement.");
-            }
-        }
-    }
-    // ------------------------------------------
-    
-    /**
-     * Enregistre l'état de l'utilisateur (entrée/sortie) ou sert de "battement de cœur".
-     * @param {string} eventType 'entry' pour l'arrivée ou le heartbeat, 'exit' pour la sortie.
-     */
-    async function logUserActivity(eventType = 'entry') {
-        const logStatus = document.getElementById('log-status');
-        const userDisplay = document.getElementById('current-user-display');
+                const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}`;
+                const response = await fetch(fullUrl, { method: 'GET', mode: 'cors' });
+                if (!response.ok) { throw new Error(`Erreur réseau: Statut ${response.status}`); }
+                const result = await response.json();
 
-        userDisplay.textContent = userRandomCode;
-
-        if (LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
-            logStatus.textContent = "Erreur: Veuillez définir l'URL de l'API Logging.";
-            return;
-        }
-
-        try {
-            // AJOUT de l'horodatage (ts) pour le nettoyage côté serveur
-            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}&event=${eventType}&ts=${new Date().getTime()}`;
-            const response = await fetch(fullUrl, { method: 'GET', mode: 'cors' });
-            
-            if (!response.ok) { throw new Error(`Erreur réseau: Statut ${response.status}`); }
-            const result = await response.json();
-
-            if (result.success) {
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                
-                let statusText = '';
-                if (eventType === 'entry') {
-                    statusText = `✅ Actif enregistré (${timeStr}). **${result.userCount} utilisateurs actifs au total.**`;
-                } else if (eventType === 'exit') {
-                    statusText = `🚪 Déconnexion signalée (${timeStr}).`;
+                if (result.success) {
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>.`;
+                } else {
+                    logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie).";
                 }
-                logStatus.innerHTML = statusText; 
-            } else {
-                logStatus.innerHTML = `❌ Échec de l'enregistrement (${eventType}).`;
+            } catch (error) {
+                console.error("Erreur lors de l'enregistrement de la visite :", error);
+                logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>${error.message}</strong>`;
             }
-        } catch (error) {
-            console.error(`Erreur lors de l'activité (${eventType}) :`, error);
-            logStatus.innerHTML = `⚠️ Erreur lors de la connexion au serveur d'enregistrement. Vérifiez la console (F12).`;
         }
-    }
-    
-    // --- LOGIQUE DE DÉMARRAGE ET DE FIN ---
-
-    logUserActivity('entry'); 
-    
-    const heartbeat = setInterval(() => {
-        logUserActivity('entry');
-    }, HEARTBEAT_INTERVAL_MS);
-    
-    window.addEventListener('beforeunload', () => {
-        // AJOUT de l'horodatage (ts) pour le nettoyage côté serveur
-        const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(userRandomCode)}&event=exit&ts=${new Date().getTime()}`;
-        navigator.sendBeacon(fullUrl);
-        clearInterval(heartbeat);
-    });
-</script>
+    </script>
 
     <script>
         const USE_HASHED_USERCODE = false;
