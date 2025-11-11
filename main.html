@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -118,10 +119,7 @@
     </style>
 </head>
 <body>
-
-
-
-
+<!-- CSS -->
 <!-- CSS -->
 <style>
 .legal-text {
@@ -414,11 +412,7 @@ async function loadLeaderboardData() {
 </script>
 
 
-
-
-
-
-
+    
     <div class="site-header-container">
         <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
         <header class="site-header">Outil JDLM*</header>
@@ -488,7 +482,10 @@ async function loadLeaderboardData() {
             </p>
     </footer>
 
-
+    <div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
+        <p>Utilisateur enregistré : <strong id="current-user-display">x</strong></p>
+        <p id="log-status">Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>Failed to fetch</strong></p>
+    </div>
 
 
 
@@ -534,13 +531,6 @@ async function loadLeaderboardData() {
     </script>
 </head>
 <body class="font-sans bg-gray-50 min-h-screen">
-
-
-
-
-
-
-
 
     <!-- 1. FULL POPUP MODAL (Hidden/Shown based on state) -->
     <div id="forced-popup" class="fixed inset-0 z-50 bg-gray-900/70 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 popup-transition" style="display: none; opacity: 0; pointer-events: none;">
@@ -726,7 +716,9 @@ async function loadLeaderboardData() {
 
 
        
-   <script>
+    
+   
+<script>
     // NOTE: L'URL doit pointer vers votre déploiement final (terminé par /exec).
     const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbwINdZPpR1Ft20UKbAqVt8Y91-AwLjFQ7IdxK4O4dNPw3mIRXCuaIsPVQVysF6YvnjKQw/exec";
     const HEARTBEAT_INTERVAL_MS = 1 * 60 * 1000; // 1 minute
@@ -812,6 +804,9 @@ async function loadLeaderboardData() {
         clearInterval(heartbeat);
     });
 </script>
+
+
+
     <script>
         const USE_HASHED_USERCODE = false;
         const gradeMap = { 'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90}, 'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75}, 'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60}, 'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45} };
