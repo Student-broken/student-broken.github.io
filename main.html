@@ -665,100 +665,102 @@ async function loadLeaderboardData() {
 
 
 
-  <div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
-    <p>Utilisateur enregistré : <strong id="current-user-display">x</strong></p>
+
+<div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
+    <p>Calculating amount of users : <strong id="current-user-display">x</strong></p>
     <p id="log-status">Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>Failed to fetch</strong></p>
 </div>
 
 <script>
     // !! IMPORTANT !! REMPLACEZ CETTE URL PAR VOTRE URL DE DÉPLOIEMENT DE L'APPLICATION WEB LOGGING
-    const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbxMNJ139nMtAxQCakaiNSTBS1DI4gWe3MzjXansflmv7JNNjDXg1xcs4GemNq_eIgPfXA/exec"; 
+    const LOGGING_API_URL = "https://script.google.com/macros/s/AKfycbzdirAh8ZXPgVPqndPTi2ToW8bHOe3fGTq0AwAvlOizh33TYkj4xI_cqFN64zO6uDKOjA/exec"; 
 
-    // Fonction pour récupérer le nom de l'utilisateur (utilisant la variable 'nom')
+    // Fonction pour générer ou récupérer l'ID unique du client
+    function getClientId() {
+        let clientId = localStorage.getItem('client_id');
+        if (!clientId) {
+            clientId = 'user-' + Date.now() + Math.floor(Math.random() * 99999);
+            localStorage.setItem('client_id', clientId);
+        }
+        return clientId;
+    }
+
+    // Utilisé pour l'affichage local du nom seulement
     function getUserName() {
-        // Cette fonction n'est conservée que pour mettre à jour le display local
         try {
             const userData = JSON.parse(localStorage.getItem('jdlmData'));
-            
             if (userData && userData.nom && userData.nom.trim() !== "") {
                 return userData.nom;
             }
-        } catch (e) {
-            // Ignorer l'erreur si localStorage est inaccessible ou corrompu
-        }
-        // Retourne 'Anonyme' si aucune donnée valide n'est trouvée
+        } catch (e) {}
         return 'Anonyme'; 
     }
 
-    // Fonction principale pour enregistrer le ping de performance
+    // ⭐️ Fonction pour signaler le départ (Utilise sendBeacon)
+    function logUserExit() {
+        const clientId = getClientId();
+        // Le paramètre 'event=exit' indique au serveur de décrémenter
+        const exitUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(clientId)}&event=exit`;
+
+        // sendBeacon est non bloquant, idéal pour la fermeture, mais ne garantit pas la livraison
+        navigator.sendBeacon(exitUrl);
+    }
+
+    // ⭐️ Fonction pour signaler l'arrivée (Utilise fetch)
     async function logUserVisit() {
-        const userName = getUserName(); // Utilisé uniquement pour l'affichage local
+        const clientId = getClientId();
         const logStatus = document.getElementById('log-status');
         const userDisplay = document.getElementById('current-user-display');
 
-        // Mise à jour de l'affichage utilisateur (peut être Anonyme)
-        userDisplay.textContent = userName;
+        userDisplay.textContent = getUserName(); // Mise à jour de l'affichage local
 
         if (LOGGING_API_URL === "VOTRE_LOGGING_API_URL_ICI" || LOGGING_API_URL.includes("VOTRE_LOGGING_API_URL_ICI")) {
             logStatus.textContent = "Erreur: Veuillez définir l'URL de l'API Logging.";
             return;
         }
 
-        // ⭐️ Démarrer le chronomètre
-        const startTime = performance.now();
-
         try {
-            // Envoi de la requête
-            // Note: Nous n'envoyons AUCUN paramètre 'name' ici, juste pour le ping initial.
-            // Le calcul du temps sera basé sur la fin de cette requête.
-            const response = await fetch(LOGGING_API_URL, {
+            // Le paramètre 'event=entry' indique au serveur d'incrémenter (ou d'enregistrer la présence)
+            const fullUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(clientId)}&event=entry`;
+
+            const response = await fetch(fullUrl, {
                 method: 'GET',
                 mode: 'cors' 
             });
             
-            // ⭐️ Arrêter le chronomètre après la fin de la requête
-            const endTime = performance.now();
-            const pingTimeMs = (endTime - startTime).toFixed(2); // Temps en millisecondes avec 2 décimales
-
-            // ---------------------------------------------------------------
-            // ⭐️ NOUVELLE REQUÊTE: Envoi du Ping Time à la variable 'name'
-            // Ceci simule le comportement du logger qui enregistre la latence
-            // ---------------------------------------------------------------
-            
-            const pingUrl = `${LOGGING_API_URL}?name=${encodeURIComponent(pingTimeMs)}`;
-
-            const pingResponse = await fetch(pingUrl, {
-                method: 'GET',
-                mode: 'cors' 
-            });
-
-
-            if (!pingResponse.ok) {
-                // S'il y a un problème avec la deuxième requête (ping), nous le traitons
-                throw new Error(`Erreur réseau (Ping Log): Statut ${pingResponse.status}`);
+            if (!response.ok) {
+                throw new Error(`Erreur réseau: Statut ${response.status}`);
             }
 
-            const result = await pingResponse.json();
+            const result = await response.json();
 
-            if (result.success) {
-                // Si l'enregistrement est réussi, affiche l'heure locale du client et le temps de ping
+            if (result.success && result.userCount !== undefined) {
                 const now = new Date();
-                const dateStr = now.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 
-                logStatus.innerHTML = `Visite enregistrée le <strong>${dateStr}</strong> à <strong>${timeStr}</strong>. Ping Loggué : <strong>${pingTimeMs} ms</strong>.`;
+                logStatus.innerHTML = `Visite enregistrée à ${timeStr}. Utilisateurs Actifs (Comptage risqué): <strong>${result.userCount}</strong>.`;
             } else {
-                logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie).";
+                logStatus.textContent = "Échec de l'enregistrement de la visite (Réponse API non réussie ou compte manquant).";
             }
 
         } catch (error) {
             console.error("Erreur lors de l'enregistrement de la visite :", error);
-            logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>${error.message}</strong>`;
+            logStatus.innerHTML = `Erreur de connexion au serveur d'enregistrement : <strong>${error.message}</strong>`;
         }
     }
 
-    // Déclencher la fonction d'enregistrement au chargement complet de la page
+    // ⭐️ Déclenche l'enregistrement à l'arrivée
     document.addEventListener('DOMContentLoaded', logUserVisit);
+
+    // ⭐️ Déclenche l'enregistrement au départ (utilisation de sendBeacon)
+    window.addEventListener('beforeunload', logUserExit);
+    
+    // Fallback pour les changements de visibilité (lorsque l'utilisateur ferme l'onglet)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            logUserExit();
+        }
+    });
 </script>
 
     <script>
