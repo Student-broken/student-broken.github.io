@@ -756,14 +756,61 @@ async function loadLeaderboardData() {
         }
     </script>
 
-    <script>
-        const USE_HASHED_USERCODE = false;
+<script>
+        const CONFIG_API_URL = "https://script.google.com/macros/s/AKfycbzbUCsprgtdAKhn0CRfkwZdAM6qPXF_NGJH7401-xzt2dKY2YHlpmgRxS3dWtphhQmkkA/exec";
+        const CONFIG_CACHE_KEY = 'jdlmConfigCache';
+        let USE_HASHED_USERCODE = false;
+        function loadSecuritySetting() {
+            try {
+                const cachedConfig = localStorage.getItem(CONFIG_CACHE_KEY);
+                if (cachedConfig) {
+                    const config = JSON.parse(cachedConfig);
+                    USE_HASHED_USERCODE = config.useHashing;
+                    console.log(`Security setting loaded from cache: Hashing is ${USE_HASHED_USERCODE ? 'ON' : 'OFF'}.`);
+                } else {
+                    console.log(`No cached security setting found. Defaulting to: Hashing ${USE_HASHED_USERCODE ? 'ON' : 'OFF'}.`);
+                }
+            } catch (error) {
+                console.error("Failed to load security setting from cache.", error);
+                USE_HASHED_USERCODE = true;
+            }
+        }
+
+
+        async function syncSecuritySetting() {
+            try {
+                const response = await fetch(CONFIG_API_URL);
+                if (!response.ok) throw new Error(`Network response was not ok: ${response.status}`);
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const remoteHashingValue = data.useHashing;
+                    if (remoteHashingValue !== USE_HASHED_USERCODE) {
+                        console.log(`Remote security setting changed. Updating to: Hashing ${remoteHashingValue ? 'ON' : 'OFF'}.`);
+                        USE_HASHED_USERCODE = remoteHashingValue;
+                    } else {
+                        console.log("Remote security setting confirmed. No change needed.");
+                    }
+                    localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify({ useHashing: remoteHashingValue }));
+                } else {
+                    console.error("Failed to sync config from sheet:", data.error);
+                }
+            } catch (error) {
+                console.error("Error syncing security setting:", error);
+            }
+        }
+
+
         const gradeMap = { 'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90}, 'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75}, 'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60}, 'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45} };
         const defaultUnits = { sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2, }, sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 } };
         const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière", };
         let jdlmData, activeTab = 'etape1';
 
         document.addEventListener('DOMContentLoaded', () => {
+            loadSecuritySetting();
+            syncSecuritySetting(); 
+
             logUserVisit();
             checkLogoutTimer();
             jdlmData = JSON.parse(localStorage.getItem('jdlmData')) || {};
@@ -785,110 +832,108 @@ async function loadLeaderboardData() {
 
         function checkLogoutTimer() { const lastActiveTime = localStorage.getItem('jdlmLastActive'); const ONE_HOUR = 3600000; if (lastActiveTime && (Date.now() - parseInt(lastActiveTime)) > ONE_HOUR) { window.location.href = 'index.html'; } setInterval(() => { const checkTime = localStorage.getItem('jdlmLastActive'); if (checkTime && (Date.now() - parseInt(checkTime)) > ONE_HOUR) { window.location.href = 'index.html'; } }, 300000); }
 
-function setupEventListeners() {
-    document.querySelectorAll('.tab-btn').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelector('.tab-btn.active').classList.remove('active');
-            tab.classList.add('active');
-            document.querySelector('.tab-content.active').classList.remove('active');
-            activeTab = tab.dataset.tab;
-            document.getElementById(activeTab).classList.add('active');
-            renderSidePanel();
-        });
-    });
+        function setupEventListeners() {
+            document.querySelectorAll('.tab-btn').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelector('.tab-btn.active').classList.remove('active');
+                    tab.classList.add('active');
+                    document.querySelector('.tab-content.active').classList.remove('active');
+                    activeTab = tab.dataset.tab;
+                    document.getElementById(activeTab).classList.add('active');
+                    renderSidePanel();
+                });
+            });
 
-    document.getElementById('niveau-secondaire').addEventListener('change', (e) => {
-        jdlmData.settings = { ...jdlmData.settings, niveau: e.target.value };
-        localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
-        renderAll();
-    });
+            document.getElementById('niveau-secondaire').addEventListener('change', (e) => {
+                jdlmData.settings = { ...jdlmData.settings, niveau: e.target.value };
+                localStorage.setItem('jdlmData', JSON.stringify(jdlmData));
+                renderAll();
+            });
 
-    const classementBtn = document.getElementById('classement-btn');
-    const classementModal = document.getElementById('classement-modal');
-    const termsCheckbox = document.getElementById('terms-checkbox');
-    const classementProceedBtn = document.getElementById('classement-proceed-btn');
-    const classementCancelBtn = document.getElementById('classement-cancel-btn');
+            const classementBtn = document.getElementById('classement-btn');
+            const classementModal = document.getElementById('classement-modal');
+            const termsCheckbox = document.getElementById('terms-checkbox');
+            const classementProceedBtn = document.getElementById('classement-proceed-btn');
+            const classementCancelBtn = document.getElementById('classement-cancel-btn');
 
-    classementBtn.addEventListener('click', async () => {
-        if (localStorage.getItem('hasAgreedToRanking') !== 'true') {
-            classementModal.classList.add('active');
-            return;
+            classementBtn.addEventListener('click', () => {
+                if (localStorage.getItem('hasAgreedToRanking') !== 'true') {
+                    classementModal.classList.add('active');
+                    return;
+                }
+                sendRankingData(true);
+                window.location.href = 'classement.html';
+            });
+
+            termsCheckbox.addEventListener('change', () => { classementProceedBtn.disabled = !termsCheckbox.checked; });
+            classementCancelBtn.addEventListener('click', () => { classementModal.classList.remove('active'); });
+            classementProceedBtn.addEventListener('click', () => {
+                if (termsCheckbox.checked) {
+                    localStorage.setItem('hasAgreedToRanking', 'true');
+                    classementModal.classList.remove('active');
+                    classementBtn.click();
+                }
+            });
+            classementModal.addEventListener('click', (e) => { if (e.target === classementModal) { classementModal.classList.remove('active'); }});
+
+            const unitesModal = document.getElementById('unites-modal');
+            document.getElementById('unites-btn').addEventListener('click', () => { populateUnitesModal(); unitesModal.classList.add('active'); });
+            document.getElementById('close-unites-modal').addEventListener('click', () => { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); });
+            unitesModal.addEventListener('click', (e) => { if (e.target === unitesModal) { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); } });
+            document.getElementById('unites-mode').addEventListener('change', (e) => { jdlmData.settings = { ...jdlmData.settings, unitesMode: e.target.value }; localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); populateUnitesModal(); });
+            
+            const tabContents = document.getElementById('tab-contents');
+            tabContents.addEventListener('input', (e) => { const target = e.target; if (target.classList.contains('pond-input-field')) { target.classList.toggle('modified-input', target.value !== target.defaultValue); renderSidePanel(); } if (target.classList.contains('grade-input-field')) { target.classList.add('modified-input'); renderSidePanel(); } });
+            tabContents.addEventListener('click', (e) => { const gradeDisplay = e.target.closest('.grade-display'); if (gradeDisplay) { const container = gradeDisplay.closest('.grade-container'); const inputField = container.querySelector('.grade-input-field'); const originalResult = container.dataset.originalResult; const numericGrade = getNumericGrade(originalResult); gradeDisplay.classList.add('hidden'); inputField.classList.remove('hidden'); inputField.value = numericGrade !== null ? numericGrade.toFixed(2) : ''; inputField.focus(); inputField.select(); } });
+            tabContents.addEventListener('focusout', (e) => { const inputField = e.target; if (inputField.classList.contains('grade-input-field')) { if (inputField.value.trim() === '') { const container = inputField.closest('.grade-container'); const displaySpan = container.querySelector('.grade-display'); inputField.classList.add('hidden'); displaySpan.classList.remove('hidden'); inputField.classList.remove('modified-input'); renderSidePanel(); } } });
+            tabContents.addEventListener('keydown', (e) => { if (e.target.classList.contains('grade-input-field')) { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); if (e.key === 'Escape') { e.target.value = ''; } e.target.blur(); } } });
         }
-
-        sendRankingData(true);
-
-        window.location.href = 'classement.html';
-    });
-
-    termsCheckbox.addEventListener('change', () => { classementProceedBtn.disabled = !termsCheckbox.checked; });
-    classementCancelBtn.addEventListener('click', () => { classementModal.classList.remove('active'); });
-    classementProceedBtn.addEventListener('click', async () => {
-        if (termsCheckbox.checked) {
-            localStorage.setItem('hasAgreedToRanking', 'true');
-            classementModal.classList.remove('active');
-            classementBtn.click();
-        }
-    });
-    classementModal.addEventListener('click', (e) => { if (e.target === classementModal) { classementModal.classList.remove('active'); }});
-
-    const unitesModal = document.getElementById('unites-modal');
-    document.getElementById('unites-btn').addEventListener('click', () => { populateUnitesModal(); unitesModal.classList.add('active'); });
-    document.getElementById('close-unites-modal').addEventListener('click', () => { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); });
-    unitesModal.addEventListener('click', (e) => { if (e.target === unitesModal) { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); } });
-    document.getElementById('unites-mode').addEventListener('change', (e) => { jdlmData.settings = { ...jdlmData.settings, unitesMode: e.target.value }; localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); populateUnitesModal(); });
-    
-    const tabContents = document.getElementById('tab-contents');
-    tabContents.addEventListener('input', (e) => { const target = e.target; if (target.classList.contains('pond-input-field')) { target.classList.toggle('modified-input', target.value !== target.defaultValue); renderSidePanel(); } if (target.classList.contains('grade-input-field')) { target.classList.add('modified-input'); renderSidePanel(); } });
-    tabContents.addEventListener('click', (e) => { const gradeDisplay = e.target.closest('.grade-display'); if (gradeDisplay) { const container = gradeDisplay.closest('.grade-container'); const inputField = container.querySelector('.grade-input-field'); const originalResult = container.dataset.originalResult; const numericGrade = getNumericGrade(originalResult); gradeDisplay.classList.add('hidden'); inputField.classList.remove('hidden'); inputField.value = numericGrade !== null ? numericGrade.toFixed(2) : ''; inputField.focus(); inputField.select(); } });
-    tabContents.addEventListener('focusout', (e) => { const inputField = e.target; if (inputField.classList.contains('grade-input-field')) { if (inputField.value.trim() === '') { const container = inputField.closest('.grade-container'); const displaySpan = container.querySelector('.grade-display'); inputField.classList.add('hidden'); displaySpan.classList.remove('hidden'); inputField.classList.remove('modified-input'); renderSidePanel(); } } });
-    tabContents.addEventListener('keydown', (e) => { if (e.target.classList.contains('grade-input-field')) { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); if (e.key === 'Escape') { e.target.value = ''; } e.target.blur(); } } });
-}
 
         function loadSettings() { const settings = jdlmData.settings || {}; document.getElementById('niveau-secondaire').value = settings.niveau || ''; document.getElementById('unites-mode').value = settings.unitesMode || 'defaut'; }
         function saveCustomUnits() { if (document.getElementById('unites-mode').value !== 'perso') return; let customUnites = {}; document.querySelectorAll('.unite-item input').forEach(input => { customUnites[input.dataset.code] = parseFloat(input.value) || 1; }); jdlmData.settings.customUnites = customUnites; localStorage.setItem('jdlmData', JSON.stringify(jdlmData)); }
         function getNumericGrade(result) { if (!result) return null; const trimmedResult = result.trim(); if (gradeMap[trimmedResult]) { const { min, max } = gradeMap[trimmedResult]; return (min + max) / 2; } const percentageMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*%/); if (percentageMatch) { return parseFloat(percentageMatch[1].replace(',', '.')); } const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/); if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const maxScore = parseFloat(scoreMatch[2].replace(',', '.')); if (!isNaN(score) && !isNaN(maxScore) && maxScore > 0) { return (score / maxScore) * 100; } } return null; }
         
-function calculateSubjectAverage(subject) {
-    let totalWeightedGrade = 0;
-    let totalCompetencyWeight = 0;
-    subject.competencies.forEach((comp, compIndex) => {
-        const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-        if (!compWeightMatch) return;
-        const compWeight = parseFloat(compWeightMatch[1]);
-        let totalAssignmentGrade = 0;
-        let totalAssignmentWeight = 0;
-        comp.assignments.forEach((assign, assignIndex) => {
-            const uniqueId = `${subject.code}-${compIndex}-${assignIndex}`;
-            const pondInput = document.querySelector(`.pond-input-field[data-row-id="${uniqueId}"]`);
-            const gradeInput = document.querySelector(`.grade-input-field[data-row-id="${uniqueId}"]`);
-            let grade = null;
-            let weight = NaN;
+        function calculateSubjectAverage(subject) {
+            let totalWeightedGrade = 0;
+            let totalCompetencyWeight = 0;
+            subject.competencies.forEach((comp, compIndex) => {
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                if (!compWeightMatch) return;
+                const compWeight = parseFloat(compWeightMatch[1]);
+                let totalAssignmentGrade = 0;
+                let totalAssignmentWeight = 0;
+                comp.assignments.forEach((assign, assignIndex) => {
+                    const uniqueId = `${subject.code}-${compIndex}-${assignIndex}`;
+                    const pondInput = document.querySelector(`.pond-input-field[data-row-id="${uniqueId}"]`);
+                    const gradeInput = document.querySelector(`.grade-input-field[data-row-id="${uniqueId}"]`);
+                    let grade = null;
+                    let weight = NaN;
 
-            if (gradeInput && !gradeInput.classList.contains('hidden') && gradeInput.value.trim() !== '') {
-                grade = parseFloat(gradeInput.value);
-            } else {
-                grade = getNumericGrade(assign.result);
-            }
+                    if (gradeInput && !gradeInput.classList.contains('hidden') && gradeInput.value.trim() !== '') {
+                        grade = parseFloat(gradeInput.value);
+                    } else {
+                        grade = getNumericGrade(assign.result);
+                    }
 
-            if (pondInput && pondInput.value.trim() !== '') {
-                weight = parseFloat(pondInput.value);
-            } else {
-                weight = parseFloat(assign.pond);
-            }
+                    if (pondInput && pondInput.value.trim() !== '') {
+                        weight = parseFloat(pondInput.value);
+                    } else {
+                        weight = parseFloat(assign.pond);
+                    }
 
-            if (grade !== null && !isNaN(grade) && !isNaN(weight) && weight > 0) {
-                totalAssignmentGrade += grade * weight;
-                totalAssignmentWeight += weight;
-            }
-        });
-        if (totalAssignmentWeight > 0) {
-            const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
-            totalWeightedGrade += competencyAverage * compWeight;
-            totalCompetencyWeight += compWeight;
+                    if (grade !== null && !isNaN(grade) && !isNaN(weight) && weight > 0) {
+                        totalAssignmentGrade += grade * weight;
+                        totalAssignmentWeight += weight;
+                    }
+                });
+                if (totalAssignmentWeight > 0) {
+                    const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
+                    totalWeightedGrade += competencyAverage * compWeight;
+                    totalCompetencyWeight += compWeight;
+                }
+            });
+            return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
         }
-    });
-    return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
-}
         
         function getUnits(overrideMode = null) { const settings = jdlmData.settings || {}; const niveau = settings.niveau; const mode = overrideMode || settings.unitesMode || 'defaut'; if (mode === 'sans') return new Proxy({}, { get: () => 1 }); if (mode === 'perso') return settings.customUnites || {}; if (mode === 'defaut' && niveau && defaultUnits[niveau]) { return defaultUnits[niveau]; } return {}; }
         function calculateAverages(overrideMode = null) { const units = getUnits(overrideMode); const settings = jdlmData.settings || {}; const niveau = settings.niveau; const mode = overrideMode || settings.unitesMode || 'defaut'; let allTermAverages = {}; let allSubjectAverages = {}; const defaultSubjectUnit = 2; ['etape1', 'etape2', 'etape3'].forEach(etape => { if (!jdlmData[etape]) return; let termWeightedSum = 0; let termUnitSum = 0; allSubjectAverages[etape] = {}; jdlmData[etape].forEach(subject => { const average = calculateSubjectAverage(subject); const codePrefix = subject.code.substring(0,3); allSubjectAverages[etape][codePrefix] = { name: subjectList[codePrefix] || subject.name, average: average }; let unit; if (mode === 'defaut' && !niveau) { unit = null; } else if (mode === 'sans' || mode === 'perso') { unit = units[codePrefix] ?? 1; } else if (mode === 'defaut') { unit = units[codePrefix] ?? defaultSubjectUnit; } if (average !== null && unit !== null && niveau) { termWeightedSum += average * unit; termUnitSum += unit; } }); allTermAverages[etape] = termUnitSum > 0 ? termWeightedSum / termUnitSum : null; }); let globalWeightedSum = 0; let globalTermCount = 0; Object.values(allTermAverages).forEach(avg => { if (avg !== null) { globalWeightedSum += avg; globalTermCount++; } }); return { subjectAverages: allSubjectAverages, termAverages: allTermAverages, globalAverage: globalTermCount > 0 ? globalWeightedSum / globalTermCount : null }; }
@@ -903,42 +948,43 @@ function calculateSubjectAverage(subject) {
         function renderSidePanel() { const averages = calculateAverages(); const niveau = (jdlmData.settings || {}).niveau; const globalAvgEl = document.getElementById('moyenne-generale'); const termAvgEl = document.getElementById('moyenne-etape'); globalAvgEl.classList.toggle('invalid', !niveau); termAvgEl.classList.toggle('invalid', !niveau); const formatAvg = (avg) => avg !== null ? `<span class="grade-percentage">${avg.toFixed(2)}%</span>` : '--'; globalAvgEl.innerHTML = !niveau ? 'N/A' : formatAvg(averages.globalAverage); termAvgEl.innerHTML = !niveau ? 'N/A' : formatAvg(averages.termAverages[activeTab]); const subjectListEl = document.getElementById('subject-averages-list'); subjectListEl.innerHTML = ''; const activeTermSubjects = averages.subjectAverages[activeTab]; if (activeTermSubjects && Object.keys(activeTermSubjects).length > 0) { Object.entries(activeTermSubjects).forEach(([code, subj]) => { const li = document.createElement('li'); li.innerHTML = `<span>${subj.name}</span><strong>${formatAvg(subj.average)}</strong>`; subjectListEl.appendChild(li); }); } else { subjectListEl.innerHTML = '<li class="no-data">Aucune matière pour cette étape</li>'; } }
         function populateUnitesModal() { const listContainer = document.getElementById('unites-list'); const mode = document.getElementById('unites-mode').value; const settings = jdlmData.settings || {}; listContainer.innerHTML = ''; const allSubjects = new Map(); ['etape1', 'etape2', 'etape3'].forEach(etape => { if (jdlmData[etape]) { jdlmData[etape].forEach(subject => { const codePrefix = subject.code.substring(0,3); if (!allSubjects.has(codePrefix)) { allSubjects.set(codePrefix, subjectList[codePrefix] || subject.name); } }); } }); if (allSubjects.size === 0) { listContainer.innerHTML = '<div class="no-data">Aucune matière trouvée.</div>'; return; } const units = getUnits(); const defaultSubjectUnit = 2; allSubjects.forEach((name, code) => { const item = document.createElement('div'); item.className = 'unite-item'; let valueDisplay = ''; if (mode === 'perso') { const currentValue = (settings.customUnites || {})[code] || 1; valueDisplay = `<input type="number" data-code="${code}" value="${currentValue}" min="0" step="1">`; } else { let unitValue; if (mode === 'sans') { unitValue = 1; } else if (mode === 'defaut') { unitValue = units[code] ?? defaultSubjectUnit; } valueDisplay = `<span>${unitValue}</span>`; } item.innerHTML = `<label>${name} (${code})</label>${valueDisplay}`; listContainer.appendChild(item); }); }
         function renderTermData(termData, container) { container.innerHTML = ''; if (!termData || termData.length === 0) { container.innerHTML = '<p class="no-data">Aucune donnée pour cette étape.</p>'; return; } termData.forEach(subject => container.appendChild(renderSubjectTable(subject))); }
-function renderSubjectTable(subject) {
-    const table = document.createElement('table');
-    table.className = 'subject-table';
-    table.innerHTML = `<thead><tr><th colspan="7">${subject.code} - ${subject.name}</th></tr><tr><th>Catégorie</th><th>Travail</th><th>Pond.</th><th>Date assignée</th><th>Date due</th><th>Date complétée</th><th>Résultat</th></tr></thead><tbody></tbody>`;
-    const tbody = table.querySelector('tbody');
-    subject.competencies.forEach((comp, compIndex) => {
-        const compRow = document.createElement('tr');
-        compRow.className = 'competency-row';
-        compRow.innerHTML = `<td colspan="7">${comp.name}</td>`;
-        tbody.appendChild(compRow);
-        comp.assignments.forEach((assign, assignIndex) => {
-            const assignRow = document.createElement('tr');
-            const uniqueId = `${subject.code}-${compIndex}-${assignIndex}`;
-            const numGrade = getNumericGrade(assign.result);
-            let formattedResult = '<span class="no-data">-</span>';
-            if (assign.result) {
-                const trimmedResult = assign.result.trim();
-                const isLetterGrade = !!gradeMap[trimmedResult];
-                const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
-                if (isLetterGrade && numGrade !== null) {
-                    formattedResult = `${trimmedResult} <i>(~<span class="grade-percentage">${numGrade.toFixed(1)}%</span>)</i>`;
-                } else if (scoreMatch && numGrade !== null) {
-                    formattedResult = `<span style="color: grey; font-size: 0.9em;">(${scoreMatch[0]})</span> <span class="grade-percentage">${numGrade.toFixed(1)}%</span>`;
-                } else if (trimmedResult.includes('%')) {
-                    formattedResult = `<span class="grade-percentage">${trimmedResult}</span>`;
-                } else {
-                    formattedResult = trimmedResult;
-                }
-            }
-            const pondValue = assign.pond ? `value="${assign.pond}"` : '';
-            assignRow.innerHTML = `<td>${assign.category || '<span class="no-data">-</span>'}</td><td>${assign.work || '<span class="no-data">-</span>'}</td><td><input type="number" class="pond-input-field" ${pondValue} data-row-id="${uniqueId}" min="0" max="100" placeholder="--"></td><td>${assign.assignedDate || '<span class="no-data">-</span>'}</td><td>${assign.dueDate.replace('à','') || '<span class="no-data">-</span>'}</td><td>${assign.completedDate || '<span class="no-data">-</span>'}</td><td><div class="grade-container" data-row-id="${uniqueId}" data-original-result="${assign.result || ''}"><span class="grade-display">${formattedResult}</span><input type="number" class="grade-input-field hidden" data-row-id="${uniqueId}" min="0" max="100"></div></td>`;
-            tbody.appendChild(assignRow);
-        });
-    });
-    return table;
-}
+        function renderSubjectTable(subject) {
+            const table = document.createElement('table');
+            table.className = 'subject-table';
+            table.innerHTML = `<thead><tr><th colspan="7">${subject.code} - ${subject.name}</th></tr><tr><th>Catégorie</th><th>Travail</th><th>Pond.</th><th>Date assignée</th><th>Date due</th><th>Date complétée</th><th>Résultat</th></tr></thead><tbody></tbody>`;
+            const tbody = table.querySelector('tbody');
+            subject.competencies.forEach((comp, compIndex) => {
+                const compRow = document.createElement('tr');
+                compRow.className = 'competency-row';
+                compRow.innerHTML = `<td colspan="7">${comp.name}</td>`;
+                tbody.appendChild(compRow);
+                comp.assignments.forEach((assign, assignIndex) => {
+                    const assignRow = document.createElement('tr');
+                    const uniqueId = `${subject.code}-${compIndex}-${assignIndex}`;
+                    const numGrade = getNumericGrade(assign.result);
+                    let formattedResult = '<span class="no-data">-</span>';
+                    if (assign.result) {
+                        const trimmedResult = assign.result.trim();
+                        const isLetterGrade = !!gradeMap[trimmedResult];
+                        const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+                        if (isLetterGrade && numGrade !== null) {
+                            formattedResult = `${trimmedResult} <i>(~<span class="grade-percentage">${numGrade.toFixed(1)}%</span>)</i>`;
+                        } else if (scoreMatch && numGrade !== null) {
+                            formattedResult = `<span style="color: grey; font-size: 0.9em;">(${scoreMatch[0]})</span> <span class="grade-percentage">${numGrade.toFixed(1)}%</span>`;
+                        } else if (trimmedResult.includes('%')) {
+                            formattedResult = `<span class="grade-percentage">${trimmedResult}</span>`;
+                        } else {
+                            formattedResult = trimmedResult;
+                        }
+                    }
+                    const pondValue = assign.pond ? `value="${assign.pond}"` : '';
+                    assignRow.innerHTML = `<td>${assign.category || '<span class="no-data">-</span>'}</td><td>${assign.work || '<span class="no-data">-</span>'}</td><td><input type="number" class="pond-input-field" ${pondValue} data-row-id="${uniqueId}" min="0" max="100" placeholder="--"></td><td>${assign.assignedDate || '<span class="no-data">-</span>'}</td><td>${assign.dueDate.replace('à','') || '<span class="no-data">-</span>'}</td><td>${assign.completedDate || '<span class="no-data">-</span>'}</td><td><div class="grade-container" data-row-id="${uniqueId}" data-original-result="${assign.result || ''}"><span class="grade-display">${formattedResult}</span><input type="number" class="grade-input-field hidden" data-row-id="${uniqueId}" min="0" max="100"></div></td>`;
+                    tbody.appendChild(assignRow);
+                });
+            });
+            return table;
+        }
+        
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5JYFE5JDLycaa4cCCsA57K-2Pka-CoHatWTr1685mQDiJtv_3IcrYDFhS2vkhsOet/exec";
         function getUserCode() { const nom = (jdlmData || {}).nom; if (!nom) return null; return nom.replace(/\s+/g, '').toLowerCase(); }
         
