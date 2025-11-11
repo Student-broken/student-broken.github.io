@@ -116,6 +116,100 @@
             min-height: 30px;
         }
     </style>
+    <style>
+.legal-text {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 15px;
+    line-height: 1.4;
+    text-align: center;
+    padding: 0 10px;
+}
+
+.legal-text a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.legal-text a:hover {
+    text-decoration: underline;
+    color: #0056b3;
+}
+
+.password-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(44, 62, 80, 1);
+    z-index: 10000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 1s ease;
+    flex-direction: column;
+}
+
+.password-overlay.show {
+    display: flex;
+}
+
+.overlay-content {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+.overlay-content h3 {
+    color: #2980b9;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+}
+
+.overlay-content input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1.1em;
+    box-sizing: border-box;
+}
+
+.overlay-content button {
+    width: 100%;
+    padding: 12px;
+    background-color: #2980b9;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.overlay-content button:hover {
+    background-color: #1e6fa3;
+}
+
+.error-message {
+    color: #e74c3c;
+    margin-top: 15px;
+    font-weight: bold;
+    min-height: 20px;
+}
+
+.hidden {
+    display: none !important;
+}
+</style>
 </head>
 <body>
     <div class="site-header-container">
