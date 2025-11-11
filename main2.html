@@ -116,7 +116,94 @@
             min-height: 30px;
         }
     </style>
-    <style>
+</head>
+<body>
+    <div class="site-header-container">
+        <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
+        <header class="site-header">Outil JDLM*</header>
+        <a href="data.html" class="btn btn-header-action">Ajouter des données</a>
+        <a href="ticket.html" class="btn btn-header-action" style="right: 290px;">Signaler un Problème</a>
+    </div>
+    <main class="main-container">
+        <section class="data-section">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="etape1">Étape 1</button>
+                <button class="tab-btn" data-tab="etape2">Étape 2</button>
+                <button class="tab-btn" data-tab="etape3">Étape 3</button>
+            </div>
+            <div id="tab-contents">
+                <div id="etape1" class="tab-content active"></div>
+                <div id="etape2" class="tab-content"></div>
+                <div id="etape3" class="tab-content"></div>
+            </div>
+        </section>
+        <aside class="side-panel">
+            <div class="moyenne-widgets">
+                <div class="moyenne-widget"><h4>Moyenne générale</h4><div id="moyenne-generale" class="moyenne-value">--</div></div>
+                <div class="moyenne-widget"><h4>Moyenne de l'étape</h4><div id="moyenne-etape" class="moyenne-value">--</div></div>
+            </div>
+            <div class="control-group">
+                <select id="niveau-secondaire"><option value="">-- Niveau --</option><option value="sec4">Secondaire 4</option><option value="sec5">Secondaire 5</option></select>
+            </div>
+            <div class="control-group"><button id="unites-btn" class="btn btn-control">Unités</button></div>
+            <div class="control-group"><button id="classement-btn" class="btn btn-control">Classement</button></div>
+            <p style="text-align: center; margin-top: -10px; margin-bottom: 20px;"><a href="faq.html" title="Foire Aux Questions - Sécurité" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">FAQ</a></p>
+            <div class="subject-averages">
+                <h4>Moyennes par matière</h4>
+                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
+            </div>
+        </aside>
+    </main>
+    <div class="modal-overlay" id="unites-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="close-unites-modal">&times;</span><h3>Unités</h3>
+            <div class="control-group"><select id="unites-mode"><option value="defaut">Unités défaut</option><option value="sans">Sans unités</option><option value="perso">Personnalisée</option></select></div>
+            <div id="unites-list"></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="classement-modal">
+        <div class="modal-content" style="width: 500px;">
+            <h3 style="text-align: center;">Consentement au Classement</h3>
+            <p style="font-size: 0.9em; text-align: center; line-height: 1.5; color: #555;">Pour participer au classement, nous devons collecter et stocker de manière anonyme vos moyennes. Votre nom d'utilisateur est transformé en un identifiant unique et non réversible pour protéger votre identité.</p>
+            <div style="display: flex; align-items: flex-start; margin-top: 20px; margin-bottom: 20px; padding: 10px; background-color: #f7f9fb; border-radius: 8px;">
+                <input type="checkbox" id="terms-checkbox" style="width: auto; margin-right: 12px; margin-top: 4px; transform: scale(1.2);">
+                <label for="terms-checkbox" class="legal-text" style="text-align: left; margin-top: 0; font-size: 0.85em; color: var(--text-color);">
+                    En cochant, vous acceptez les <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
+                </label>
+            </div>
+            <p style="text-align: center; margin-top: -10px; margin-bottom: 20px;"><a href="faq.html" target="_blank" title="Foire Aux Questions - Sécurité" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">Consulter la FAQ pour en savoir plus</a></p>
+            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <button id="classement-cancel-btn" class="btn" style="background-color: var(--light-grey); flex: 1;">Annuler</button>
+                <button id="classement-proceed-btn" class="btn btn-control" style="flex: 1;" disabled>Procéder</button>
+            </div>
+        </div>
+    </div>
+    <footer>*jauge de la moyenne
+        <br>
+        <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>
+        <p style="font-style: normal; margin-top: 8px;">
+                Pour toute question, préoccupation ou pour signaler un bogue, veuillez contacter :
+                <a href="mailto:notabot.chat@gmail.com" style="font-style: normal;">notabot.chat@gmail.com</a>
+            </p>
+    </footer>
+
+    <div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
+        <p>Utilisateur enregistré : <strong id="current-user-display">x</strong></p>
+        <p id="log-status">Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>Failed to fetch</strong></p>
+    </div>
+
+
+
+
+
+
+
+   <body>
+
+
+<!-- CSS -->
+<!-- CSS -->
+<style>
 .legal-text {
     font-size: 0.75rem;
     color: #6c757d;
@@ -210,94 +297,62 @@
     display: none !important;
 }
 </style>
+
+<!-- HTML -->
+<div class="password-overlay" id="password-lock">
+    <div class="overlay-content">
+        <h3>🔒 Accès Restreint</h3>
+        <p>Nous sommes désolés pour le désagrément. L'accès est actuellement restreint pour des raisons de sécurité et de développement. Veuillez contacter un administrateur pour un accès immédiat.</p>
+        <input type="password" id="password-input" placeholder="Mot de passe" required>
+        <button id="password-submit-btn">Déverrouiller</button>
+        <p class="legal-text">
+            La lecture de nos 
+            <a href="confidentialite.html" target="_blank">politiques de confidentialité</a> 
+            ainsi que nos 
+            <a href="conditions.html" target="_blank">Conditions d'utilisations</a> 
+            est obligatoire pour vos fins d'utilisations. En utilisant ce site, vous acceptez ces conditions. Sinon, fermez la page.
+        </p>
+        <div class="error-message" id="password-error"></div>
+    </div>
+</div>
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forced Announcement Popup</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for smooth transitions */
+        .popup-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-blue': '#107c92',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-    <div class="site-header-container">
-        <a href="index.html" class="logout-arrow" title="Déconnexion">←</a>
-        <header class="site-header">Outil JDLM*</header>
-        <a href="data.html" class="btn btn-header-action">Ajouter des données</a>
-        <a href="ticket.html" class="btn btn-header-action" style="right: 290px;">Signaler un Problème</a>
-    </div>
-    <main class="main-container">
-        <section class="data-section">
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="etape1">Étape 1</button>
-                <button class="tab-btn" data-tab="etape2">Étape 2</button>
-                <button class="tab-btn" data-tab="etape3">Étape 3</button>
-            </div>
-            <div id="tab-contents">
-                <div id="etape1" class="tab-content active"></div>
-                <div id="etape2" class="tab-content"></div>
-                <div id="etape3" class="tab-content"></div>
-            </div>
-        </section>
-        <aside class="side-panel">
-            <div class="moyenne-widgets">
-                <div class="moyenne-widget"><h4>Moyenne générale</h4><div id="moyenne-generale" class="moyenne-value">--</div></div>
-                <div class="moyenne-widget"><h4>Moyenne de l'étape</h4><div id="moyenne-etape" class="moyenne-value">--</div></div>
-            </div>
-            <div class="control-group">
-                <select id="niveau-secondaire"><option value="">-- Niveau --</option><option value="sec4">Secondaire 4</option><option value="sec5">Secondaire 5</option></select>
-            </div>
-            <div class="control-group"><button id="unites-btn" class="btn btn-control">Unités</button></div>
-            <div class="control-group"><button id="classement-btn" class="btn btn-control">Classement</button></div>
-            <p style="text-align: center; margin-top: -10px; margin-bottom: 20px;"><a href="faq.html" title="Foire Aux Questions - Sécurité" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">FAQ</a></p>
-            <div class="subject-averages">
-                <h4>Moyennes par matière</h4>
-                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
-            </div>
-        </aside>
-    </main>
-    <div class="modal-overlay" id="unites-modal">
-        <div class="modal-content">
-            <span class="modal-close" id="close-unites-modal">&times;</span><h3>Unités</h3>
-            <div class="control-group"><select id="unites-mode"><option value="defaut">Unités défaut</option><option value="sans">Sans unités</option><option value="perso">Personnalisée</option></select></div>
-            <div id="unites-list"></div>
-        </div>
-    </div>
-    <div class="modal-overlay" id="classement-modal">
-        <div class="modal-content" style="width: 500px;">
-            <h3 style="text-align: center;">Consentement au Classement</h3>
-            <p style="font-size: 0.9em; text-align: center; line-height: 1.5; color: #555;">Pour participer au classement, nous devons collecter et stocker de manière anonyme vos moyennes. Votre nom d'utilisateur est transformé en un identifiant unique et non réversible pour protéger votre identité.</p>
-            <div style="display: flex; align-items: flex-start; margin-top: 20px; margin-bottom: 20px; padding: 10px; background-color: #f7f9fb; border-radius: 8px;">
-                <input type="checkbox" id="terms-checkbox" style="width: auto; margin-right: 12px; margin-top: 4px; transform: scale(1.2);">
-                <label for="terms-checkbox" class="legal-text" style="text-align: left; margin-top: 0; font-size: 0.85em; color: var(--text-color);">
-                    En cochant, vous acceptez les <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
-                </label>
-            </div>
-            <p style="text-align: center; margin-top: -10px; margin-bottom: 20px;"><a href="faq.html" target="_blank" title="Foire Aux Questions - Sécurité" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">Consulter la FAQ pour en savoir plus</a></p>
-            <div style="display: flex; gap: 10px; margin-top: 25px;">
-                <button id="classement-cancel-btn" class="btn" style="background-color: var(--light-grey); flex: 1;">Annuler</button>
-                <button id="classement-proceed-btn" class="btn btn-control" style="flex: 1;" disabled>Procéder</button>
-            </div>
-        </div>
-    </div>
-    <footer>*jauge de la moyenne
-        <br>
-        <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>
-        <p style="font-style: normal; margin-top: 8px;">
-                Pour toute question, préoccupation ou pour signaler un bogue, veuillez contacter :
-                <a href="mailto:notabot.chat@gmail.com" style="font-style: normal;">notabot.chat@gmail.com</a>
-            </p>
-    </footer>
+<body class="font-sans bg-gray-50 min-h-screen">
 
-    <div class="log-display" style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; display: none;">
-        <p>Utilisateur enregistré : <strong id="current-user-display">x</strong></p>
-        <p id="log-status">Erreur de connexion au serveur d'enregistrement. Vérifiez la console pour les erreurs CORS ou réseau : <strong>Failed to fetch</strong></p>
-    </div>
-
-
-
-
-
-
-
-    <body class="font-sans bg-gray-50 min-h-screen">
-
+    <!-- 1. FULL POPUP MODAL (Hidden/Shown based on state) -->
+    <!-- The inset-0 property ensures it covers the entire screen, regardless of other content. -->
     <div id="forced-popup" class="fixed inset-0 z-50 bg-gray-900/70 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 popup-transition" style="display: none;">
         
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mt-12 transform scale-100 opacity-100 popup-transition" id="popup-content">
             
+            <!-- Header -->
             <div class="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 bg-primary-blue rounded-t-xl">
                 <h2 class="text-xl font-semibold text-white">ANNONCE IMPORTANTE</h2>
                 <button id="close-popup-btn" class="text-white hover:text-gray-200 transition" aria-label="Minimize announcement">
@@ -307,6 +362,7 @@
                 </button>
             </div>
             
+            <!-- Content & Loading State -->
             <div class="p-4 sm:p-6">
                 <div id="loading-state" class="flex items-center space-x-2 text-primary-blue">
                     <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -328,11 +384,13 @@
         </div>
     </div>
 
+    <!-- 2. MINIMIZED PANEL (Collapsed state) -->
     <div id="minimized-panel" class="fixed left-0 top-1/2 -translate-y-1/2 z-50 transform -translate-x-full popup-transition" style="display: none;">
         <button id="restore-popup-btn" class="flex items-center p-3 bg-primary-blue text-white rounded-r-xl shadow-lg hover:bg-opacity-90 transition transform hover:translate-x-1" aria-label="Restore announcement">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
             </svg>
+            <span class="text-sm font-medium whitespace-nowrap">Mise à Jour</span>
         </button>
     </div>
 
@@ -349,8 +407,13 @@
 
         const SESSION_KEY = 'announcementMinimized';
 
-      
+        /**
+         * Fetches the announcement message from the Google Sheets web app API.
+         * The Google App Script should return a JSON object with a 'message' field.
+         * * @returns {Promise<string>} The message content.
+         */
         async function fetchMessage() {
+            // ⚠️ IMPORTANT: REPLACE THIS URL with your actual Google Sheets Web App URL.
             const GS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzQhgU6ypNAEoR6QlX0PI_wlrEfvGwVP8pKvj91EYwquZ309Hqk5xAtFIs0uzyUAe_c/exec';
             
             try {
@@ -362,6 +425,8 @@
 
                 const data = await response.json();
                 
+                // Assuming your Google App Script returns a JSON object like:
+                // { status: "success", message: "Your Q8-9 content" }
                 if (data && data.message) {
                     return data.message;
                 } else {
@@ -370,52 +435,72 @@
 
             } catch (error) {
                 console.error("Error fetching message from API:", error.message);
+                // Throw the error so the calling function (initPopup) can handle the error state UI
                 throw error; 
             }
         }
 
-      
+        /**
+         * Sets the display mode to the minimized panel on the left.
+         */
         function minimizePopup() {
+            // Hide full popup
             forcedPopup.style.opacity = '0';
             forcedPopup.style.pointerEvents = 'none';
 
+            // Show minimized panel with slide-in transition
             minimizedPanel.style.display = 'block';
             minimizedPanel.style.transform = 'translateX(0)';
 
+            // Set session flag so it doesn't reappear on refresh
             sessionStorage.setItem(SESSION_KEY, 'true');
         }
-
+        
+        /**
+         * Restores the full modal popup.
+         */
         function restorePopup() {
+            // Hide minimized panel with slide-out transition
             minimizedPanel.style.transform = 'translateX(-100%)';
             setTimeout(() => {
                 minimizedPanel.style.display = 'none';
-            }, 300); 
+            }, 300); // Matches CSS transition duration
 
+            // Show full popup
             forcedPopup.style.display = 'flex';
             setTimeout(() => {
                 forcedPopup.style.opacity = '1';
                 forcedPopup.style.pointerEvents = 'auto';
-            }, 10); 
+            }, 10); // Small delay to trigger transition
             
+            // Remove session flag
             sessionStorage.removeItem(SESSION_KEY);
         }
 
-                 
+        /**
+         * Initializes the popup state and fetches content.
+         */
         async function initPopup() {
             try {
+                // 1. Fetch content
                 const message = await fetchMessage();
                 
+                // Hide loading, show message
                 loadingState.classList.add('hidden');
                 popupMessageElement.textContent = message;
                 messageContainer.classList.remove('hidden');
 
+                // 2. Check session state (force appearance unless minimized)
                 const isMinimized = sessionStorage.getItem(SESSION_KEY) === 'true';
 
                 if (isMinimized) {
+                    // Start in minimized state (for current session only)
                     minimizedPanel.style.display = 'block';
                     minimizedPanel.style.transform = 'translateX(0)';
                 } else {
+                    // Force display of the full modal
                     forcedPopup.style.display = 'flex';
+                    // Apply opacity and pointer-events after display is set for smooth fading
                     setTimeout(() => {
                         forcedPopup.style.opacity = '1';
                         forcedPopup.style.pointerEvents = 'auto';
@@ -423,10 +508,12 @@
                 }
 
             } catch (error) {
+                // This catches the error thrown from fetchMessage (API failed)
                 console.error("Failed to initialize announcement:", error);
                 loadingState.classList.add('hidden');
                 errorState.classList.remove('hidden');
                 
+                // Still force show the popup to display the error to the user
                 forcedPopup.style.display = 'flex';
                 setTimeout(() => {
                     forcedPopup.style.opacity = '1';
@@ -435,6 +522,7 @@
             }
         }
 
+        // Attach Event Listeners
         window.addEventListener('load', () => {
             initPopup();
             closeBtn.addEventListener('click', minimizePopup);
