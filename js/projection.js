@@ -32,19 +32,31 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
     }
 
-    function calculateAndCacheAnalysis() {
-        cachedAnalysis = CoreAnalysis.calculateAll(mbsData);
-                // --- ADD THIS CODE ---
-        // This new block saves the result into a separate local storage item.
-        try {
-            localStorage.setItem('mbsAnalysisCache', JSON.stringify(cachedAnalysis));
-            console.log("Analysis results have been saved to local storage under 'mbsAnalysisCache'.");
-        } catch (e) {
-            console.error("Could not save analysis results to local storage.", e);
-        }
-        // --- END OF ADDED CODE ---
+// CORRECTED AND IMPROVED VERSION
+
+function calculateAndCacheAnalysis() {
+    // This line runs all the complex calculations.
+    cachedAnalysis = CoreAnalysis.calculateAll(mbsData);
+
+    // This block saves the result into a separate local storage item.
+    try {
+        // This is a special function to handle complex data types like 'Set'
+        const replacer = (key, value) => {
+            if (value instanceof Set) {
+                return Array.from(value); // Convert Set to an Array for saving
+            }
+            return value;
+        };
+
+        // Now we use the replacer to safely save the data
+        localStorage.setItem('mbsAnalysisCache', JSON.stringify(cachedAnalysis, replacer));
+        
+        console.log("Analysis results have been safely saved to local storage under 'mbsAnalysisCache'.");
+
+    } catch (e) {
+        console.error("Could not save analysis results to local storage.", e);
     }
-    }
+} // <--- Notice there is only ONE closing brace for the function.
 
     // --- DATA & SETTINGS MANAGEMENT ---
     function loadSettings() {
