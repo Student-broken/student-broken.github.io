@@ -8,29 +8,37 @@ document.addEventListener('DOMContentLoaded', () => {
     let cachedAnalysis = null;
     
     // --- INITIALIZATION ---
-    function init() {
-        if (typeof CoreAnalysis === 'undefined') {
-            console.error("CoreAnalysis is not defined. Ensure projected-averages.js is loaded first.");
-            document.querySelector('.main-container').innerHTML = `<p style="text-align:center; width:100%; padding: 4rem;">Erreur de chargement des algorithmes.</p>`;
-            return;
-        }
-        try {
-            mbsData = JSON.parse(localStorage.getItem('mbsData')) || { 
-                valid: false, nom: 'Étudiant', settings: { niveau: 'sec5', unitesMode: 'defaut', absenceRate: '5' } 
-            };
-        } catch (e) {
-            console.error("Failed to parse mbsData from localStorage", e);
-            mbsData = { valid: false };
-        }
-        if (!mbsData.valid || !mbsData.nom) {
-            document.querySelector('.main-container').innerHTML = `<p style="text-align:center; width:100%; padding: 4rem;">Données non chargées. Veuillez vous assurer que les données sont enregistrées sous 'mbsData' dans le Local Storage.</p>`;
-            return;
-        }
-        loadSettings();
-        calculateAndCacheAnalysis();
-        renderAll();
-        setupEventListeners();
+    // --- projection.js (in the init() function) ---
+
+function init() {
+    // 1. Load the shared data created by main-functions.js
+    let loadedData = JSON.parse(localStorage.getItem('mbsData')) || {};
+
+    if (!loadedData.valid || !loadedData.nom) {
+        document.querySelector('.main-container').innerHTML = `<p style="text-align:center; width:100%; padding: 4rem;">Données non chargées. Veuillez vous assurer que les données sont enregistrées sous 'mbsData' dans le Local Storage.</p>`;
+        return;
     }
+
+    // 2. IMPORTANT: Merge loaded settings with the projection tool's defaults
+    // This prevents errors if 'mbsData' is missing settings the projection tool needs.
+    const projectionDefaults = {
+        niveau: 'sec5',
+        unitesMode: 'defaut',
+        absenceRate: '5', // Default absence rate
+        customUnites: {}
+    };
+    // The loaded settings will override defaults if they exist.
+    loadedData.settings = { ...projectionDefaults, ...loadedData.settings };
+    
+    // 3. Assign the complete, safe data object to the page's mbsData variable
+    mbsData = loadedData;
+
+    // 4. Continue with the normal setup
+    loadSettings();
+    calculateAndCacheAnalysis(); // This now runs on complete data
+    renderAll();
+    setupEventListeners();
+}
 
 // --- projection.js (CORRECT AND FINAL VERSION) ---
 
