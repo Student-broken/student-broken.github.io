@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Academic Tutor</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background-color: #f7f7f7; }
+        #header { background-color: #4A90E2; color: white; padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #chat-container { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .message { padding: 10px 15px; border-radius: 18px; max-width: 70%; line-height: 1.4; }
+        .user-message { background-color: #4A90E2; color: white; align-self: flex-end; }
+        .tutor-message { background-color: #e9e9eb; color: #2c2c2c; align-self: flex-start; }
+        .tutor-message.loading::after { content: '...'; display: inline-block; animation: dots 1.5s infinite; }
+        @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } }
+        #input-area { display: flex; padding: 1rem; border-top: 1px solid #ddd; background-color: #fff; }
+        #user-input { flex-grow: 1; border: 1px solid #ccc; border-radius: 20px; padding: 10px 15px; font-size: 1rem; }
+        #send-btn { background-color: #4A90E2; color: white; border: none; border-radius: 50%; width: 44px; height: 44px; margin-left: 10px; font-size: 1.5rem; cursor: pointer; transition: background-color 0.2s; }
+        #send-btn:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+        #status { padding: 5px; text-align: center; background: #fffde7; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div id="header">
+        <h1>Your Personal AI Tutor</h1>
+        <div id="status">Loading AI Model... Please wait. This may take a moment on the first visit.</div>
+    </div>
+
+    <div id="chat-container">
+        <!-- Messages will be added here -->
+    </div>
+
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Ask about your grades..." disabled>
+        <button id="send-btn" disabled>&#9658;</button>
+    </div>
+
+    <!-- 1. Import the Transformers.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1"></script>
+
+    <script>
+        // Set an option to avoid downloading models on metered connections
+        import { env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
+        env.allowRemoteModels = true;
+
+        // --- DOM ELEMENTS ---
+        const status = document.getElementById('status');
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // --- AI & DATA STATE ---
+        let tutorPipeline = null;
+        let studentDataText = '';
+        let mbsData = null;
+
+        // --- UTILITY FUNCTIONS ---
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', `${sender}-message`);
+            messageDiv.textContent = text;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll
+            return messageDiv;
+        }
+
+        // 2. This function converts your raw grade data into a text summary for the AI
+        function formatDataForSLM(data) {
+            if (!data || !data.valid) {
+                return "No student data found.";
+            }
+
+            let summary = `Student Name: ${data.nom}\n`;
+            summary += `School Level: ${data.settings?.niveau || 'N/A'}\n\n`;
+
+            ['etape1', 'etape2'].forEach(etape => {
+                if (data[etape] && data[etape].length > 0) {
+                    summary += `--- ${etape.toUpperCase()} GRADES ---\n`;
+                    data[etape].forEach(subject => {
+                        summary += `Subject: ${subject.name} (${subject.code})\n`;
+                        subject.competencies.forEach(comp => {
+                            comp.assignments.forEach(assign => {
+                                if (assign.result) {
+                                    summary += `- Assignment: "${assign.work}", Result: ${assign.result}\n`;
+                                }
+                            });
+                        });
+                        summary += "\n";
+                    });
+                }
+            });
+            return summary;
+        }
+
+        // 3. The main function to handle the AI conversation
+        async function handleSend() {
+            const query = userInput.value.trim();
+            if (query === '' || !tutorPipeline) return;
+
+            addMessage(query, 'user');
+            userInput.value = '';
+            const loadingMessage = addMessage("Thinking...", 'tutor');
+            loadingMessage.classList.add('loading');
+
+            // This is the core of the AI logic!
+            // We combine the system prompt, our data summary, and the user's question.
+            const prompt = `
+                <|system|>
+                You are an expert, friendly, and encouraging academic tutor.
+                Your role is to analyze the student's grade data provided below and answer their questions thoughtfully.
+                Never make up information. If the data to answer a question isn't available, say so politely.
+                Keep your answers concise and helpful.
+                </s>
+                <|user|>
+                Here is my academic data:
+                ---
+                ${studentDataText}
+                ---
+                My question is: ${query}
+                </s>
+                <|assistant|>
+            `;
+
+            try {
+                const result = await tutorPipeline(prompt, {
+                    max_new_tokens: 250,
+                    do_sample: true,
+                    temperature: 0.7,
+                    top_k: 50,
+                });
+                
+                // Clean up the response from the model
+                const responseText = result[0].generated_text.split('<|assistant|>').pop().trim();
+                loadingMessage.textContent = responseText;
+                loadingMessage.classList.remove('loading');
+
+            } catch (e) {
+                loadingMessage.textContent = "Sorry, an error occurred while I was thinking. Please try again.";
+                loadingMessage.classList.remove('loading');
+                console.error(e);
+            }
+        }
+
+
+        // 4. Initialization function that runs on page load
+        async function main() {
+            // Load and prepare the student's data
+            try {
+                mbsData = JSON.parse(localStorage.getItem('mbsData'));
+                if (!mbsData || !mbsData.valid) {
+                    status.textContent = "Could not find student data. Please import your data first.";
+                    return;
+                }
+                studentDataText = formatDataForSLM(mbsData);
+            } catch (e) {
+                status.textContent = "Error reading student data from local storage.";
+                return;
+            }
+
+            // Load the AI model
+            try {
+                // We use a small, instruction-tuned model perfect for chat/Q&A
+                tutorPipeline = await pipeline('text-generation', 'Xenova/flan-t5-small');
+                
+                status.textContent = `Hello, ${mbsData.nom}! I'm ready to help.`;
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                addMessage("I've loaded your academic data. How can I help you today? You can ask things like 'How am I doing in Math?' or 'What are my lowest grades in Étape 1?'", 'tutor');
+
+            } catch (e) {
+                status.textContent = "Failed to load the AI model. Please refresh the page.";
+                console.error(e);
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSend();
+            }
+        });
+
+        main(); // Start the application
+    </script>
+</body>
+</html>
