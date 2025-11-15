@@ -264,7 +264,8 @@
                     status.textContent = 'Chargement du modèle IA (peut prendre un moment)...';
                     logToDebug("Téléchargement du modèle: Xenova/flan-t5-small");
 
-                    tutorPipeline = await pipeline('text-generation', 'Xenova/flan-t5-small');
+                    // NEW, CORRECTED LINE
+                    tutorPipeline = await pipeline('text2text-generation', 'Xenova/flan-t5-small');
                     
                     status.textContent = `Bonjour, ${rawData.nom}! Je suis prêt.`;
                     logToDebug("Modèle IA chargé et prêt.");
