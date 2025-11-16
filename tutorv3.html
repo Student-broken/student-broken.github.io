@@ -44,14 +44,13 @@
         updateTheme(initialTheme);
         themeToggleBtn.addEventListener('click', () => { const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; updateTheme(newTheme); });
 
-        let generator = null;
+        let chatPipeline = null;
         let studentDataContext = '';
-        let chatHistory = [];
 
-        // --- THE LIGHTWEIGHT, CHROMEBOOK-FRIENDLY MODEL ---
-        const CHAT_MODEL = 'MBZUAI/LaMini-GPT-124M';
-        const CHAT_TASK = 'text-generation';
-        document.getElementById('model-download-size').textContent = '(Téléchargement unique d\'environ 480MB)';
+        // --- UPGRADE: Switched to the smarter, compatible T5 model ---
+        const CHAT_MODEL = 'MBZUAI/LaMini-Flan-T5-248M';
+        const CHAT_TASK = 'text2text-generation';
+        document.getElementById('model-download-size').textContent = '(Téléchargement unique d\'environ 1GB)';
 
         const chatInput = document.getElementById('chat-input');
         const sendBtn = document.getElementById('send-chat-btn');
@@ -64,18 +63,25 @@
             chatInputWrapper.style.display = 'flex';
             addMessageToChat('Chargement des données de l\'étudiant...', 'status');
 
+            // --- UPGRADE: Load data from Local Storage ---
             try {
                 const rawData = JSON.parse(localStorage.getItem('mbsData'));
                 const analysisData = JSON.parse(localStorage.getItem('mbsProjectionCache'));
-                if (!rawData?.valid) { addMessageToChat("Erreur : Données 'mbsData' introuvables.", 'status'); return; }
+                if (!rawData?.valid) {
+                    addMessageToChat("Erreur : Données 'mbsData' introuvables. Assurez-vous d'avoir utilisé les autres outils d'analyse d'abord.", 'status');
+                    return;
+                }
                 studentDataContext = formatDataForSLM(rawData, analysisData);
-                addMessageToChat('Données chargées. Téléchargement du modèle IA...', 'status');
-            } catch (e) { addMessageToChat(`Erreur (données locales) : ${e.message}`, 'status'); return; }
+                addMessageToChat('Données de l\'étudiant chargées. Téléchargement du modèle IA...', 'status');
+            } catch (e) {
+                addMessageToChat(`Erreur lors du chargement des données locales : ${e.message}`, 'status');
+                return;
+            }
             
             try {
-                // The pipeline() command that we know works, but with the smaller model.
-                generator = await pipeline(CHAT_TASK, CHAT_MODEL, {
-                    quantized: true,
+                // This direct pipeline call is stable for T5 models.
+                chatPipeline = await pipeline(CHAT_TASK, CHAT_MODEL, {
+                    quantized: true, // Ask for the small, fast version
                     progress_callback: (p) => {
                         const statusMessage = messagesContainer.querySelector('.status-message:last-child');
                         if (statusMessage) {
@@ -88,52 +94,64 @@
                     }
                 });
                 
-                // Set up the initial conversation context
-                const personalityPrompt = `Tu es un tuteur académique expert, amical et encourageant.`;
-                chatHistory = [`System: ${personalityPrompt} ${studentDataContext}`];
-                
                 messagesContainer.querySelector('.status-message:last-child')?.remove();
                 addMessageToChat('Bonjour ! Je suis l\'Assistant MBS. J\'ai analysé vos données. Posez-moi une question.', 'assistant');
-                chatInput.disabled = false; sendBtn.disabled = false;
-                chatInput.placeholder = 'Écrivez votre message...'; chatInput.focus();
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+                chatInput.placeholder = 'Écrivez votre message...';
+                chatInput.focus();
+
             } catch (error) {
-                addMessageToChat(`Erreur critique (modèle IA) : ${error.message}`, 'status');
+                addMessageToChat(`Erreur critique : Impossible de charger le modèle IA. ${error.message}`, 'status');
                 console.error("Model loading error:", error);
             }
         }
 
         async function handleChatSubmit() {
-            const userMessage = userInput.value.trim();
-            if (!userMessage || !generator) return;
+            const userMessage = chatInput.value.trim();
+            if (!userMessage || !chatPipeline) return;
+
             addMessageToChat(userMessage, 'user');
-            chatInput.value = ''; chatInput.disabled = true; sendBtn.disabled = true;
+            chatInput.value = '';
+            chatInput.disabled = true;
+            sendBtn.disabled = true;
+
             const typingIndicator = addMessageToChat("L'assistant réfléchit...", 'assistant status-message');
             
-            chatHistory.push(`User: ${userMessage}`);
-            // This simpler prompt format works well with LaMini-GPT
-            const prompt = chatHistory.join('\n') + '\nAssistant:';
+            const prompt = buildSmartPrompt(userMessage);
             
-            try {
-                const result = await generator(prompt, { max_new_tokens: 256, temperature: 0.7, top_k: 50 });
-                const assistantResponse = result[0].generated_text.split(prompt).pop().trim();
-                
-                typingIndicator.remove();
-                addMessageToChat(assistantResponse, 'assistant');
-                chatHistory.push(`Assistant: ${assistantResponse}`);
-                if (chatHistory.length > 8) chatHistory = chatHistory.slice(-8);
+            const result = await chatPipeline(prompt, { 
+                max_new_tokens: 256,
+                temperature: 0.7,
+                top_k: 50,
+            });
 
-            } catch (e) {
-                typingIndicator.remove();
-                addMessageToChat("Désolé, une erreur est survenue pendant la génération de la réponse.", 'assistant');
-                console.error("Inference Error:", e);
-            }
+            typingIndicator.remove();
+            addMessageToChat(result[0].generated_text, 'assistant');
 
-            chatInput.disabled = false; sendBtn.disabled = false; chatInput.focus();
+            chatInput.disabled = false;
+            sendBtn.disabled = false;
+            chatInput.focus();
         }
         
-        // Helper Functions (unchanged)
-        function formatDataForSLM(rawData, analysisData) {let summary = `Tu as accès aux données académiques suivantes pour un étudiant nommé ${rawData.nom || 'l\'étudiant'}.\n\n`;['etape1', 'etape2'].forEach(etape => {if (rawData[etape] && rawData[etape].length > 0) {summary += `--- RÉSULTATS ${etape.toUpperCase()} ---\n`;rawData[etape].forEach(subject => {summary += `Sujet: ${subject.name} (${subject.code})\n`;subject.competencies.forEach(comp => {comp.assignments.forEach(assign => {if (assign.result) summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;});});});}});if (analysisData) {summary += `\n--- ANALYSE PRÉDICTIVE ---\n`;if(analysisData.globalAverage) summary += `- Moyenne générale (calculée): ${analysisData.globalAverage.toFixed(2)}%\n`;if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;if(analysisData.globalConsistencyScore) summary += `- Indice de consistance: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale: ${analysisData.predictions.global.p50.toFixed(2)}%\n`;}return summary;}
-        function addMessageToChat(text, role) {const messageDiv = document.createElement('div');if(role === 'status' && messagesContainer.querySelector('#initial-status')){messagesContainer.querySelector('#initial-status').style.display = 'none';}messageDiv.className = `message ${role}-message`;messageDiv.textContent = text;messagesContainer.appendChild(messageDiv);messagesContainer.scrollTop = chatContainer.scrollHeight;return messageDiv;}
+        // --- UPGRADE: New "smart prompt" with data context ---
+        function buildSmartPrompt(userQuestion) {
+            const personalityPrompt = `Tu es un tuteur académique expert, amical et encourageant.`;
+            const baseInstructions = `Règles Strictes:
+1. Analyse l'intégralité du CONTEXTE pour trouver les informations pertinentes à la QUESTION.
+2. Formule une réponse entièrement nouvelle en utilisant tes propres mots. Ne copie JAMAIS de phrases directement du contexte.
+3. Si la réponse n'est pas dans le contexte, réponds "Je n'ai pas cette information dans les données fournies."`;
+            
+            return `TÂCHE:\n${personalityPrompt}\n${baseInstructions}\n\nCONTEXTE:\n---\n${studentDataContext}\n---\n\nQUESTION:\n"${userQuestion}"\n\nRÉPONSE SYNTHÉTISÉE:`;
+        }
+        
+        // Helper functions
+        function formatDataForSLM(rawData, analysisData) { /* Unchanged */ }
+        function addMessageToChat(text, role) { /* Unchanged */ }
+
+        // Minor helper code for completeness
+        function formatDataForSLM(rawData, analysisData) {let summary = ``;if (rawData?.nom) summary += `Nom de l'étudiant: ${rawData.nom}\n`;['etape1', 'etape2'].forEach(etape => {if (rawData[etape] && rawData[etape].length > 0) {summary += `\n--- RÉSULTATS ${etape.toUpperCase()} ---\n`;rawData[etape].forEach(subject => {summary += `Sujet: ${subject.name} (${subject.code})\n`;subject.competencies.forEach(comp => {comp.assignments.forEach(assign => {if (assign.result) summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;});});});}});if (analysisData) {summary += `\n--- ANALYSE PRÉDICTIVE ---\n`;if(analysisData.globalAverage) summary += `- Moyenne générale (calculée): ${analysisData.globalAverage.toFixed(2)}%\n`;if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;if(analysisData.globalConsistencyScore) summary += `- Indice de consistance: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale: ${analysisData.predictions.global.p50.toFixed(2)}%\n`;}return summary;}
+        function addMessageToChat(text, role) {const messageDiv = document.createElement('div');if(role === 'status' && messagesContainer.querySelector('#initial-status')){messagesContainer.querySelector('#initial-status').style.display = 'none';}messageDiv.className = `message ${role}-message`;messageDiv.textContent = text;messagesContainer.appendChild(messageDiv);messagesContainer.scrollTop = messagesContainer.scrollHeight;return messageDiv;}
 
         startBtn.onclick = initializeChatbot;
         sendBtn.onclick = handleChatSubmit;
