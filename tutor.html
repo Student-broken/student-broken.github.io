@@ -34,8 +34,18 @@
         let studentDataContext = '';
         let currentAiMode = 'tuteur';
 
-        const PROMPT_TUTEUR = `Respond to the questions exactly as they are asked.`; // (content is the same as before)
-        const PROMPT_ANALYSTE = `Respond to the questions exactly as they are asked.`; // (content is the same as before)
+        const PROMPT_TUTEUR = `Règles Strictes et Obligatoires:
+1. Analyse l'intégralité du CONTEXTE pour trouver les informations pertinentes à la QUESTION.
+2. Formule une réponse entièrement nouvelle en utilisant tes propres mots. Ne copie JAMAIS de phrases directement du contexte.
+3. Ta réponse doit être une synthèse cohérente, pas une simple liste de données.
+4. Si la réponse n'est pas dans le contexte, réponds UNIQUEMENT: "Je n'ai pas cette information dans les données fournies."
+5. Sois concis et va droit au but.`;; // (content is the same as before)
+        const PROMPT_ANALYSTE = `Règles Strictes et Obligatoires:
+1. Analyse l'intégralité du CONTEXTE pour trouver les informations pertinentes à la QUESTION.
+2. Formule une réponse entièrement nouvelle en utilisant tes propres mots. Ne copie JAMAIS de phrases directement du contexte.
+3. Ta réponse doit être une synthèse cohérente, pas une simple liste de données.
+4. Si la réponse n'est pas dans le contexte, réponds UNIQUEMENT: "Je n'ai pas cette information dans les données fournies."
+5. Sois concis et va droit au but.`;; // (content is the same as before)
 
         function logToDebug(message) {
             const timestamp = new Date().toLocaleTimeString();
