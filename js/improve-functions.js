@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     let listenersAttached = false;
     
+    // Use pageshow to ensure re-initialization on back navigation
     window.addEventListener('pageshow', () => {
         init(); 
     });
@@ -183,7 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="gauge-container"><canvas id="gauge-${chartCanvasId}"></canvas></div>
                 </div>
                 <div class="widget-chart-controls">
-                    <button class="chart-toggle-btn" data-subject-code="${subject.code}"><i class="fa-solid fa-chart-simple"></i> Changer</button>
+                    <button class="order-edit-btn chart-toggle-btn" data-subject-code="${subject.code}" title="Ordonner les travaux"><i class="fa-solid fa-list-ol"></i></button>
+                    <button class="chart-view-toggle-btn chart-toggle-btn" data-subject-code="${subject.code}" title="Changer de vue"><i class="fa-solid fa-chart-line"></i></button>
                 </div>
                 <div class="histogram-container" data-canvas-id="${chartCanvasId}"><canvas id="${chartCanvasId}"></canvas></div>`;
             
@@ -191,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             renderGauge(`gauge-${chartCanvasId}`, subject.average, mbsData.settings.objectives[subject.code]);
             
-            // --- FIX: Logic to render a graph by default and allow toggling ---
             const preferredView = mbsData.settings.chartViewPrefs[subject.code] || 'histogram';
             if (preferredView === 'line') {
                 renderLineGraph(chartCanvasId, overallSubject);
@@ -200,7 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // --- EVENT LISTENERS ---
         document.querySelectorAll('.widget-top-section').forEach(section => {
             section.addEventListener('click', () => {
                 const subjectCode = section.dataset.subjectCode;
@@ -210,20 +210,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        document.querySelectorAll('.chart-toggle-btn').forEach(button => {
+        document.querySelectorAll('.chart-view-toggle-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const subjectCode = button.dataset.subjectCode;
-                const overallSubject = allSubjectsAcrossEtapes.get(subjectCode);
-                openOrderEditor(overallSubject);
-            });
-        });
-
-        document.querySelectorAll('.histogram-container').forEach(container => {
-            container.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const canvasId = container.dataset.canvasId;
-                const subjectCode = canvasId.split('-')[2];
+                const canvasId = button.closest('.subject-widget').querySelector('.histogram-container').dataset.canvasId;
                 const overallSubject = allSubjectsAcrossEtapes.get(subjectCode);
                 
                 const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
@@ -238,6 +229,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     renderHistogram(canvasId, overallSubject);
                 }
+            });
+        });
+
+        document.querySelectorAll('.order-edit-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const subjectCode = button.dataset.subjectCode;
+                const overallSubject = allSubjectsAcrossEtapes.get(subjectCode);
+                openOrderEditor(overallSubject);
             });
         });
 
@@ -298,6 +298,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+
+        const controls = document.getElementById(canvasId).closest('.subject-widget').querySelector('.widget-chart-controls');
+        if (controls) {
+            controls.querySelector('.order-edit-btn').style.display = 'flex';
+            const toggleBtn = controls.querySelector('.chart-view-toggle-btn');
+            toggleBtn.innerHTML = '<i class="fa-solid fa-chart-column"></i>';
+            toggleBtn.title = 'Vue: Distribution';
+        }
+    }
+
+    function renderHistogram(canvasId, subject) {
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
+        const grades = (subject.competencies || []).flatMap(comp => (comp.assignments || []).map(a => getNumericGrade(a.result)).filter(g => g !== null));
+        const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
+        grades.forEach(g => {
+            if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++;
+            else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++;
+        });
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        activeWidgetCharts[canvasId] = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
+        });
+
+        const controls = document.getElementById(canvasId).closest('.subject-widget').querySelector('.widget-chart-controls');
+        if (controls) {
+            controls.querySelector('.order-edit-btn').style.display = 'none';
+            const toggleBtn = controls.querySelector('.chart-view-toggle-btn');
+            toggleBtn.innerHTML = '<i class="fa-solid fa-chart-line"></i>';
+            toggleBtn.title = 'Vue: Tendance';
+        }
     }
 
     function openOrderEditor(subject) {
@@ -382,8 +415,6 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.querySelector('#close-order-editor').addEventListener('click', closeModal);
     }
     
-    // --- UNCHANGED AND RESTORED FUNCTIONS ---
-    
     function renderGauge(canvasId, value, goal) {
         const ctx = document.getElementById(canvasId).getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 120, 0);
@@ -418,20 +449,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function renderHistogram(canvasId, subject) {
-        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-        const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
-        const grades = (subject.competencies || []).flatMap(comp => (comp.assignments || []).map(a => getNumericGrade(a.result)).filter(g => g !== null));
-        const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
-        grades.forEach(g => {
-            if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++;
-            else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++;
-        });
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        activeWidgetCharts[canvasId] = new Chart(ctx, {
+    // --- MODAL AND CALCULATOR FUNCTIONS ---
+
+    function renderAssignmentsChart(assignments) {
+        if (activeChart) {
+            activeChart.destroy();
+        }
+        const ctx = document.getElementById('assignmentsChart').getContext('2d');
+        const chartData = {
+            labels: assignments.map(a => a.work.replace('<br>', ' ')),
+            datasets: [{
+                label: 'Note',
+                data: assignments.map(a => getNumericGrade(a.result)),
+                backgroundColor: assignments.map(a => (getNumericGrade(a.result) ?? 0) < 60 ? 'rgba(231, 76, 60, 0.7)' : 'rgba(41, 128, 185, 0.7)'),
+                borderColor: assignments.map(a => (getNumericGrade(a.result) ?? 0) < 60 ? 'rgb(231, 76, 60)' : 'rgb(41, 128, 185)'),
+                borderWidth: 1
+            }]
+        };
+        activeChart = new Chart(ctx, {
             type: 'bar',
-            data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { suggestedMin: 50, suggestedMax: 100, beginAtZero: false } },
+                plugins: { legend: { display: false }, title: { display: true, text: 'Notes des travaux' } }
+            }
         });
     }
 
@@ -441,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="modal-header"><h2 class="modal-title">${subject.name} (${subject.code})</h2></div>
             <div class="modal-body">
                 <div class="competency-widgets"></div>
-                <div class="graph-container" style="display:none;"><canvas id="assignmentsChart"></canvas></div>
+                <div class="graph-container" style="height: 250px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div>
                 <div class="calculator-container"></div>
             </div>`;
         const competencyContainer = modalContent.querySelector('.competency-widgets');
@@ -462,12 +505,36 @@ document.addEventListener('DOMContentLoaded', () => {
             competencyContainer.appendChild(compWidget);
         });
         
+        const compWidgets = competencyContainer.querySelectorAll('.comp-widget');
+        compWidgets.forEach(widget => {
+            widget.addEventListener('click', () => {
+                compWidgets.forEach(w => w.classList.remove('active'));
+                widget.classList.add('active');
+                const compIndex = parseInt(widget.dataset.index, 10);
+                const selectedComp = compsForChart[compIndex];
+                const gradedAssignments = (selectedComp.assignments || []).filter(a => getNumericGrade(a.result) !== null);
+                renderAssignmentsChart(gradedAssignments);
+            });
+        });
+
+        if (compsForChart.length > 0 && compWidgets.length > 0) {
+            compWidgets[0].classList.add('active');
+            const firstGradedAssignments = (compsForChart[0].assignments || []).filter(a => getNumericGrade(a.result) !== null);
+            renderAssignmentsChart(firstGradedAssignments);
+        } else {
+            modalContent.querySelector('.graph-container').style.display = 'none';
+        }
+
         setupGoalFramework(subject, modalContent.querySelector('.calculator-container'), etapeKey);
         detailsModal.classList.add('active');
     }
 
     function closeDetailsModal() {
         detailsModal.classList.remove('active');
+        if (activeChart) {
+            activeChart.destroy();
+            activeChart = null;
+        }
     }
 
     function setupGoalFramework(subject, container, etapeKey) {
@@ -501,7 +568,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hasFutureWork) {
             setupIntraSubjectCalculator(subject, calculatorContent, objectiveInput);
         } else {
-            // This part might need adjustment based on your overall data structure for inter-etape calculation
             calculatorContent.innerHTML = `<p>Tous les travaux pour cette matière ont été notés.</p>`;
         }
     }
