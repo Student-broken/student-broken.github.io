@@ -97,7 +97,16 @@ function renderWidgets(etapeKey) {
     renderGeneralAverageWidget(subjectsToRender, etapeKey);
     subjectsToRender.forEach(subject => {
         const overallSubject = allSubjectsAcrossEtapes.get(subject.code);
+
+        // FIX #1: Update subject history if average has changed
         const history = mbsData.historique[subject.code] || [];
+        if (subject.average !== null && (history.length === 0 || history[history.length - 1].toFixed(2) !== subject.average.toFixed(2))) {
+            history.push(subject.average);
+            if (history.length > 10) history.shift(); // Limit history size
+            mbsData.historique[subject.code] = history;
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+        }
+
         let trend;
         if (history.length < 2) { trend = { direction: '—', change: '0.00%', class: 'neutral' }; }
         else { const [prev, curr] = history.slice(-2); const change = curr - prev; trend = change < 0 ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' } : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' }; }
@@ -115,8 +124,19 @@ function renderWidgets(etapeKey) {
     });
 }
 function renderGeneralAverageWidget(subjects, etapeKey) {
-    if (subjects.length === 0) return;
-    const totalAverage = subjects.reduce((sum, s) => sum + s.average, 0) / subjects.length;
+    if (subjects.length === 0 && etapeKey !== 'generale') return;
+
+    let totalAverage;
+    if (etapeKey === 'generale') {
+        // FIX #2: Use the centralized calculation for the weighted global average.
+        const termAvgs = calculateAveragesFromRawData(mbsData).term;
+        totalAverage = termAvgs.GlobalAverage;
+        if (totalAverage === null) return; // Don't render the widget if average can't be calculated.
+    } else {
+        // This is correct for individual etapes, as 'subjects' is pre-filtered.
+        totalAverage = subjects.reduce((sum, s) => sum + s.average, 0) / subjects.length;
+    }
+
     const historyKey = `general-${etapeKey}`;
     const history = mbsData.historique[historyKey] || [];
     if(history.length === 0 || history[history.length-1].toFixed(2) !== totalAverage.toFixed(2)) { history.push(totalAverage); if (history.length > 10) history.shift(); mbsData.historique[historyKey] = history; localStorage.setItem('mbsData', JSON.stringify(mbsData)); }
@@ -314,8 +334,6 @@ function setupIntraSubjectCalculator(subject, container, goalInput) {
             return;
         }
 
-        // --- FIXED FORMULA ---
-        // New Formula: Required = Target + (Target - Current) * (CompletedWeight / FutureWeight)
         const requiredAvgOnFuture = targetAvg + (targetAvg - currentAverage) * (sumOfCompletedWeights / sumOfFutureWeights);
 
         let message, resultClass;
@@ -332,7 +350,6 @@ function setupIntraSubjectCalculator(subject, container, goalInput) {
 
 
 // --- UNCHANGED HELPER & CHART FUNCTIONS ---
-// (Omitted for brevity, but they are the same as the previous version)
 function openOrderEditor(subject) { const existingModal = document.getElementById('order-editor-modal'); if(existingModal) existingModal.remove(); const modal = document.createElement('div'); modal.id = 'order-editor-modal'; modal.style.cssText = `position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; display:flex; align-items:center; justify-content:center;`; const allAssignments = (subject.competencies || []).flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` }))).filter(a => getNumericGrade(a.result) !== null); const currentOrder = mbsData.settings.assignmentOrder[subject.code] || []; if (currentOrder.length > 0) { const orderMap = new Map(currentOrder.map((id, index) => [id, index])); allAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity)); } modal.innerHTML = `<div style="background:var(--widget-background); color:var(--text-color); padding:25px; border-radius:12px; width:90%; max-width:600px;"><h3>Ordonner les Travaux pour le Graphique</h3><p style="color:var(--text-secondary-color); text-align:center;">Glissez-déposez pour réorganiser l'ordre des points sur le graphique.</p><ul id="order-list" style="list-style:none; padding:0; margin: 0 0 20px 0; max-height: 40vh; overflow-y: auto;">${allAssignments.map(assign => `<li draggable="true" data-id="${assign.uniqueId}" style="background:var(--background-color); margin-bottom:8px; padding:10px 15px; border-radius:5px; display:flex; align-items:center; cursor:grab; border:1px solid var(--border-color);"><i class="fa-solid fa-grip-vertical" style="margin-right:15px;"></i>${assign.work.replace('<br>', ' ')} <span style="margin-left:auto; background:var(--widget-background); padding:3px 8px; border-radius:10px; font-size:0.8em; border:1px solid var(--border-color);">${assign.result}</span></li>`).join('')}</ul><div style="display:flex; justify-content:space-between; align-items:center;"><button id="reset-mode-btn" class="btn-secondary">Mode moyenne auto</button><div><button id="close-order-editor" class="btn-secondary">Annuler</button><button id="save-order" class="btn-secondary" style="background-color:var(--success-color); margin-left:10px;">Sauvegarder</button></div></div></div>`; document.body.appendChild(modal); const content = modal.querySelector('div'); content.addEventListener('click', e => e.stopPropagation()); const list = modal.querySelector('#order-list'); let draggedItem = null; list.addEventListener('dragstart', e => { draggedItem = e.target; setTimeout(() => e.target.style.opacity = '0.5', 0); }); list.addEventListener('dragend', e => { setTimeout(() => { if(draggedItem) { draggedItem.style.opacity = '1'; draggedItem = null; } }, 0); }); list.addEventListener('dragover', e => { e.preventDefault(); const afterElement = [...list.querySelectorAll('li:not(.dragging)')].reduce((closest, child) => { const box = child.getBoundingClientRect(); const offset = e.clientY - box.top - box.height / 2; return (offset < 0 && offset > closest.offset) ? { offset: offset, element: child } : closest; }, { offset: Number.NEGATIVE_INFINITY }).element; if (draggedItem) { if (afterElement == null) { list.appendChild(draggedItem); } else { list.insertBefore(draggedItem, afterElement); } } }); const closeModal = () => { modal.remove(); renderWidgets(document.querySelector('.tab-btn.active').dataset.etape); }; modal.addEventListener('click', closeModal); modal.querySelector('#save-order').addEventListener('click', () => { const newOrder = [...list.querySelectorAll('li')].map(li => li.dataset.id); mbsData.settings.assignmentOrder[subject.code] = newOrder; mbsData.settings.historyMode[subject.code] = 'assignment'; localStorage.setItem('mbsData', JSON.stringify(mbsData)); closeModal(); }); modal.querySelector('#reset-mode-btn').addEventListener('click', () => { delete mbsData.settings.assignmentOrder[subject.code]; delete mbsData.settings.historyMode[subject.code]; localStorage.setItem('mbsData', JSON.stringify(mbsData)); closeModal(); }); modal.querySelector('#close-order-editor').addEventListener('click', closeModal); }
 function calculateAveragesFromRawData(data) { let termAverages = { GlobalAverage:null, Etape1Average: null, Etape2Average: null, Etape3Average: null }; let allSubjectAverages = {}; ['etape1', 'etape2', 'etape3'].forEach(etape => { let termSubjectAvgs = []; (data[etape] || []).forEach(subject => { const subjectAverage = calculateSubjectAverage(subject); if (subjectAverage !== null) { termSubjectAvgs.push(subjectAverage); const code = subject.code.substring(0, 3); if (!allSubjectAverages[code]) allSubjectAverages[code] = { total: 0, count: 0 }; allSubjectAverages[code].total += subjectAverage; allSubjectAverages[code].count++; } }); if (termSubjectAvgs.length > 0) { const etapeKey = 'Etape' + etape.slice(-1) + 'Average'; termAverages[etapeKey] = termSubjectAvgs.reduce((a, b) => a + b, 0) / termSubjectAvgs.length; } }); const finalSubjectAvgs = {}; for (const code in allSubjectAverages) { finalSubjectAvgs[code] = allSubjectAverages[code].total / allSubjectAverages[code].count; } let globalTotal = 0, globalWeight = 0; if(termAverages.Etape1Average !== null) {globalTotal += termAverages.Etape1Average * TERM_WEIGHTS.etape1; globalWeight += TERM_WEIGHTS.etape1}; if(termAverages.Etape2Average !== null) {globalTotal += termAverages.Etape2Average * TERM_WEIGHTS.etape2; globalWeight += TERM_WEIGHTS.etape2}; if(termAverages.Etape3Average !== null) {globalTotal += termAverages.Etape3Average * TERM_WEIGHTS.etape3; globalWeight += TERM_WEIGHTS.etape3}; if (globalWeight > 0) termAverages.GlobalAverage = globalTotal / globalWeight; return { term: termAverages, subjects: finalSubjectAvgs }; }
 function getRank(levelData, key, currentUserEncodedName) { const scores = levelData.map(row => parseFloat(row[key])).filter(score => !isNaN(score)); scores.sort((a, b) => b - a); const currentUser = levelData.find(d => d.encodedName === currentUserEncodedName); const currentUserValue = currentUser ? parseFloat(currentUser[key]) : NaN; const rank = scores.indexOf(currentUserValue) + 1; const percentile = (scores.length > 0) ? (1 - ((rank - 1) / scores.length)) * 100 : 0; return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? (percentile).toFixed(1) : null }; }
