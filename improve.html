@@ -153,8 +153,8 @@
 
 /* Toggle Button */
 #mbs-chatbot-toggle {
-    position: relative; /* <-- Add this */
-    z-index: 10000;     /* <-- And this */
+    position: relative; 
+    z-index: 10000; 
     background-color: var(--mbs-primary-color);
     color: white;
     border: none;
@@ -167,9 +167,11 @@
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s ease, background-color 0.2s ease;
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.2s ease;
 }
-    
+#mbs-chatbot-container.expanded #mbs-chatbot-toggle {
+    transform: translateX(calc(-1 * clamp(400px, 50vw, 800px)));
+}
     #mbs-chatbot-toggle.loading {
         background-color: #444;
         cursor: wait;
