@@ -1,4 +1,3 @@
-// --- CONFIGURATION & GLOBAL STATE ---
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1CoMUIieKjENe1jE-5It-pIEi7qiU2Mv6ian-3yDNs6uz383wlQYmCdDNXXHAgLjpGw/exec';
 const subjectNames = { 'ART':"Arts", 'MUS':"Musique", 'DRM':"Art Dram.", 'CAT':"Tech", 'FRA':"Français", 'ELA':"Anglais", 'EESL':"Anglais Enrichi", 'ESL':"Anglais Second", 'SN':"Math SN", 'CST':"Math CST", 'ST':"Science", 'STE':"Science (STE)", 'HQC':"Histoire", 'CCQ':"Citoyenneté", 'EPS':"É. Phys.", 'CHI':"Chimie", 'PHY':"Physique", 'MON':"Monde Cont.", 'MED':"Média", 'ENT':"Entreprenariat", 'INF':"Informatique", 'PSY':"Psychologie", 'FIN':"Finance" };
 const TERM_WEIGHTS = { etape1:0.20, etape2:0.20, etape3:0.60 };
