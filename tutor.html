@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assistant IA (API) - Outil MBS</title>
+    <title>Assistant IA (Sécurisé) - Outil MBS</title>
     <!-- Your CSS and other header elements go here -->
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; background-color: #f4f4f9; }
@@ -24,121 +24,75 @@
     <div class="container">
         <h2>Assistant IA (Gemini Flash)</h2>
         <div id="chat-messages">
-            <div class="status-message">L'assistant est en attente. Cliquez sur "Démarrer l'IA" pour commencer.</div>
+            <div class="status-message">L'assistant est prêt.</div>
         </div>
         <div class="input-area">
-            <input type="text" id="chat-input" placeholder="Démarrez l'IA d'abord..." disabled>
-            <button id="send-chat-btn" disabled>Envoyer</button>
+            <input type="text" id="chat-input" placeholder="Écrivez votre message...">
+            <button id="send-chat-btn">Envoyer</button>
         </div>
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-             <button id="start-ai-btn" style="flex:1;">Démarrer l'IA</button>
-             <button id="load-data-btn" style="flex:1;" disabled>Charger les Données Étudiantes</button>
-        </div>
+        <button id="load-data-btn" style="width: 100%; margin-top: 10px;">Charger les Données Étudiantes</button>
         <div id="debug-console"></div>
     </div>
 
     <script type="module">
         // --- PASTE YOUR GOOGLE APPS SCRIPT URL HERE ---
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyxj9IOJfBWOdRzbjEtuYD3F97iFotDa1oIBjCQI6wkEfkjkTu_BmXC2Uopcz8nYmY/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT8ycWJRqRdmglHFwl9AOXaM5K7AYZ_eluriMTnxukKRotslrHhKDDDYCJv_fnIwzS/exec';
         // ---------------------------------------------
 
         const chatInput = document.getElementById('chat-input');
         const sendBtn = document.getElementById('send-chat-btn');
         const messagesContainer = document.getElementById('chat-messages');
-        const startBtn = document.getElementById('start-ai-btn');
         const loadDataBtn = document.getElementById('load-data-btn');
         const debugConsole = document.getElementById('debug-console');
 
-        let GEMINI_API_KEY = null;
         let studentDataContext = null;
 
-        // --- HELPER FUNCTIONS (DEFINED ONCE) ---
-        function logToConsole(message, isError = false) {
-            const timestamp = new Date().toLocaleTimeString();
-            const color = isError ? 'style="color: #ff5555;"' : '';
-            debugConsole.innerHTML += `<div>[${timestamp}] <span ${color}>${message}</span></div>`;
-            debugConsole.scrollTop = debugConsole.scrollHeight;
-            (isError ? console.error : console.log)(message);
-        }
+        function logToConsole(message, isError = false) { /* ... */ }
+        function addMessageToChat(text, role) { /* ... */ }
+        function formatDataForSLM(rawData, analysisData) { /* ... */ }
+        function buildSmartPrompt(userQuestion) { /* ... */ }
 
-        function addMessageToChat(text, role) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}-message`;
-            messageDiv.textContent = text;
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            return messageDiv;
-        }
-
-        function formatDataForSLM(rawData, analysisData) {
-            let summary = ``;
-            if (rawData?.nom) summary += `Nom de l'étudiant: ${rawData.nom}\n`;
-            ['etape1', 'etape2'].forEach(etape => {
-                if (rawData[etape] && rawData[etape].length > 0) {
-                    summary += `\n--- RÉSULTATS ${etape.toUpperCase()} ---\n`;
-                    rawData[etape].forEach(subject => {
-                        summary += `Sujet: ${subject.name} (${subject.code})\n`;
-                        subject.competencies.forEach(comp => {
-                            comp.assignments.forEach(assign => {
-                                if (assign.result) summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;
-                            });
-                        });
-                    });
-                }
-            });
-            if (analysisData) {
-                summary += `\n\n--- ANALYSE PRÉDICTIVE ---\n`;
-                if(analysisData.globalAverage) summary += `- Moyenne générale (calculée): ${analysisData.globalAverage.toFixed(2)}%\n`;
-                if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;
-                if(analysisData.globalConsistencyScore) summary += `- Indice de consistance: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;
-                if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale: ${analysisData.predictions.global.p50.toFixed(2)}%\n`;
-            }
-            return summary;
-        }
-
-        function buildSmartPrompt(userQuestion) {
-            const personalityPrompt = `Tu es un tuteur académique expert, amical et encourageant.`;
-            const baseInstructions = `Règles Strictes:\n1. Analyse le CONTEXTE fourni pour répondre à la QUESTION.\n2. Formule une réponse entièrement nouvelle en français.\n3. Si la réponse n'est pas dans le contexte, réponds "Je n'ai pas cette information."`;
-            
-            const contextSection = studentDataContext 
-                ? `\n\nCONTEXTE:\n---\n${studentDataContext}\n---`
-                : `\n\nCONTEXTE:\nAucune donnée étudiante n'a été chargée.`;
-
-            return `${personalityPrompt}\n${baseInstructions}${contextSection}\n\nQuestion: "${userQuestion}"`;
-        }
-        
-        // --- CORE LOGIC ---
-        async function initializeAI() {
-            startBtn.disabled = true;
-            startBtn.textContent = 'Démarrage...';
-            addMessageToChat('Contact du serveur de clés...', 'status');
-            logToConsole("Fetching API key from Google Sheets...");
-
+        async function handleChatSubmit() {
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
             if (SCRIPT_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE')) {
                 addMessageToChat('Erreur: SCRIPT_URL non configuré.', 'status'); return;
             }
 
+            addMessageToChat(userMessage, 'user');
+            chatInput.value = '';
+            chatInput.disabled = true; sendBtn.disabled = true;
+            const typingIndicator = addMessageToChat("L'assistant réfléchit...", 'assistant status-message');
+            
+            const prompt = buildSmartPrompt(userMessage);
+            logToConsole("Sending prompt to secure back-end...");
+            
             try {
-                const response = await fetch(SCRIPT_URL);
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-                
-                GEMINI_API_KEY = data.apiKey;
-                logToConsole("API Key received successfully.");
+                // This is the secure call to YOUR back-end.
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors', // This is essential for cross-domain requests
+                    body: JSON.stringify({ prompt }),
+                });
 
-                addMessageToChat('Bonjour ! Je suis l\'Assistant MBS. Je suis prêt.', 'assistant');
-                startBtn.style.display = 'none';
-                chatInput.disabled = false;
-                sendBtn.disabled = false;
-                loadDataBtn.disabled = false;
-                chatInput.placeholder = 'Écrivez votre message...';
+                if (!response.ok) { throw new Error(`Le serveur a répondu avec une erreur: ${await response.text()}`); }
+
+                const result = await response.json();
+                if (result.error) throw new Error(`Erreur du script : ${result.error}`);
+                
+                const assistantResponse = result.generated_text;
+                
+                typingIndicator.remove();
+                addMessageToChat(assistantResponse, 'assistant');
+                logToConsole("Received response from back-end.");
 
             } catch (error) {
-                addMessageToChat(`Erreur critique: ${error.message}`, 'status');
-                logToConsole(`Failed to fetch API key: ${error.message}`, true);
-                startBtn.disabled = false;
-                startBtn.textContent = "Réessayer de démarrer l'IA";
+                typingIndicator.remove();
+                addMessageToChat(`Désolé, une erreur de réseau est survenue: ${error.message}`, 'status');
+                logToConsole(error.message, true);
             }
+
+            chatInput.disabled = false; sendBtn.disabled = false; chatInput.focus();
         }
 
         function loadStudentData() {
@@ -158,44 +112,14 @@
                 logToConsole(e.message, true);
             }
         }
-
-        async function handleChatSubmit() {
-            const userMessage = chatInput.value.trim();
-            if (!userMessage || !GEMINI_API_KEY) return;
-
-            addMessageToChat(userMessage, 'user');
-            chatInput.value = '';
-            chatInput.disabled = true; sendBtn.disabled = true;
-            const typingIndicator = addMessageToChat("L'assistant réfléchit...", 'assistant status-message');
-            
-            const prompt = buildSmartPrompt(userMessage);
-            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
-            
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-                });
-
-                if (!response.ok) throw new Error(`API Error: ${await response.text()}`);
-                
-                const result = await response.json();
-                const assistantResponse = result.candidates[0].content.parts[0].text;
-                
-                typingIndicator.remove();
-                addMessageToChat(assistantResponse, 'assistant');
-
-            } catch (error) {
-                typingIndicator.remove();
-                addMessageToChat(`Désolé, une erreur est survenue: ${error.message}`, 'status');
-                logToConsole(error.message, true);
-            }
-
-            chatInput.disabled = false; sendBtn.disabled = false; chatInput.focus();
-        }
         
-        // --- EVENT LISTENERS ---
-        startBtn.onclick = initializeAI;
+        // Full helper functions for completeness
+        function logToConsole(message, isError = false) {const timestamp = new Date().toLocaleTimeString(); const color = isError ? 'style="color: #ff5555;"' : ''; debugConsole.innerHTML += `<div>[${timestamp}] <span ${color}>${message}</span></div>`; debugConsole.scrollTop = debugConsole.scrollHeight; (isError ? console.error : console.log)(message);}
+        function addMessageToChat(text, role) {const messageDiv = document.createElement('div');messageDiv.className = `message ${role}-message`;messageDiv.textContent = text;messagesContainer.appendChild(messageDiv);messagesContainer.scrollTop = messagesContainer.scrollHeight;return messageDiv;}
+        function formatDataForSLM(rawData, analysisData) {let summary = ``;if (rawData?.nom) summary += `Nom de l'étudiant: ${rawData.nom}\n`;['etape1', 'etape2'].forEach(etape => {if (rawData[etape] && rawData[etape].length > 0) {summary += `\n--- RÉSULTATS ${etape.toUpperCase()} ---\n`;rawData[etape].forEach(subject => {summary += `Sujet: ${subject.name} (${subject.code})\n`;subject.competencies.forEach(comp => {comp.assignments.forEach(assign => {if (assign.result) summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;});});});}});if (analysisData) {summary += `\n--- ANALYSE PRÉDICTIVE ---\n`;if(analysisData.globalAverage) summary += `- Moyenne générale (calculée): ${analysisData.globalAverage.toFixed(2)}%\n`;if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;if(analysisData.globalConsistencyScore) summary += `- Indice de consistance: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale: ${analysisData.predictions.global.p50.toFixed(2)}%\n`;}return summary;}
+        function buildSmartPrompt(userQuestion) { const personalityPrompt = `Tu es un tuteur académique expert, amical et encourageant.`; const baseInstructions = `Règles Strictes:\n1. Analyse le CONTEXTE fourni pour répondre à la QUESTION.\n2. Formule une réponse entièrement nouvelle en français.\n3. Si la réponse n'est pas dans le contexte, réponds "Je n'ai pas cette information."`; const contextSection = studentDataContext ? `\n\nCONTEXTE:\n---\n${studentDataContext}\n---` : `\n\nCONTEXTE:\nAucune donnée étudiante n'a été chargée.`; return `${personalityPrompt}\n${baseInstructions}${contextSection}\n\nQuestion: "${userQuestion}"`;}
+
+        // Event listeners
         sendBtn.onclick = handleChatSubmit;
         chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleChatSubmit(); } });
         loadDataBtn.onclick = loadStudentData;
