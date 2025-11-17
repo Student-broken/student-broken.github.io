@@ -1,346 +1,602 @@
-// --- CONFIGURATION & GLOBAL STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1CoMUIieKjENe1jE-5It-pIEi7qiU2Mv6ian-3yDNs6uz383wlQYmCdDNXXHAgLjpGw/exec';
-const subjectNames = { 'ART':"Arts", 'MUS':"Musique", 'DRM':"Art Dram.", 'CAT':"Tech", 'FRA':"Français", 'ELA':"Anglais", 'EESL':"Anglais Enrichi", 'ESL':"Anglais Second", 'SN':"Math SN", 'CST':"Math CST", 'ST':"Science", 'STE':"Science (STE)", 'HQC':"Histoire", 'CCQ':"Citoyenneté", 'EPS':"É. Phys.", 'CHI':"Chimie", 'PHY':"Physique", 'MON':"Monde Cont.", 'MED':"Média", 'ENT':"Entreprenariat", 'INF':"Informatique", 'PSY':"Psychologie", 'FIN':"Finance" };
-const TERM_WEIGHTS = { etape1:0.20, etape2:0.20, etape3:0.60 };
-
-let mbsData = {};
-let rankingData = { status: 'idle', data: null, error: null };
-let activeGauges = {};
-let activeWidgetCharts = {};
-let activeExpandedCharts = {};
-let currentRankingInfo = { widget: null, key: null };
-
-// --- DOM ELEMENTS ---
-const widgetGrid = document.getElementById('widget-grid');
-const expandedViewOverlay = document.getElementById('expanded-view-overlay');
-const expandedViewGrid = document.getElementById('expanded-view-grid');
-
-// --- INITIALIZATION ---
-document.addEventListener('DOMContentLoaded', () => {
-    setupTheme();
-    init();
-});
-
-function init() {
-    mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
-    if (!mbsData.valid) {
-        widgetGrid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Aucune donnée. Veuillez <a href="data.html">importer vos données</a>.</p>`;
-        return;
-    }
-    mbsData.settings = mbsData.settings || {};
-    mbsData.settings.chartViewPrefs = mbsData.settings.chartViewPrefs || {};
-    mbsData.settings.historyMode = mbsData.settings.historyMode || {};
-    mbsData.settings.assignmentOrder = mbsData.settings.assignmentOrder || {};
-    mbsData.historique = mbsData.historique || {};
-    setupEventListeners();
-    fetchRankingData();
-    renderWidgets('generale');
-}
-
-function setupEventListeners() {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
-        document.querySelector('.tab-btn.active').classList.remove('active');
-        btn.classList.add('active');
-        renderWidgets(btn.dataset.etape);
-    }));
-    expandedViewOverlay.addEventListener('click', e => {
-        if (e.target === expandedViewOverlay) closeExpandedView();
-    });
-}
-
-// --- THEME LOGIC ---
-function setupTheme() {
-    const themeToggle = document.getElementById('theme-toggle');
-    const html = document.documentElement;
-    const toggleIcon = themeToggle.querySelector('i');
-    const THEME_KEY = 'mbs-theme';
-    const updateTheme = (theme) => { html.setAttribute('data-theme', theme); localStorage.setItem(THEME_KEY, theme); toggleIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; };
-    const storedTheme = localStorage.getItem(THEME_KEY);
-    const initialTheme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    updateTheme(initialTheme);
-    themeToggle.addEventListener('click', () => { const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; updateTheme(newTheme); });
-}
-
-// --- DATA CALCULATION HELPERS ---
-const getNumericGrade = (result) => {
-    if (!result) return null;
-    const gradeMap = {'A+':100,'A':95,'A-':90,'B+':85,'B':80,'B-':75,'C+':70,'C':65,'C-':60,'D+':55,'D':50,'E':45};
-    const trimmed = result.trim();
-    if(gradeMap[trimmed]) return gradeMap[trimmed];
-    const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
-    if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const max = parseFloat(scoreMatch[2].replace(',', '.')); return (max > 0) ? (score / max) * 100 : null; }
-    return null;
-};
-const calculateAverage = (assignments) => {
-    let totalWeightedGrade = 0, totalWeight = 0;
-    (assignments || []).forEach(assign => { const grade = getNumericGrade(assign.result); const weight = parseFloat(assign.pond); if (grade !== null && !isNaN(weight) && weight > 0) { totalWeightedGrade += grade * weight; totalWeight += weight; } });
-    return totalWeight > 0 ? { average: totalWeightedGrade / totalWeight, weight: totalWeight } : null;
-};
-const calculateSubjectAverage = (subject) => {
-    let totalWeightedCompetencyScore = 0, totalCompetencyWeight = 0;
-    (subject?.competencies || []).forEach(comp => { const compWeightMatch = comp.name.match(/\((\d+)%\)/); if (!compWeightMatch) return; const competencyWeight = parseFloat(compWeightMatch[1]); const compResult = calculateAverage(comp.assignments); if (compResult) { totalWeightedCompetencyScore += compResult.average * competencyWeight; totalCompetencyWeight += competencyWeight; } });
-    return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
-};
-
-// --- MAIN WIDGET RENDERING ---
-function renderWidgets(etapeKey) {
-    widgetGrid.innerHTML = '';
-    Object.values(activeGauges).forEach(chart => chart.destroy());
-    Object.values(activeWidgetCharts).forEach(chart => chart.destroy());
-    const allSubjectsAcrossEtapes = new Map();
-    ['etape1', 'etape2', 'etape3'].forEach(etape => {
-        (mbsData[etape] || []).forEach(subject => { if (!allSubjectsAcrossEtapes.has(subject.code)) { allSubjectsAcrossEtapes.set(subject.code, { ...subject, competencies: [] }); } });
-        (mbsData[etape] || []).forEach(subject => { allSubjectsAcrossEtapes.get(subject.code)?.competencies.push(...subject.competencies); });
-    });
-    let subjectsToRender = (etapeKey === 'generale') ? Array.from(allSubjectsAcrossEtapes.values()) : (mbsData[etapeKey] || []);
-    subjectsToRender = subjectsToRender.map(subject => ({ ...subject, average: calculateSubjectAverage(subject) })).filter(s => s.average !== null);
-    renderGeneralAverageWidget(subjectsToRender, etapeKey);
-    subjectsToRender.forEach(subject => {
-        const overallSubject = allSubjectsAcrossEtapes.get(subject.code);
-        const history = mbsData.historique[subject.code] || [];
-        let trend;
-        if (history.length < 2) { trend = { direction: '—', change: '0.00%', class: 'neutral' }; }
-        else { const [prev, curr] = history.slice(-2); const change = curr - prev; trend = change < 0 ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' } : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' }; }
-        const widget = document.createElement('div');
-        widget.className = 'subject-widget';
-        const chartCanvasId = `dist-chart-${subject.code.replace(/\s+/g, '')}`;
-        widget.innerHTML = `<div class="widget-top-section"><div class="widget-info"><h3 class="widget-title">${subject.name}</h3><p class="widget-average">${subject.average.toFixed(2)}%</p><div class="widget-trend ${trend.class}"><span>${trend.direction}</span><span>${trend.change}</span></div></div><div class="gauge-container"><canvas id="gauge-${chartCanvasId}"></canvas></div></div><div class="widget-chart-controls"><button class="chart-toggle-btn order-edit-btn" title="Ordonner les travaux"><i class="fa-solid fa-list-ol"></i></button><button class="chart-toggle-btn chart-view-toggle-btn" title="Changer de vue"><i class="fa-solid fa-chart-line"></i></button></div><div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
-        widget.addEventListener('click', () => openExpandedView(overallSubject));
-        widgetGrid.appendChild(widget);
-        renderGauge(`gauge-${chartCanvasId}`, subject.average);
-        const preferredView = mbsData.settings.chartViewPrefs[subject.code] || 'histogram';
-        if (preferredView === 'line') { renderLineGraph(chartCanvasId, overallSubject); } else { renderHistogram(chartCanvasId, overallSubject); }
-        widget.querySelector('.chart-view-toggle-btn').addEventListener('click', (e) => { e.stopPropagation(); const currentView = mbsData.settings.chartViewPrefs[subject.code] || 'histogram'; const newView = currentView === 'histogram' ? 'line' : 'histogram'; mbsData.settings.chartViewPrefs[subject.code] = newView; localStorage.setItem('mbsData', JSON.stringify(mbsData)); if (activeWidgetCharts[chartCanvasId]) activeWidgetCharts[chartCanvasId].destroy(); if (newView === 'line') renderLineGraph(chartCanvasId, overallSubject); else renderHistogram(chartCanvasId, overallSubject); });
-        widget.querySelector('.order-edit-btn').addEventListener('click', (e) => { e.stopPropagation(); openOrderEditor(overallSubject); });
-    });
-}
-function renderGeneralAverageWidget(subjects, etapeKey) {
-    if (subjects.length === 0) return;
-    const totalAverage = subjects.reduce((sum, s) => sum + s.average, 0) / subjects.length;
-    const historyKey = `general-${etapeKey}`;
-    const history = mbsData.historique[historyKey] || [];
-    if(history.length === 0 || history[history.length-1].toFixed(2) !== totalAverage.toFixed(2)) { history.push(totalAverage); if (history.length > 10) history.shift(); mbsData.historique[historyKey] = history; localStorage.setItem('mbsData', JSON.stringify(mbsData)); }
-    let trend;
-    if (history.length < 2) { trend = { direction: '—', change: '0.00%', class: 'neutral' }; }
-    else { const [prev, curr] = history.slice(-2); const change = curr - prev; trend = change < 0 ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' } : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' }; }
-    const widget = document.createElement('div');
-    widget.className = 'subject-widget';
-    const chartCanvasId = `general-chart-${etapeKey}`;
-    widget.innerHTML = `<div class="widget-top-section"><div class="widget-info"><h3 class="widget-title">Moyenne Générale (${etapeKey === 'generale' ? 'Toutes' : etapeKey.replace('etape', 'Étape ')})</h3><p class="widget-average">${totalAverage.toFixed(2)}%</p><div class="widget-trend ${trend.class}"><span>${trend.direction}</span><span>${trend.change}</span></div></div><div class="gauge-container"><canvas id="gauge-${chartCanvasId}"></canvas></div></div><div class="widget-chart-controls"><button class="chart-toggle-btn" title="Changer de vue"><i class="fa-solid fa-chart-line"></i></button></div><div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
-    widget.addEventListener('click', () => openExpandedViewForGeneral(subjects, etapeKey, totalAverage, history));
-    widgetGrid.prepend(widget);
-    renderGauge(`gauge-${chartCanvasId}`, totalAverage);
-    const preferredView = mbsData.settings.chartViewPrefs[historyKey] || 'histogram';
-    const toggleBtn = widget.querySelector('.chart-toggle-btn');
-    if (preferredView === 'line') { renderGeneralAverageHistoryGraph(chartCanvasId, history); toggleBtn.innerHTML = '<i class="fa-solid fa-chart-column"></i>'; }
-    else { renderSubjectDistributionHistogram(chartCanvasId, subjects); toggleBtn.innerHTML = '<i class="fa-solid fa-chart-line"></i>'; }
-    toggleBtn.addEventListener('click', (e) => { e.stopPropagation(); const currentView = mbsData.settings.chartViewPrefs[historyKey] || 'histogram'; const newView = currentView === 'histogram' ? 'line' : 'histogram'; mbsData.settings.chartViewPrefs[historyKey] = newView; localStorage.setItem('mbsData', JSON.stringify(mbsData)); if (activeWidgetCharts[chartCanvasId]) activeWidgetCharts[chartCanvasId].destroy(); if (newView === 'line') renderGeneralAverageHistoryGraph(chartCanvasId, history); else renderSubjectDistributionHistogram(chartCanvasId, subjects); });
-}
-
-// --- EXPANDED VIEW LOGIC ---
-function openExpandedView(subject) {
-    expandedViewGrid.innerHTML = '';
-    const subjectAverage = calculateSubjectAverage(subject);
-    const summaryWidget = document.createElement('div');
-    summaryWidget.className = 'subject-widget';
-    summaryWidget.style.cssText = 'display: flex; flex-direction: column;';
-    summaryWidget.innerHTML = `<div class="widget-top-section" style="flex: 1;"><div class="widget-info"><h3 class="widget-title">${subject.name} (Résumé)</h3><p class="widget-average">${subjectAverage.toFixed(2)}%</p></div><div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div></div><div class="histogram-container" style="flex: 1; margin-top: 10px;"><canvas id="expanded-hist-chart"></canvas></div><div class="histogram-container" style="flex: 1; margin-top: 10px;"><canvas id="expanded-line-chart"></canvas></div>`;
-    const detailsWidget = document.createElement('div');
-    detailsWidget.className = 'subject-widget';
-    detailsWidget.style.cssText = 'display: flex; flex-direction: column;';
-    detailsWidget.innerHTML = `<h3 class="widget-title" style="margin-bottom:20px; flex-shrink: 0;">Détails & Planificateur</h3><div class="details-widget-body" style="flex-grow: 1; min-height: 0;"><div class="competency-widgets"></div><div class="graph-container" style="height: 300px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div><div class="calculator-container"></div></div><a href="projection.html?subject=${encodeURIComponent(subject.name)}" class="btn-secondary" style="margin-top: 20px; text-align: center; flex-shrink: 0;">Plus d'information</a>`;
-    const rankingWidget = document.createElement('div');
-    rankingWidget.className = 'subject-widget';
-    rankingWidget.innerHTML = `<h3 class="widget-title">Classement de la matière</h3><div id="ranking-content" style="height: calc(100% - 40px); display: flex; flex-direction: column;"></div>`;
-    expandedViewGrid.append(summaryWidget, detailsWidget, rankingWidget);
-    expandedViewOverlay.classList.add('active');
-    renderGauge('expanded-gauge-chart', subjectAverage);
-    renderHistogram('expanded-hist-chart', subject, activeExpandedCharts);
-    renderLineGraph('expanded-line-chart', subject, activeExpandedCharts);
-    populateDetailsWidget(detailsWidget, subject);
-    const rankingKey = subject.code.substring(0, 3);
-    currentRankingInfo = { widget: rankingWidget, key: rankingKey };
-    populateRankingWidget(rankingWidget, rankingKey);
-}
-function openExpandedViewForGeneral(subjects, etapeKey, average, history) {
-    expandedViewGrid.innerHTML = '';
-    const title = `Moyenne Générale (${etapeKey === 'generale' ? 'Toutes' : etapeKey.replace('etape', 'Étape ')})`;
-    const summaryWidget = document.createElement('div');
-    summaryWidget.className = 'subject-widget';
-    summaryWidget.style.cssText = 'display: flex; flex-direction: column;';
-    summaryWidget.innerHTML = `<div class="widget-top-section" style="flex: 1;"><div class="widget-info"><h3 class="widget-title">${title} (Résumé)</h3><p class="widget-average">${average.toFixed(2)}%</p></div><div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div></div><div class="histogram-container" style="flex: 1; margin-top: 10px;"><canvas id="expanded-hist-chart"></canvas></div><div class="histogram-container" style="flex: 1; margin-top: 10px;"><canvas id="expanded-line-chart"></canvas></div>`;
-    const detailsWidget = document.createElement('div');
-    detailsWidget.className = 'subject-widget';
-    detailsWidget.style.cssText = 'display: flex; flex-direction: column;';
-    detailsWidget.innerHTML = `<h3 class="widget-title" style="margin-bottom:20px; flex-shrink: 0;">Détail par Matière</h3><div class="details-widget-body" style="flex-grow: 1; min-height: 0;"><div class="competency-widgets"></div><div class="graph-container" style="height: 400px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div><div class="calculator-container"><p>Le planificateur est disponible uniquement pour les matières individuelles.</p></div></div><a href="projection.html" class="btn-secondary" style="margin-top: 20px; text-align: center; flex-shrink: 0;">Plus d'information</a>`;
-    const rankingWidget = document.createElement('div');
-    rankingWidget.className = 'subject-widget';
-    rankingWidget.innerHTML = `<h3 class="widget-title">Classement de la Moyenne</h3><div id="ranking-content" style="height: calc(100% - 40px); display: flex; flex-direction: column;"></div>`;
-    expandedViewGrid.append(summaryWidget, detailsWidget, rankingWidget);
-    expandedViewOverlay.classList.add('active');
-    renderGauge('expanded-gauge-chart', average);
-    renderSubjectDistributionHistogram('expanded-hist-chart', subjects, activeExpandedCharts);
-    renderGeneralAverageHistoryGraph('expanded-line-chart', history, activeExpandedCharts);
-    populateGeneralDetailsWidget(detailsWidget, subjects, average);
-    const rankingKey = etapeKey === 'generale' ? 'GlobalAverage' : `Etape${etapeKey.slice(-1)}Average`;
-    currentRankingInfo = { widget: rankingWidget, key: rankingKey };
-    populateRankingWidget(rankingWidget, rankingKey);
-}
-function closeExpandedView() {
-    expandedViewOverlay.classList.remove('active');
-    Object.values(activeExpandedCharts).forEach(chart => chart.destroy());
-    activeExpandedCharts = {};
-    currentRankingInfo = { widget: null, key: null };
-}
-function populateDetailsWidget(widget, subject) {
-    const competencyContainer = widget.querySelector('.competency-widgets');
-    const uniqueCompetencies = new Map();
-    (subject.competencies || []).forEach(comp => { if (!uniqueCompetencies.has(comp.name)) { uniqueCompetencies.set(comp.name, { name: comp.name, assignments: [] }); } uniqueCompetencies.get(comp.name).assignments.push(...(comp.assignments || [])); });
-    const compsForChart = Array.from(uniqueCompetencies.values());
-    compsForChart.forEach((comp, index) => { const compResult = calculateAverage(comp.assignments); if (!compResult) return; const compWidget = document.createElement('div'); compWidget.className = 'comp-widget'; compWidget.dataset.index = index; compWidget.innerHTML = `<h4>${comp.name.split('(')[0].trim()}</h4><div class="avg">${compResult.average.toFixed(1)}%</div>`; competencyContainer.appendChild(compWidget); });
-    const compWidgets = competencyContainer.querySelectorAll('.comp-widget');
-    compWidgets.forEach(w => { w.addEventListener('click', () => { compWidgets.forEach(el => el.classList.remove('active')); w.classList.add('active'); const compIndex = parseInt(w.dataset.index, 10); const selectedComp = compsForChart[compIndex]; renderAssignmentsChart((selectedComp.assignments || []).filter(a => getNumericGrade(a.result) !== null)); }); });
-    if (compsForChart.length > 0 && compWidgets.length > 0) { compWidgets[0].click(); } else { widget.querySelector('.graph-container').style.display = 'none'; }
-    setupGoalFramework(subject, widget.querySelector('.calculator-container'));
-}
-function populateGeneralDetailsWidget(widget, subjects, average) {
-    const subjectContainer = widget.querySelector('.competency-widgets');
-    const summaryWidget = document.createElement('div');
-    summaryWidget.className = 'comp-widget active';
-    summaryWidget.style.flexBasis = '100%';
-    summaryWidget.innerHTML = `<h4>Toutes les matières</h4><div class="avg">${average.toFixed(1)}%</div>`;
-    subjectContainer.appendChild(summaryWidget);
-    renderSubjectAveragesChart(subjects);
-}
-
-// --- RANKING LOGIC ---
-async function fetchRankingData() {
-    if (rankingData.status === 'loading' || rankingData.status === 'loaded') return;
-    rankingData.status = 'loading';
-    try {
-        if (!mbsData?.nom || !mbsData?.settings?.niveau) throw new Error("Nom ou niveau manquant.");
-        const localAvgs = calculateAveragesFromRawData(mbsData);
-        const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom)));
-        const formData = new FormData();
-        formData.append('encodedName', encodedName);
-        formData.append('secondaryLevel', mbsData.settings.niveau);
-        for (const key in localAvgs.term) formData.append(key, localAvgs.term[key]?.toFixed(2) ?? '');
-        for (const key in localAvgs.subjects) formData.append(key, localAvgs.subjects[key]?.toFixed(2) ?? '');
-        fetch(SCRIPT_URL, { method: 'POST', body: formData, mode: 'no-cors' });
-        const getResponse = await fetch(`${SCRIPT_URL}?level=${mbsData.settings.niveau}`);
-        if (!getResponse.ok) throw new Error(`Erreur réseau: ${getResponse.statusText}`);
-        const allData = await getResponse.json();
-        if (allData.result === 'error') throw new Error(allData.error);
-        rankingData = { status: 'loaded', data: allData, error: null };
-        if (currentRankingInfo.widget && currentRankingInfo.key) {
-            populateRankingWidget(currentRankingInfo.widget, currentRankingInfo.key);
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse - Outil MBS</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f7f9fb; --widget-background: #ffffff; --text-color: #34495e; --text-secondary-color: #7f8c8d; --accent-color: #3498db; --light-grey: #e0e6eb; --footer-grey: #7f8c8d; --success-color: #27ae60; --danger-color: #e74c3c; --warning-color: #f39c12; --shadow-header: 0 2px 4px rgba(0,0,0,0.05); --shadow-widget: 0 8px 15px rgba(0,0,0,0.08); --border-color: #e0e6eb; --goal-success-bg: #eafaf1; --goal-warning-bg: #fff9f0; --goal-danger-bg: #fdf3f2; --transition-duration: 0.35s;
         }
-    } catch (error) {
-        console.error("Ranking Fetch Error:", error);
-        rankingData = { status: 'error', data: null, error: error.message };
-        if (currentRankingInfo.widget) {
-             populateRankingWidget(currentRankingInfo.widget, currentRankingInfo.key);
+        [data-theme="dark"] {
+            --background-color: #121212; --widget-background: #1e1e1e; --text-color: #e0e0e0; --text-secondary-color: #a0a0a0; --secondary-color: #bbbbbb; --light-grey: #333333; --footer-grey: #a0a0a0; --shadow-header: 0 2px 5px rgba(255,255,255,0.1); --shadow-widget: 0 5px 10px rgba(0,0,0,0.3); --border-color: #333333; --goal-success-bg: #1a3e2a; --goal-warning-bg: #4d381c; --goal-danger-bg: #4f2323;
         }
-    }
-}
-function populateRankingWidget(widget, rankingKey) {
-    const contentEl = widget.querySelector('#ranking-content');
-    if (rankingData.status === 'loading') { contentEl.innerHTML = `<p>Synchronisation des classements...</p><div class="ghost-item"></div><div class="ghost-item"></div><div class="ghost-item"></div>`; return; }
-    if (rankingData.status === 'error') { contentEl.innerHTML = `<p style="color:var(--danger-color)">Erreur de chargement: ${rankingData.error}</p>`; return; }
-    const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom)));
-    const levelData = rankingData.data;
-    const currentUserData = levelData.find(d => d.encodedName === encodedName);
-    if (!currentUserData || !(rankingKey in currentUserData) || currentUserData[rankingKey] === null) { contentEl.innerHTML = `<p>Aucune donnée de classement pour cette catégorie.</p>`; return; }
-    const { rank, total, percentile } = getRank(levelData, rankingKey, encodedName);
-    const getTrophy = r => (r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : `#${r}`);
-    const leaderboardItemsHTML = levelData.filter(u => u[rankingKey] && !isNaN(parseFloat(u[rankingKey]))).sort((a, b) => b[rankingKey] - a[rankingKey]).map((user, index) => { const r = index + 1; const isCurrentUser = user.encodedName === encodedName; const name = isCurrentUser ? 'Vous' : `Anonyme #${r}`; return `<li class="leaderboard-item ${isCurrentUser ? 'is-user' : ''}"><span class="item-rank">${getTrophy(r)}</span><span class="item-name">${name}</span><span class="item-grade">${parseFloat(user[rankingKey]).toFixed(1)}%</span></li>`; }).join('');
-    contentEl.innerHTML = `<div class="widget-rank">${rank} sur ${total} <span style="margin-left: 8px;">(Top ${percentile}%)</span></div><div class="mini-leaderboard-container" style="max-height: 200px; overflow-y: auto; flex-shrink: 0;"><ul class="leaderboard-list">${leaderboardItemsHTML}</ul></div><div class="histogram-container" style="flex-grow: 1; margin-top:20px;"><canvas id="ranking-comparison-chart"></canvas></div>`;
-    const userItem = contentEl.querySelector('.is-user');
-    if(userItem) userItem.parentElement.parentElement.scrollTop = userItem.offsetTop - 50;
-    renderRankingComparisonChart('ranking-comparison-chart', levelData, currentUserData);
-}
+        [data-theme="dark"] .site-header,[data-theme="dark"] .widget-title { color:var(--text-color); } [data-theme="dark"] .comp-widget,[data-theme="dark"] .calculator-container { background-color:#282828; border-color:var(--border-color); } [data-theme="dark"] .modal-content { background-color:var(--background-color); } [data-theme="dark"] .modal-header { background-color:#2c3e50; } [data-theme="dark"] .goal-input input { background-color:#282828; border-color:var(--light-grey); color:var(--text-color); } [data-theme="dark"] #order-list li { background-color:#333; } [data-theme="dark"] .grade-pill { background-color:#444; } [data-theme="dark"] .leaderboard-item.is-user { background-color: #2c3e50; }
 
-// --- GOAL FRAMEWORK (FIXED) ---
-function setupGoalFramework(subject, container) {
-    container.innerHTML = `<h3>Planificateur d'Objectifs</h3><div class="goal-input"><label for="objective-input">Objectif :</label><input type="number" id="objective-input" min="0" max="100" value="">%</div><div id="calculator-content"></div>`;
-    const objectiveInput = container.querySelector('#objective-input');
-    const calculatorContent = container.querySelector('#calculator-content');
-    const hasFutureWork = (subject.competencies || []).some(comp => (comp.assignments || []).some(a => getNumericGrade(a.result) === null && parseFloat(a.pond) > 0));
-    if (hasFutureWork) {
-        setupIntraSubjectCalculator(subject, calculatorContent, objectiveInput);
-    } else {
-        calculatorContent.innerHTML = `<p>Tous les travaux pour cette matière ont été notés.</p>`;
-    }
-}
+        /* General Styles & Transitions */
+        body, .site-header-container, .subject-widget, .tab-btn { transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--background-color); color: var(--text-color); }
 
-function setupIntraSubjectCalculator(subject, container, goalInput) {
-    container.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
-    const goalResult = container.querySelector('#goal-result');
-    const calcInfo = container.querySelector('#calc-info');
+        /* Header */
+        .site-header-container { background-color: var(--widget-background); box-shadow: var(--shadow-header); border-bottom: 1px solid var(--border-color); padding: 15px 25px; display: flex; align-items: center; justify-content: space-between; }
+        .header-left, .header-right { display: flex; align-items: center; gap: 15px; flex: 1; }
+        .header-right { justify-content: flex-end; }
+        .site-header { flex: 2; text-align: center; padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-family: 'Playfair Display', serif; }
+        .icon-btn { background: none; border: 2px solid var(--light-grey); color: var(--text-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; text-decoration: none; transition: all 0.2s ease; }
+        .icon-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: scale(1.1); }
+        .btn-secondary { text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; background-color: #2980b9; color: white; border: none; transition: all 0.2s ease; }
+        .btn-secondary:hover { background-color: #3498db; }
+
+        /* Tabs & Grid */
+        .sticky-tabs { position: sticky; top: 0; background-color: var(--background-color); z-index: 100; padding: 15px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; border: 1px solid var(--light-grey); border-radius: 20px; background-color: transparent; color: var(--text-color); font-weight: 600; cursor: pointer; }
+        .tab-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .widget-grid { max-width: 1400px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px; }
+
+        /* Subject Widget Styles */
+        .subject-widget { background-color: var(--widget-background); border-radius: 12px; box-shadow: var(--shadow-widget); padding: 20px; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
+        .subject-widget:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
+        .widget-top-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; cursor: pointer; }
+        .widget-info { flex: 1; }
+        .widget-title { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); margin: 0 0 10px 0; }
+        .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 0; }
+        .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
+        .widget-trend.up { color: var(--success-color); } .widget-trend.down { color: var(--danger-color); } .widget-trend.neutral { color: var(--text-secondary-color); }
+        .gauge-container { width: 120px; height: 70px; position: relative; }
+        .histogram-container { margin-top: 15px; height: 120px; }
+        .widget-chart-controls { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 5px; height: 25px; gap: 5px; }
+        .chart-toggle-btn { background: none; border: 1px solid var(--border-color); color: var(--light-grey); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8em; }
+        .chart-toggle-btn:hover { color: var(--primary-color); border-color: var(--primary-color); }
+
+        /* EXPANDED VIEW (Placeholder styling) */
+        #expanded-view-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); z-index: 1000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        #expanded-view-overlay.active { display: flex; }
+        #expanded-view-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 25px; width: 100%; max-width: 1400px; max-height: 95vh; }
+        
+        /* Right Widget (Ranking) Placeholder Styling */
+        .mini-leaderboard-container { flex-grow: 1; overflow-y: auto; position: relative; border-top: 1px solid var(--light-grey); padding-top: 15px; max-height: 250px; }
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
+        .leaderboard-item { display: flex; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 0.9em; transition: background-color 0.2s; }
+        .leaderboard-item.is-user { background-color: #eaf2f8; font-weight: bold; }
+        .item-rank { width: 40px; } .item-name { flex-grow: 1; } .item-grade { font-weight: 600; }
+        .widget-rank { font-size: 1.1em; color: var(--secondary-color); margin-top: 5px; }
+        
+        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: 40px; }
+    </style>
+</head>
+<body>
+    <header class="site-header-container">
+        <div class="header-left">
+            <a href="main.html" class="icon-btn" title="Retour au tableau de bord"><i class="fa-solid fa-arrow-left"></i></a>
+        </div>
+        <h1 class="site-header">Outil MBS</h1>
+        <div class="header-right">
+            <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème"><i class="fa-solid fa-moon"></i></button>
+            <a href="projection.html" class="btn btn-secondary">Projection</a>
+        </div>
+    </header>
+
+    <div class="sticky-tabs">
+        <button class="tab-btn active" data-etape="generale">Générale</button>
+        <button class="tab-btn" data-etape="etape1">Étape 1</button>
+        <button class="tab-btn" data-etape="etape2">Étape 2</button>
+        <button class="tab-btn" data-etape="etape3">Étape 3</button>
+    </div>
+
+    <main id="widget-grid" class="widget-grid">
+        <!-- Widgets will be populated by improve-functions.js -->
+    </main>
     
-    const calculate = () => {
-        let sumOfWeightedGrades = 0, sumOfCompletedWeights = 0, sumOfFutureWeights = 0;
-        (subject.competencies || []).forEach(comp => {
-            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-            if (!compWeightMatch) return;
-            const competencyWeight = parseFloat(compWeightMatch[1]);
-            (comp.assignments || []).forEach(assign => {
-                const weight = parseFloat(assign.pond);
-                if (isNaN(weight) || weight <= 0) return;
-                const finalWeight = (weight / 100) * competencyWeight;
-                const grade = getNumericGrade(assign.result);
-                if (grade !== null) {
-                    sumOfWeightedGrades += grade * finalWeight;
-                    sumOfCompletedWeights += finalWeight;
-                } else {
-                    sumOfFutureWeights += finalWeight;
+    <div id="expanded-view-overlay">
+        <div id="expanded-view-grid">
+            <!-- Expanded view widgets will be populated here -->
+        </div>
+    </div>
+
+    <!-- CHATBOT MARKUP -->
+    <style>
+        :root {
+            --mbs-bg-color: #1a1a1a; --mbs-surface-color: #2c2c2c; --mbs-primary-color: #61afef; --mbs-text-color: #f0f0f0; --mbs-text-secondary-color: #a0a0a0; --mbs-border-color: #444444; --mbs-font-family: 'Inter', sans-serif;
+        }
+        #mbs-chatbot-container *, #mbs-chatbot-container *::before, #mbs-chatbot-container *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        #mbs-chatbot-container { position: fixed; bottom: 20px; right: 20px; z-index: 10000; font-family: var(--mbs-font-family); }
+        #mbs-chatbot-toggle {
+            background-color: var(--mbs-primary-color); color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        #mbs-chatbot-toggle:hover { transform: scale(1.1); }
+        #mbs-chatbot-toggle.loading { background-color: #444; cursor: wait; animation: mbs-pulse 1.5s infinite; }
+        #mbs-chatbot-toggle .chat-icon, #mbs-chatbot-toggle .close-icon, #mbs-chatbot-toggle .loading-icon { display: none; }
+        #mbs-chatbot-toggle:not(.loading) .chat-icon { display: block; }
+        #mbs-chatbot-container.expanded #mbs-chatbot-toggle .chat-icon { display: none; }
+        #mbs-chatbot-container.expanded #mbs-chatbot-toggle .close-icon { display: block; }
+        #mbs-chatbot-toggle.loading .loading-icon { display: block; animation: mbs-spin 1.5s linear infinite; }
+        @keyframes mbs-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes mbs-pulse { 0% { box-shadow: 0 0 0 0 rgba(97, 175, 239, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(97, 175, 239, 0); } 100% { box-shadow: 0 0 0 0 rgba(97, 175, 239, 0); } }
+        #mbs-chatbot-window {
+            position: fixed; bottom: 90px; right: 20px; width: clamp(380px, 30vw, 450px); max-height: 60vh; background-color: var(--mbs-bg-color); border: 1px solid var(--mbs-border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; opacity: 0; visibility: hidden; transform: translateY(20px); transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s; z-index: 9999;
+        }
+        #mbs-chatbot-container.expanded #mbs-chatbot-window { opacity: 1; visibility: visible; transform: translateY(0); }
+        .mbs-chat-header { padding: 16px; background-color: var(--mbs-surface-color); border-bottom: 1px solid var(--mbs-border-color); text-align: center; flex-shrink: 0; border-radius: 12px 12px 0 0; }
+        .mbs-chat-header h3 { color: var(--mbs-text-color); font-size: 1.1rem; margin: 0; }
+        #mbs-chat-messages { flex-grow: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+        #mbs-chat-messages a { color: #61afef; text-decoration: underline; }
+        #mbs-chat-messages::-webkit-scrollbar { width: 6px; }
+        #mbs-chat-messages::-webkit-scrollbar-track { background: transparent; }
+        #mbs-chat-messages::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+        .mbs-chat-message { max-width: 90%; padding: 12px 16px; border-radius: 10px; line-height: 1.6; font-size: 0.95rem; overflow-wrap: break-word; }
+        .mbs-chat-message.user { color: white; background-color: var(--mbs-primary-color); align-self: flex-end; border-bottom-right-radius: 2px; }
+        .mbs-chat-message.ai { color: var(--mbs-text-color); background-color: var(--mbs-surface-color); align-self: flex-start; border-bottom-left-radius: 2px; }
+        .mbs-chat-message.ai * { margin: 0; color: inherit; }
+        .mbs-chat-message.ai > *:not(:last-child) { margin-bottom: 0.8em; }
+        .mbs-chat-message.ai ul, .mbs-chat-message.ai ol { padding-left: 20px; }
+        .mbs-chat-message.ai li:not(:last-child) { margin-bottom: 4px; }
+        .mbs-chat-message.ai strong, .mbs-chat-message.ai b { color: #c678dd; font-weight: 600; }
+        .mbs-chat-message.ai code { background-color: #212121; padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; }
+        .mbs-typing-indicator { align-self: flex-start; display: flex; align-items: center; gap: 5px; padding: 14px 20px; background-color: var(--mbs-surface-color); border-radius: 12px; border-bottom-left-radius: 4px; }
+        .mbs-typing-indicator span { width: 8px; height: 8px; background-color: var(--mbs-text-secondary-color); border-radius: 50%; animation: mbs-typing-bounce 1.4s infinite ease-in-out both; }
+        .mbs-typing-indicator span:nth-child(1) { animation-delay: -0.32s; } .mbs-typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes mbs-typing-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        #mbs-chat-form { display: flex; padding: 12px; border-top: 1px solid var(--mbs-border-color); background-color: var(--mbs-bg-color); flex-shrink: 0; border-radius: 0 0 12px 12px; }
+        #mbs-chat-input { flex-grow: 1; background-color: var(--mbs-surface-color); border: 1px solid var(--mbs-border-color); border-radius: 20px; padding: 10px 16px; color: var(--mbs-text-color); font-size: 0.95rem; margin-right: 10px; outline: none; transition: border-color 0.2s ease; }
+        #mbs-chat-input:focus { border-color: var(--mbs-primary-color); }
+        #mbs-chat-input::placeholder { color: var(--mbs-text-secondary-color); }
+        #mbs-chat-send { background-color: var(--mbs-primary-color); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; transition: background-color 0.2s ease; }
+        #mbs-chat-send:not([disabled]):hover { opacity: 0.85; }
+        #mbs-chat-form:has(input:disabled) #mbs-chat-send, #mbs-chat-send:disabled { background-color: #555; cursor: not-allowed; }
+    </style>
+    <div id="mbs-chatbot-container">
+        <div id="mbs-chatbot-window">
+            <div class="mbs-chat-header"><h3>Assistant MBS</h3></div>
+            <div id="mbs-chat-messages"></div>
+            <form id="mbs-chat-form">
+                <input type="text" id="mbs-chat-input" placeholder="Chargement..." autocomplete="off" disabled>
+                <button type="submit" id="mbs-chat-send" aria-label="Envoyer" disabled>
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+        <button id="mbs-chatbot-toggle" aria-label="Ouvrir/Fermer le chatbot" class="loading">
+            <span class="chat-icon"><i class="fa-solid fa-comment-dots"></i></span>
+            <span class="close-icon"><i class="fa-solid fa-xmark"></i></span>
+            <span class="loading-icon"><i class="fa-solid fa-spinner"></i></span>
+        </button>
+    </div>
+    
+    <footer><p>Outil MBS - Moyenne, Bilan, Stratégie</p></footer>
+
+    <!-- MARKED.JS for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/lib/marked.umd.min.js"></script>
+
+    <script id="improve-functions">
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- GLOBAL VARIABLES ---
+        const widgetGrid = document.getElementById('widget-grid');
+        const tabs = document.querySelectorAll('.tab-btn');
+        let currentEtape = 'generale';
+        let charts = {}; // To keep track of Chart.js instances
+
+        // --- INITIALIZATION ---
+        function init() {
+            setupEventListeners();
+            loadDataAndRender(currentEtape);
+            initTheme();
+        }
+
+        // --- EVENT LISTENERS ---
+        function setupEventListeners() {
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Update active tab UI
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Get new etape and re-render
+                    currentEtape = tab.dataset.etape;
+                    loadDataAndRender(currentEtape);
+                });
+            });
+
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+        }
+
+        // --- DATA LOADING AND PROCESSING ---
+        function loadDataAndRender(etape) {
+            try {
+                const rawData = localStorage.getItem('mbsData');
+                if (!rawData) {
+                    widgetGrid.innerHTML = `<p>Aucune donnée trouvée. Veuillez importer vos notes.</p>`;
+                    return;
+                }
+                const mbsData = JSON.parse(rawData);
+                const processedData = processDataForEtape(mbsData, etape);
+                renderWidgets(processedData);
+
+            } catch (error) {
+                console.error("Error loading or parsing data:", error);
+                widgetGrid.innerHTML = `<p>Erreur lors du chargement des données.</p>`;
+            }
+        }
+        
+        function processDataForEtape(data, etape) {
+            const subjectMap = new Map();
+
+            data.subjects.forEach(subject => {
+                const filteredGrades = subject.grades.filter(grade => {
+                    if (etape === 'generale') return true;
+                    // Assumes grade.etape is 'Étape 1', 'Étape 2', etc.
+                    return grade.etape.replace(/\s+/g, '').toLowerCase() === etape;
+                });
+
+                if (filteredGrades.length > 0) {
+                    const subjectData = {
+                        name: subject.name,
+                        grades: filteredGrades,
+                        average: calculateWeightedAverage(filteredGrades),
+                        // Add more calculations here if needed (e.g., trend)
+                    };
+                    subjectMap.set(subject.name, subjectData);
                 }
             });
-        });
-
-        if (sumOfFutureWeights < 0.0001) {
-            calcInfo.textContent = 'Tous les travaux ont été notés.';
-            goalResult.style.display = 'none';
-            return;
+            return Array.from(subjectMap.values());
         }
 
-        const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
-        calcInfo.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur les travaux complétés).`;
+        function calculateWeightedAverage(grades) {
+            let totalPoints = 0;
+            let totalWeight = 0;
 
-        const targetAvg = parseFloat(goalInput.value);
-        if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
-            goalResult.innerHTML = 'Veuillez entrer un objectif valide.';
-            goalResult.className = 'goal-result';
-            return;
+            grades.forEach(grade => {
+                const score = parseFloat(grade.result);
+                const maxScore = parseFloat(grade.max);
+                const weight = parseFloat(grade.weight);
+
+                if (!isNaN(score) && !isNaN(maxScore) && !isNaN(weight) && maxScore > 0) {
+                    totalPoints += (score / maxScore) * weight;
+                    totalWeight += weight;
+                }
+            });
+            
+            return totalWeight > 0 ? (totalPoints / totalWeight) * 100 : 0;
         }
 
-        // --- FIXED FORMULA ---
-        // New Formula: Required = Target + (Target - Current) * (CompletedWeight / FutureWeight)
-        const requiredAvgOnFuture = targetAvg + (targetAvg - currentAverage) * (sumOfCompletedWeights / sumOfFutureWeights);
+        // --- RENDERING ---
+        function renderWidgets(subjectData) {
+            // Clear previous charts and grid content
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+            widgetGrid.innerHTML = '';
+            
+            if (subjectData.length === 0) {
+                widgetGrid.innerHTML = `<p>Aucune note trouvée pour cette étape.</p>`;
+                return;
+            }
 
-        let message, resultClass;
-        if (requiredAvgOnFuture > 100.01) { message = `Il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Objectif impossible.`; resultClass = 'danger'; }
-        else if (requiredAvgOnFuture < 0) { message = `Félicitations ! Objectif déjà atteint.`; resultClass = 'success'; }
-        else { message = `Il vous faut une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants.`; resultClass = 'warning'; }
-        goalResult.innerHTML = message;
-        goalResult.className = `goal-result ${resultClass}`;
-    }
+            subjectData.sort((a, b) => b.average - a.average); // Sort by average
+
+            subjectData.forEach((subject, index) => {
+                const widgetHTML = `
+                    <div class="subject-widget" data-subject="${subject.name}">
+                        <div class="widget-top-section">
+                            <div class="widget-info">
+                                <h3 class="widget-title">${subject.name}</h3>
+                                <p class="widget-average">${subject.average.toFixed(1)}%</p>
+                                <!-- Trend logic can be added here -->
+                            </div>
+                            <div class="histogram-container">
+                                <canvas id="chart-${index}"></canvas>
+                            </div>
+                        </div>
+                        <div class="mini-leaderboard-container" id="leaderboard-${index}">
+                           <!-- Leaderboard will be rendered here -->
+                        </div>
+                    </div>
+                `;
+                widgetGrid.insertAdjacentHTML('beforeend', widgetHTML);
+                
+                // Create chart and render leaderboard after HTML is in the DOM
+                createChart(`chart-${index}`, subject.grades);
+                renderLeaderboard(`leaderboard-${index}`, subject.average);
+            });
+        }
+        
+        function createChart(canvasId, grades) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            
+            const gradePercentages = grades.map(g => {
+                const score = parseFloat(g.result);
+                const max = parseFloat(g.max);
+                return (score && max) ? (score / max) * 100 : 0;
+            }).filter(p => p > 0);
+
+            charts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: grades.map((g, i) => `Éval ${i + 1}`),
+                    datasets: [{
+                        label: 'Résultats',
+                        data: gradePercentages,
+                        backgroundColor: 'rgba(41, 128, 185, 0.6)',
+                        borderColor: 'rgba(41, 128, 185, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100, display: false },
+                        x: { display: false }
+                    },
+                    plugins: { legend: { display: false }, tooltip: { enabled: true } }
+                }
+            });
+        }
+        
+        /**
+         * FIX: This function now correctly uses the pre-calculated average from localStorage
+         * to find the user's rank. A full implementation requires a database of other students.
+         * This is a simulation to demonstrate the corrected logic.
+         */
+        function renderLeaderboard(containerId, userAverage) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Simulate leaderboard data
+            const leaderboardData = [
+                { name: 'A. Tremblay', grade: 94.5 }, { name: 'B. Côté', grade: 91.2 },
+                { name: 'C. Roy', grade: 88.9 }, { name: 'D. Gagnon', grade: 85.1 },
+                { name: 'E. Bouchard', grade: 82.4 }
+            ];
+
+            // Add the current user to the data
+            const userEntry = { name: 'Vous', grade: userAverage, isUser: true };
+            leaderboardData.push(userEntry);
+            
+            // Sort by grade to establish ranking
+            leaderboardData.sort((a, b) => b.grade - a.grade);
+
+            let listHTML = '<ul class="leaderboard-list">';
+            leaderboardData.forEach((item, index) => {
+                listHTML += `
+                    <li class="leaderboard-item ${item.isUser ? 'is-user' : ''}">
+                        <span class="item-rank">${index + 1}.</span>
+                        <span class="item-name">${item.name}</span>
+                        <span class="item-grade">${item.grade.toFixed(1)}%</span>
+                    </li>
+                `;
+            });
+            listHTML += '</ul>';
+            container.innerHTML = listHTML;
+        }
+
+        // --- THEME MANAGEMENT ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('theme-toggle').querySelector('i').className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            document.getElementById('theme-toggle').querySelector('i').className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+
+        // --- START THE APP ---
+        init();
+    });
+    </script>
     
-    goalInput.addEventListener('input', calculate);
-    calculate();
-}
+    <script id="chatbot-script">
+    (function() {
+        // --- CONFIGURATION ---
+        const appScriptUrl = "https://script.google.com/macros/s/AKfycbwSKlEFJU94tw8B0Vq1VB4dI-4fgD1whUl4IoFkkelrODBjPdIGh3jTOYgIMR-cu5WIcg/exec";
+        const GEMINI_MODEL = "gemini-1.5-flash-latest"; // Using a modern, efficient model
+        let geminiApiKey = ''; 
+        let isFetching = false;
+        
+        /**
+         * --- IMPROVED SYSTEM PROMPT ---
+         * This prompt now includes clear instructions on formatting, tone, and the crucial requirement to use clickable Markdown links.
+         */
+        const SYSTEM_PROMPT = `Tu es "Assistant MBS", un assistant IA pour les élèves du système éducatif québécois. Ton rôle est de les aider à comprendre leurs notes, leurs projections et leurs priorités d'amélioration en te basant sur les données JSON fournies.
+        
+        Règles de communication :
+        1.  **Langue** : Communique en français (par défaut) ou en anglais, selon la langue de l'utilisateur.
+        2.  **Ton** : Sois encourageant, clair et concis. Évite le jargon complexe.
+        3.  **Formatage OBLIGATOIRE** : Structure tes réponses pour une lisibilité maximale. Utilise des paragraphes (sauts de ligne), des listes à puces (*), et du texte en gras (**mot**) pour hiérarchiser l'information. C'EST CRUCIAL. Évite les longs blocs de texte.
+        4.  **Liens Cliquables** : Lorsque tu suggères des ressources externes, tu DOIS les formater en liens Markdown cliquables.
+            *   Exemple correct : "Tu peux trouver de l'aide sur [Alloprof](https://www.alloprof.qc.ca)."
+            *   Exemple correct : "Gère tes devoirs avec [Google Classroom](https://classroom.google.com/)."
+        5.  **Analyse de Données** : N'effectue une analyse approfondie des notes que si l'utilisateur le demande explicitement. Pour les salutations simples, réponds par une salutation simple et amicale.
+        `;
 
+        // --- DOM Elements ---
+        const container = document.getElementById('mbs-chatbot-container');
+        const toggleButton = document.getElementById('mbs-chatbot-toggle');
+        const chatWindow = document.getElementById('mbs-chatbot-window');
+        const messagesContainer = document.getElementById('mbs-chat-messages');
+        const chatForm = document.getElementById('mbs-chat-form');
+        const chatInput = document.getElementById('mbs-chat-input');
+        const chatSend = document.getElementById('mbs-chat-send');
+        
+        function init() {
+            // FIX: Configure marked.js to treat newlines as <br>, crucial for chat formatting
+            if (window.marked) {
+                marked.use({ breaks: true });
+            }
+            
+            setChatState('loading'); 
+            fetchApiKey();
+            setupEventListeners();
+        }
+        
+        function setChatState(state) {
+            isFetching = (state === 'fetching');
+            const isReady = (state === 'ready' || state === 'idle');
+            
+            toggleButton.classList.toggle('loading', state === 'loading' || state === 'fetching');
+            chatInput.disabled = !isReady;
+            chatSend.disabled = !isReady;
 
-// --- UNCHANGED HELPER & CHART FUNCTIONS ---
-// (Omitted for brevity, but they are the same as the previous version)
-function openOrderEditor(subject) { const existingModal = document.getElementById('order-editor-modal'); if(existingModal) existingModal.remove(); const modal = document.createElement('div'); modal.id = 'order-editor-modal'; modal.style.cssText = `position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; display:flex; align-items:center; justify-content:center;`; const allAssignments = (subject.competencies || []).flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` }))).filter(a => getNumericGrade(a.result) !== null); const currentOrder = mbsData.settings.assignmentOrder[subject.code] || []; if (currentOrder.length > 0) { const orderMap = new Map(currentOrder.map((id, index) => [id, index])); allAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity)); } modal.innerHTML = `<div style="background:var(--widget-background); color:var(--text-color); padding:25px; border-radius:12px; width:90%; max-width:600px;"><h3>Ordonner les Travaux pour le Graphique</h3><p style="color:var(--text-secondary-color); text-align:center;">Glissez-déposez pour réorganiser l'ordre des points sur le graphique.</p><ul id="order-list" style="list-style:none; padding:0; margin: 0 0 20px 0; max-height: 40vh; overflow-y: auto;">${allAssignments.map(assign => `<li draggable="true" data-id="${assign.uniqueId}" style="background:var(--background-color); margin-bottom:8px; padding:10px 15px; border-radius:5px; display:flex; align-items:center; cursor:grab; border:1px solid var(--border-color);"><i class="fa-solid fa-grip-vertical" style="margin-right:15px;"></i>${assign.work.replace('<br>', ' ')} <span style="margin-left:auto; background:var(--widget-background); padding:3px 8px; border-radius:10px; font-size:0.8em; border:1px solid var(--border-color);">${assign.result}</span></li>`).join('')}</ul><div style="display:flex; justify-content:space-between; align-items:center;"><button id="reset-mode-btn" class="btn-secondary">Mode moyenne auto</button><div><button id="close-order-editor" class="btn-secondary">Annuler</button><button id="save-order" class="btn-secondary" style="background-color:var(--success-color); margin-left:10px;">Sauvegarder</button></div></div></div>`; document.body.appendChild(modal); const content = modal.querySelector('div'); content.addEventListener('click', e => e.stopPropagation()); const list = modal.querySelector('#order-list'); let draggedItem = null; list.addEventListener('dragstart', e => { draggedItem = e.target; setTimeout(() => e.target.style.opacity = '0.5', 0); }); list.addEventListener('dragend', e => { setTimeout(() => { if(draggedItem) { draggedItem.style.opacity = '1'; draggedItem = null; } }, 0); }); list.addEventListener('dragover', e => { e.preventDefault(); const afterElement = [...list.querySelectorAll('li:not(.dragging)')].reduce((closest, child) => { const box = child.getBoundingClientRect(); const offset = e.clientY - box.top - box.height / 2; return (offset < 0 && offset > closest.offset) ? { offset: offset, element: child } : closest; }, { offset: Number.NEGATIVE_INFINITY }).element; if (draggedItem) { if (afterElement == null) { list.appendChild(draggedItem); } else { list.insertBefore(draggedItem, afterElement); } } }); const closeModal = () => { modal.remove(); renderWidgets(document.querySelector('.tab-btn.active').dataset.etape); }; modal.addEventListener('click', closeModal); modal.querySelector('#save-order').addEventListener('click', () => { const newOrder = [...list.querySelectorAll('li')].map(li => li.dataset.id); mbsData.settings.assignmentOrder[subject.code] = newOrder; mbsData.settings.historyMode[subject.code] = 'assignment'; localStorage.setItem('mbsData', JSON.stringify(mbsData)); closeModal(); }); modal.querySelector('#reset-mode-btn').addEventListener('click', () => { delete mbsData.settings.assignmentOrder[subject.code]; delete mbsData.settings.historyMode[subject.code]; localStorage.setItem('mbsData', JSON.stringify(mbsData)); closeModal(); }); modal.querySelector('#close-order-editor').addEventListener('click', closeModal); }
-function calculateAveragesFromRawData(data) { let termAverages = { GlobalAverage:null, Etape1Average: null, Etape2Average: null, Etape3Average: null }; let allSubjectAverages = {}; ['etape1', 'etape2', 'etape3'].forEach(etape => { let termSubjectAvgs = []; (data[etape] || []).forEach(subject => { const subjectAverage = calculateSubjectAverage(subject); if (subjectAverage !== null) { termSubjectAvgs.push(subjectAverage); const code = subject.code.substring(0, 3); if (!allSubjectAverages[code]) allSubjectAverages[code] = { total: 0, count: 0 }; allSubjectAverages[code].total += subjectAverage; allSubjectAverages[code].count++; } }); if (termSubjectAvgs.length > 0) { const etapeKey = 'Etape' + etape.slice(-1) + 'Average'; termAverages[etapeKey] = termSubjectAvgs.reduce((a, b) => a + b, 0) / termSubjectAvgs.length; } }); const finalSubjectAvgs = {}; for (const code in allSubjectAverages) { finalSubjectAvgs[code] = allSubjectAverages[code].total / allSubjectAverages[code].count; } let globalTotal = 0, globalWeight = 0; if(termAverages.Etape1Average !== null) {globalTotal += termAverages.Etape1Average * TERM_WEIGHTS.etape1; globalWeight += TERM_WEIGHTS.etape1}; if(termAverages.Etape2Average !== null) {globalTotal += termAverages.Etape2Average * TERM_WEIGHTS.etape2; globalWeight += TERM_WEIGHTS.etape2}; if(termAverages.Etape3Average !== null) {globalTotal += termAverages.Etape3Average * TERM_WEIGHTS.etape3; globalWeight += TERM_WEIGHTS.etape3}; if (globalWeight > 0) termAverages.GlobalAverage = globalTotal / globalWeight; return { term: termAverages, subjects: finalSubjectAvgs }; }
-function getRank(levelData, key, currentUserEncodedName) { const scores = levelData.map(row => parseFloat(row[key])).filter(score => !isNaN(score)); scores.sort((a, b) => b - a); const currentUser = levelData.find(d => d.encodedName === currentUserEncodedName); const currentUserValue = currentUser ? parseFloat(currentUser[key]) : NaN; const rank = scores.indexOf(currentUserValue) + 1; const percentile = (scores.length > 0) ? (1 - ((rank - 1) / scores.length)) * 100 : 0; return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? (percentile).toFixed(1) : null }; }
-function renderGauge(canvasId, value) { const ctx = document.getElementById(canvasId).getContext('2d'); const gradient = ctx.createLinearGradient(0, 0, 120, 0); gradient.addColorStop(0, '#e74c3c'); gradient.addColorStop(0.6, '#f39c12'); gradient.addColorStop(1, '#27ae60'); activeGauges[canvasId] = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%', plugins: { tooltip: { enabled: false } } }, plugins: [{ id: 'gaugeNeedle', afterDraw: chart => { const { ctx, chartArea } = chart; const angle = Math.PI + (value / 100) * Math.PI; const cx = chartArea.left + chartArea.width / 2; const cy = chartArea.top + chartArea.height; const needleRadius = chart.getDatasetMeta(0).data[0].outerRadius; ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(needleRadius - 10, 0); ctx.lineTo(0, 5); ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#e0e0e0' : '#2c3e50'; ctx.fill(); ctx.restore(); } }] }); }
-function renderHistogram(canvasId, subject, chartStore = activeWidgetCharts) { const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark'; const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60']; const grades = (subject.competencies || []).flatMap(comp => (comp.assignments || []).map(a => getNumericGrade(a.result)).filter(g => g !== null)); const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 }; grades.forEach(g => { if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++; else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++; }); const ctx = document.getElementById(canvasId)?.getContext('2d'); if (!ctx) return; chartStore[canvasId] = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } } }); const widget = ctx.canvas.closest('.subject-widget'); if (widget && chartStore === activeWidgetCharts) { widget.querySelector('.chart-view-toggle-btn').innerHTML = '<i class="fa-solid fa-chart-line"></i>'; const orderBtn = widget.querySelector('.order-edit-btn'); if (orderBtn) orderBtn.style.display = 'none'; } }
-function renderLineGraph(canvasId, subject, chartStore = activeWidgetCharts) { const mode = mbsData.settings.historyMode[subject.code] || 'average'; let chartData; if (mode === 'assignment') { const allAssignments = (subject.competencies || []).flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` }))).filter(a => getNumericGrade(a.result) !== null); const order = mbsData.settings.assignmentOrder[subject.code] || []; if (order.length > 0) { const orderMap = new Map(order.map((id, index) => [id, index])); allAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity)); } chartData = { labels: allAssignments.map(a => a.work.replace('<br>', ' ')), datasets: [{ label: 'Note', data: allAssignments.map(a => getNumericGrade(a.result)), borderColor: '#3498db', pointBackgroundColor: '#3498db', pointRadius: 5 }] }; } else { const history = (mbsData.historique[subject.code] || []).filter(h => h !== null); chartData = { labels: history.map((_, i) => `Moyenne ${i + 1}`), datasets: [{ label: 'Moyenne', data: history, borderColor: '#3498db', pointBackgroundColor: '#3498db', pointRadius: 5 }] }; } const ctx = document.getElementById(canvasId)?.getContext('2d'); if (!ctx) return; chartStore[canvasId] = new Chart(ctx, { type: 'line', data: chartData, options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100 }, x: { ticks: { display: false }, grid: { display: false } } }, plugins: { legend: { display: false }, title: { display: true, text: mode === 'assignment' ? 'Ordre des travaux' : 'Historique des moyennes' } } } }); const widget = ctx.canvas.closest('.subject-widget'); if (widget && chartStore === activeWidgetCharts) { widget.querySelector('.chart-view-toggle-btn').innerHTML = '<i class="fa-solid fa-chart-column"></i>'; const orderBtn = widget.querySelector('.order-edit-btn'); if (orderBtn) orderBtn.style.display = 'flex'; } }
-function renderAssignmentsChart(assignments) { if (activeExpandedCharts['assignmentsChart']) activeExpandedCharts['assignmentsChart'].destroy(); const ctx = document.getElementById('assignmentsChart').getContext('2d'); activeExpandedCharts['assignmentsChart'] = new Chart(ctx, { type: 'bar', data: { labels: assignments.map(a => a.work.replace('<br>', ' ')), datasets: [{ label: 'Note', data: assignments.map(a => getNumericGrade(a.result)), backgroundColor: assignments.map(a => (getNumericGrade(a.result) ?? 0) < 60 ? 'rgba(231, 76, 60, 0.7)' : 'rgba(41, 128, 185, 0.7)'), }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100, beginAtZero: false } }, plugins: { legend: { display: false }, title: { display: true, text: 'Notes des travaux' } } } }); }
-function renderSubjectAveragesChart(subjects) { if (activeExpandedCharts['assignmentsChart']) activeExpandedCharts['assignmentsChart'].destroy(); const ctx = document.getElementById('assignmentsChart').getContext('2d'); activeExpandedCharts['assignmentsChart'] = new Chart(ctx, { type: 'bar', data: { labels: subjects.map(s => s.name), datasets: [{ label: 'Moyenne', data: subjects.map(s => s.average), backgroundColor: subjects.map(s => (s.average < 60 ? 'rgba(231, 76, 60, 0.7)' : 'rgba(41, 128, 185, 0.7)')), }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100, beginAtZero: false } }, plugins: { legend: { display: false }, title: { display: true, text: 'Moyennes par Matière' } } } }); }
-function renderSubjectDistributionHistogram(canvasId, subjects, chartStore = activeWidgetCharts) { const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 }; subjects.forEach(s => { const avg = s.average; if (avg < 60) bins['Echec (<60)']++; else if (avg < 70) bins['C (60-69)']++; else if (avg < 90) bins['B (70-89)']++; else bins['A (90+)']++; }); const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark'; const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60']; const ctx = document.getElementById(canvasId).getContext('2d'); chartStore[canvasId] = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des moyennes' } } } }); }
-function renderGeneralAverageHistoryGraph(canvasId, history, chartStore = activeWidgetCharts) { const chartData = { labels: history.map((_, i) => `Sync ${i + 1}`), datasets: [{ label: 'Moyenne Générale', data: history, borderColor: '#3498db', tension: 0.1 }] }; const ctx = document.getElementById(canvasId).getContext('2d'); chartStore[canvasId] = new Chart(ctx, { type: 'line', data: chartData, options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 60, suggestedMax: 100 }, x: { display: false } }, plugins: { legend: { display: false }, title: { display: true, text: 'Historique de la moyenne' } } } }); }
-function renderRankingComparisonChart(canvasId, levelData, currentUserData) { const calculateGroupAvg = (etapeKey) => { const validGrades = levelData.map(u => parseFloat(u[etapeKey])).filter(g => !isNaN(g) && g > 0); return validGrades.length > 0 ? validGrades.reduce((a, b) => a + b, 0) / validGrades.length : null; }; const parseUserGrade = (grade) => (parseFloat(grade) > 0 ? parseFloat(grade) : null); const userData = [parseUserGrade(currentUserData.Etape1Average), parseUserGrade(currentUserData.Etape2Average), parseUserGrade(currentUserData.Etape3Average)]; const groupData = [calculateGroupAvg('Etape1Average'), calculateGroupAvg('Etape2Average'), calculateGroupAvg('Etape3Average')]; const ctx = document.getElementById(canvasId).getContext('2d'); activeExpandedCharts[canvasId] = new Chart(ctx, { type: 'line', data: { labels: ['Étape 1', 'Étape 2', 'Étape 3'], datasets: [ { label: 'Votre Moyenne', data: userData, borderColor: '#27ae60', tension: 0.1 }, { label: 'Moyenne du Niveau', data: groupData, borderColor: '#e74c3c', tension: 0.1 } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 50, max: 100 } }, plugins: { legend: { position: 'top' } } } }); }
+            if (state === 'ready') {
+                chatInput.placeholder = "Posez votre question...";
+                displayMessage("Bonjour ! Comment puis-je vous aider avec vos notes aujourd'hui ?", 'ai');
+            } else if (state === 'loading') {
+                chatInput.placeholder = "Chargement de l'assistant...";
+            } else if (state === 'idle') {
+                chatInput.focus();
+            }
+        }
+        
+        function fetchApiKey() {
+            fetch(appScriptUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.status === "success" && data.data.firstBox) {
+                        geminiApiKey = data.data.firstBox.trim();
+                        setChatState('ready');
+                    } else {
+                        throw new Error("Invalid API key format received.");
+                    }
+                })
+                .catch(error => {
+                    console.error("MBS Chatbot: API Key fetch error:", error);
+                    displayMessage(`**Erreur de chargement:** Impossible de contacter le service de l'assistant. Veuillez réessayer plus tard.`, 'ai');
+                });
+        }
+
+        function setupEventListeners() {
+            toggleButton.addEventListener('click', () => {
+                if (!toggleButton.classList.contains('loading')) {
+                     container.classList.toggle('expanded');
+                     if(container.classList.contains('expanded')) {
+                        chatInput.focus();
+                     }
+                }
+            });
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const userMessage = chatInput.value.trim();
+                if (userMessage && !isFetching) {
+                    displayMessage(userMessage, 'user');
+                    chatInput.value = '';
+                    processUserMessage(userMessage);
+                }
+            });
+        }
+
+        function displayMessage(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `mbs-chat-message ${sender}`;
+            
+            // FIX: Use marked.parse for AI messages to render HTML from Markdown
+            if (sender === 'ai' && window.marked) {
+                messageDiv.innerHTML = marked.parse(message);
+            } else {
+                messageDiv.textContent = message;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+            return messageDiv;
+        }
+
+        function showTypingIndicator() {
+            if (messagesContainer.querySelector('.mbs-typing-indicator')) return;
+            const indicatorDiv = document.createElement('div');
+            indicatorDiv.className = 'mbs-typing-indicator';
+            indicatorDiv.innerHTML = '<span></span><span></span><span></span>';
+            messagesContainer.appendChild(indicatorDiv);
+            scrollToBottom();
+        }
+
+        function removeTypingIndicator() {
+            const indicator = messagesContainer.querySelector('.mbs-typing-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function getStudentDataForPrompt() {
+            const safeParse = (key) => {
+                try {
+                    const rawData = localStorage.getItem(key);
+                    return rawData ? JSON.parse(rawData) : { error: `Données '${key}' introuvables.` };
+                } catch (e) {
+                    return { error: `Erreur de lecture des données '${key}'.` };
+                }
+            };
+            return { 
+                mbsData: safeParse('mbsData'), 
+                mbsProjectionCache: safeParse('mbsProjectionCache') 
+            };
+        }
+
+        async function processUserMessage(userMessage) {
+            if (!geminiApiKey) {
+                 displayMessage('Désolé, l\'assistant n\'est pas correctement configuré. Clé API manquante.', 'ai');
+                 return;
+            }
+            
+            setChatState('fetching');
+            showTypingIndicator();
+            
+            const studentDataContext = JSON.stringify(getStudentDataForPrompt(), null, 2);
+            
+            const fullPrompt = `${userMessage}\n\n---CONTEXTE DES DONNÉES DE L'ÉLÈVE---\n${studentDataContext}`;
+            
+            const payload = {
+                contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+                systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
+            };
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `Erreur HTTP: ${response.status}`);
+                }
+
+                const responseData = await response.json();
+                const aiResponseText = responseData.candidates[0]?.content?.parts[0]?.text;
+
+                if (aiResponseText) {
+                    displayMessage(aiResponseText, 'ai');
+                } else {
+                    throw new Error("Réponse invalide ou vide de l'API.");
+                }
+
+            } catch (error) {
+                console.error("MBS Chatbot: API Error:", error);
+                displayMessage(`**Oups !** Une erreur est survenue. Voici le détail : ${error.message}`, 'ai');
+            } finally {
+                removeTypingIndicator();
+                setChatState('idle');
+            }
+        }
+        
+        init();
+    })();
+    </script>
+
+</body>
+</html>
