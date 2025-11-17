@@ -151,22 +151,24 @@
         font-family: var(--mbs-font-family);
     }
 
-    /* Toggle Button */
-    #mbs-chatbot-toggle {
-        background-color: var(--mbs-primary-color);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 60px;
-        height: 60px;
-        font-size: 28px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        transition: transform 0.2s ease, background-color 0.2s ease;
-    }
+/* Toggle Button */
+#mbs-chatbot-toggle {
+    position: relative; /* <-- Add this */
+    z-index: 10000;     /* <-- And this */
+    background-color: var(--mbs-primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
     
     #mbs-chatbot-toggle.loading {
         background-color: #444;
