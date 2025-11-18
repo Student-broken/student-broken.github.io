@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
     /**
      * Checks local storage for the 'mbs_accept' key.
      * @returns {boolean} - True if terms and privacy are accepted, false otherwise.
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // --- No Data Collection Message ---
         const noDataCollectionMessage = document.createElement('p');
-        noDataCollectionMessage.textContent = 'Ce site ne collecte ni mots de passe, ni noms, ni noms d’utilisateur.';
+        noDataCollectionMessage.textContent = 'Ce site ne collecte ni mots de passe, ni noms d’utilisateur.';
         Object.assign(noDataCollectionMessage.style, {
             fontSize: '0.9em',
             color: '#b9bbbe', // Lighter grey text
