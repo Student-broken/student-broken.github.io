@@ -166,6 +166,72 @@
     </style>
 </head>
 <body>
+    <div class="background-container"></div>
+    <div class="background-overlay"></div>
+
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" class="icon-btn theme-toggle" title="Mode Sombre/Clair">
+        <i class="fa-solid fa-moon"></i>
+    </button>
+
+    <main class="content">
+        <div class="welcome-widget">
+            <div id="signup-flow">
+                <h1>Outil MBS</h1>
+                <a href="data.html" class="btn btn-primary">
+                    <span>🚀</span>
+                    <span>Commencer</span>
+                </a>
+            </div>
+            <div id="login-flow">
+                <p class="welcome-back">Bon retour,</p>
+                <h2 id="userNameDisplay" class="user-name"></h2>
+                
+                <a href="main.html" class="btn btn-primary">
+                    <span>📊</span>
+                    <span>Accéder au tableau de bord</span>
+                </a>
+                <a href="data.html" class="btn btn-secondary">
+                    <span>🔄</span>
+                    <span>Mettre à jour les données</span>
+                </a>
+                <a href="improve.html" class="btn btn-performance">
+                    <span>📈</span>
+                    <span>Analyser ma performance</span>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Theme and animation control script -->
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const toggleIcon = themeToggle.querySelector('i');
+        const THEME_KEY = 'mbs-theme';
+
+        const updateTheme = (theme) => {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem(THEME_KEY, theme);
+            if (theme === 'dark') {
+                toggleIcon.classList.remove('fa-moon');
+                toggleIcon.classList.add('fa-sun');
+            } else {
+                toggleIcon.classList.remove('fa-sun');
+                toggleIcon.classList.add('fa-moon');
+            }
+        };
+
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        updateTheme(initialTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            updateTheme(newTheme);
+        });
+    </script>
     
     <!-- Existing script for login flow -->
     <script>
