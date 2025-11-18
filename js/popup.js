@@ -180,7 +180,7 @@
         closeIframeButton.textContent = 'Fermer';
         Object.assign(closeIframeButton.style, {
             position: 'absolute',
-            bottom: '20px',
+            top: '20px',
             right: '20px',
             padding: '10px 20px',
             backgroundColor: '#f04747', // Red color
