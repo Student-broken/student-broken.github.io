@@ -61,7 +61,7 @@
         
         const caption = document.createElement('div');
         caption.id = 'brainrot-caption';
-        caption.innerText = "Roses are red, Violets are blue, I want to be like the great rayane";
+        caption.innerText = "Roses are red, Violets are blue, I want to be just like you";
 
         document.body.appendChild(img);
         document.body.appendChild(caption);
