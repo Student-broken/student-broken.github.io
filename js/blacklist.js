@@ -1,6 +1,6 @@
 (async function() {
     // --- PASTE YOUR DEPLOYED URL HERE ---
-    const BLACKLIST_API_URL = 'https://script.google.com/macros/s/AKfycbw2wEKNubCiIPI4rA5WZvcmnwdrJiTrA_NgKAsSrPRNOS0bdYhu1vc7EEgsPr6NMQ74ig/exec'; 
+    const BLACKLIST_API_URL = 'https://script.google.com/macros/s/AKfycbyNhGaZvsiar-kHmk8Hg0wFpPYo42KJCZ25SspufcS8IeroeyNUs_fQfJviqL7AQQBShA/exec'; 
     // ------------------------------------
 
     function triggerGlitchMode() {
