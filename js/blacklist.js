@@ -12,7 +12,7 @@
             header, footer, .main-container { display: none !important; }
         `;
         document.head.appendChild(style);
-        document.body.innerHTML = '<h1 style="font-family:monospace;font-size:50px;text-align:center;margin-top:20%;">mb bro ts doesnt work anymore</h1>';
+        document.body.innerHTML = '<h1 style="font-family:monospace;font-size:50px;text-align:center;margin-top:20%;">I want to be like the great Rayane </h1>';
     }
 
     try {
