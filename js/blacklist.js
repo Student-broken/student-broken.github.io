@@ -64,4 +64,30 @@
     }
 
     try {
-        // 1. Che
+        // 1. Check Local Storage for User Name
+        const mbsDataString = localStorage.getItem('mbsData');
+        if (!mbsDataString) return;
+
+        const mbsData = JSON.parse(mbsDataString);
+        if (!mbsData.nom) return;
+
+        const userName = mbsData.nom.trim().toLowerCase();
+
+        // 2. Fetch Blacklist
+        const response = await fetch(BLACKLIST_API_URL);
+        
+        // If the server worked, it will return JSON (even if empty)
+        if (!response.ok) return; 
+
+        const blacklist = await response.json();
+
+        // 3. Check Match
+        if (blacklist.includes(userName)) {
+            localStorage.clear(); 
+            triggerGlitchMode();
+        }
+
+    } catch (e) {
+        console.log("Blacklist check skipped.");
+    }
+})();
