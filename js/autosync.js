@@ -1,61 +1,101 @@
-
+/**
+ * js/auto-sync.js - Visual Feedback Version
+ * Displays a status box on screen since console is inaccessible.
+ */
 
 (function() {
     // --- CONFIGURATION ---
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1CoMUIieKjENe1jE-5It-pIEi7qiU2Mv6ian-3yDNs6uz383wlQYmCdDNXXHAgLjpGw/exec';
     const TERM_WEIGHTS = { etape1: 0.20, etape2: 0.20, etape3: 0.60 };
 
-    // --- MAIN EXECUTION ---
-    function initSync() {
-        try {
-            const mbsData = JSON.parse(localStorage.getItem('mbsData'));
+    // --- VISUAL FEEDBACK HELPER ---
+    function showStatus(message, color = '#333') {
+        let statusBox = document.getElementById('sync-status-box');
+        if (!statusBox) {
+            statusBox = document.createElement('div');
+            statusBox.id = 'sync-status-box';
+            statusBox.style.cssText = `
+                position: fixed; bottom: 10px; right: 10px; 
+                background: ${color}; color: white; padding: 10px 15px; 
+                border-radius: 5px; font-family: sans-serif; font-size: 12px; 
+                z-index: 9999; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            `;
+            document.body.appendChild(statusBox);
+        }
+        statusBox.style.background = color;
+        statusBox.innerText = message;
+        
+        // Hide success messages after 5 seconds
+        if (color === '#27ae60') {
+            setTimeout(() => { statusBox.remove(); }, 5000);
+        }
+    }
 
-            // Basic Validation
-            if (!mbsData || !mbsData.valid || !mbsData.nom || !mbsData.settings?.niveau) {
-                console.log("Auto-Sync: Data invalid or missing configuration. Skipping sync.");
+    // --- MAIN SYNC LOGIC ---
+    function initSync() {
+        showStatus("Sync: Initialisation...", "#f39c12"); // Orange (Working)
+
+        try {
+            const rawData = localStorage.getItem('mbsData');
+            
+            // CHECK 1: LocalStorage Data
+            if (!rawData) {
+                showStatus("Erreur Sync: Aucune donnée locale (mbsData)", "#c0392b");
                 return;
             }
 
-            // Calculate Data using improve-functions logic
+            const mbsData = JSON.parse(rawData);
+
+            // CHECK 2: Name and Level
+            if (!mbsData.nom) {
+                showStatus("Erreur Sync: Nom manquant. Allez dans 'Mise à jour'.", "#c0392b");
+                return;
+            }
+            if (!mbsData.settings || !mbsData.settings.niveau) {
+                showStatus("Erreur Sync: Niveau (Sec 4/5) non sélectionné.", "#c0392b");
+                return;
+            }
+
+            // CHECK 3: Calculation
+            showStatus("Sync: Calcul des moyennes...", "#2980b9"); // Blue
             const calculatedData = calculateAveragesFromRawData(mbsData);
             
-            // Prepare Network Request
+            // CHECK 4: Preparation
             const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom)));
             const formData = new FormData();
             
             formData.append('encodedName', encodedName);
             formData.append('secondaryLevel', mbsData.settings.niveau);
 
-            // Append Term Averages
             for (const key in calculatedData.term) {
                 const val = calculatedData.term[key];
                 formData.append(key, val !== null ? val.toFixed(2) : '');
             }
 
-            // Append Subject Averages
             for (const key in calculatedData.subjects) {
                 const val = calculatedData.subjects[key];
                 formData.append(key, val !== null ? val.toFixed(2) : '');
             }
 
-            // Send Data (Fire & Forget)
+            // CHECK 5: Sending
+            showStatus("Sync: Envoi vers Google Sheets...", "#8e44ad"); // Purple
+
             fetch(SCRIPT_URL, {
                 method: 'POST',
                 body: formData,
                 mode: 'no-cors'
             }).then(() => {
-                console.log("Auto-Sync: Data sent to Google Sheet successfully.");
+                showStatus("Sync: Données envoyées avec succès !", "#27ae60"); // Green
             }).catch(err => {
-                console.error("Auto-Sync: Network error.", err);
+                showStatus("Erreur Réseau: " + err.message, "#c0392b");
             });
 
         } catch (e) {
-            console.error("Auto-Sync: Internal error during sync process.", e);
+            showStatus("Erreur Script: " + e.message, "#c0392b");
         }
     }
 
-    // --- CALCULATION HELPERS (Exact logic from improve-functions.js) ---
-
+    // --- CALCULATION HELPERS (Exact copy needed for standalone file) ---
     const getNumericGrade = (result) => {
         if (!result) return null;
         const gradeMap = {'A+':100,'A':95,'A-':90,'B+':85,'B':80,'B-':75,'C+':70,'C':65,'C-':60,'D+':55,'D':50,'E':45};
@@ -137,8 +177,8 @@
 
     // --- TRIGGER ---
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initSync);
+        document.addEventListener('DOMContentLoaded', () => setTimeout(initSync, 1000));
     } else {
-        initSync();
+        setTimeout(initSync, 1000);
     }
 })();
