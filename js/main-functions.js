@@ -4,10 +4,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
     const defaultUnits = {
         sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2 },
-        sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 }
+        sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2 }
     };
-    const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière" };
-    
+    const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'MAT': "Mathématique", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière" };
+
     let mbsData = {};
     let activeTab = 'etape1';
 
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('mbsData', JSON.stringify(mbsData));
         renderAll();
     }
-    
+
     function saveCustomUnits() {
         if (document.getElementById('unites-mode').value !== 'perso') return;
         let customUnites = {};
@@ -105,13 +105,13 @@ document.addEventListener('DOMContentLoaded', () => {
             comp.assignments.forEach((assign, assignIndex) => {
                 const assignRow = document.createElement('tr');
                 const dataPath = `${etapeKey}-${subjectIndex}-${compIndex}-${assignIndex}`;
-                
+
                 assignRow.innerHTML = `
                     <td>${assign.category || '<span class="no-data">-</span>'}</td>
                     <td>${assign.work || '<span class="no-data">-</span>'}</td>
                     <td><input type="number" class="pond-input-field" value="${assign.pond || ''}" data-path="${dataPath}" placeholder="--"></td>
                     <td>${assign.assignedDate || '<span class="no-data">-</span>'}</td>
-                    <td>${(assign.dueDate || '').replace('à','')}</td>
+                    <td>${(assign.dueDate || '').replace('à', '')}</td>
                     <td>
                         <div class="grade-container" data-original-result="${assign.result || ''}">
                             <span class="grade-display">${formatGrade(assign.result)}</span>
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderSidePanel() {
         const averages = calculateAllAverages();
         const niveau = mbsData.settings?.niveau;
-        
+
         const formatAvg = (avg) => avg !== null ? `<span class="grade-percentage">${avg.toFixed(2)}%</span>` : '--';
 
         const globalAvgEl = document.getElementById('moyenne-generale');
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!result) return null;
         const trimmed = result.trim();
         if (gradeMap[trimmed]) return gradeMap[trimmed];
-        
+
         const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/);
         if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.'));
 
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return null;
     }
-    
+
     function calculateAllAverages() {
         const units = getUnits();
         const niveau = mbsData.settings?.niveau;
@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Dynamic content listeners (Event Delegation)
         const tabContents = document.getElementById('tab-contents');
-        
+
         tabContents.addEventListener('input', e => {
             const target = e.target;
             if (target.classList.contains('pond-input-field')) {
@@ -372,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const inputField = container.querySelector('.grade-input-field');
                 const originalResult = container.dataset.originalResult;
                 const numericGrade = getNumericGrade(originalResult);
-                
+
                 gradeDisplay.classList.add('hidden');
                 inputField.classList.remove('hidden');
                 inputField.value = numericGrade !== null ? numericGrade.toFixed(2) : '';

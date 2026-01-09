@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,11 +8,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2980b9; 
-            --secondary-color: #2c3e50; 
-            --background-color: #f7f9fb; 
+            --primary-color: #2980b9;
+            --secondary-color: #2c3e50;
+            --background-color: #f7f9fb;
             --widget-background: #ffffff;
-            --text-color: #34495e; 
+            --text-color: #34495e;
             --light-grey: #bdc3c7;
             --footer-grey: #95a5a6;
             --success-color: #27ae60;
@@ -32,14 +33,14 @@
 
         .site-header-container {
             background-color: var(--widget-background);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); 
-            border-bottom: 1px solid #e0e6eb; 
-            padding: 15px 0; 
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid #e0e6eb;
+            padding: 15px 0;
         }
-        
+
         .site-header {
             text-align: center;
-            padding: 0; 
+            padding: 0;
             margin: 0;
             color: var(--secondary-color);
             font-size: 2.2em;
@@ -103,7 +104,9 @@
             font-size: 0.95em;
         }
 
-        input[type="text"], textarea, select {
+        input[type="text"],
+        textarea,
+        select {
             width: 100%;
             padding: 14px;
             border: 1px solid #ddd;
@@ -114,7 +117,9 @@
             font-family: inherit;
         }
 
-        input[type="text"]:focus, textarea:focus, select:focus {
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
             outline: none;
@@ -130,7 +135,8 @@
             background-color: white;
         }
 
-        input[type="submit"], .btn {
+        input[type="submit"],
+        .btn {
             background-color: var(--primary-color);
             color: white;
             padding: 16px 25px;
@@ -144,12 +150,14 @@
             width: 100%;
         }
 
-        input[type="submit"]:not(:disabled):hover, .btn:not(:disabled):hover {
+        input[type="submit"]:not(:disabled):hover,
+        .btn:not(:disabled):hover {
             background-color: #3498db;
             transform: translateY(-1px);
         }
 
-        input[type="submit"]:disabled, .btn:disabled {
+        input[type="submit"]:disabled,
+        .btn:disabled {
             background-color: var(--light-grey);
             cursor: not-allowed;
             opacity: 0.8;
@@ -274,14 +282,16 @@
                 flex-direction: column;
                 align-items: center;
             }
-            
-            .form-widget, .status-widget {
+
+            .form-widget,
+            .status-widget {
                 max-width: 100%;
                 width: 100%;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="site-header-container">
         <header class="site-header">Signaler un Problème</header>
@@ -295,9 +305,10 @@
                 <label for="Name">Votre nom / nom d'utilisateur *</label>
                 <input type="text" id="Name" name="Name" required>
 
-                <label for="Contact">Contacte email (Seulement nécessaire si vous demandez de l'information ou désirez obtenir une copie de vos donnés)</label>
+                <label for="Contact">Contacte email (Seulement nécessaire si vous demandez de l'information ou désirez
+                    obtenir une copie de vos donnés)</label>
                 <input type="text" id="Contact" name="Contact">
-                
+
                 <label for="Message">Message *</label>
                 <textarea id="Message" name="Message" rows="5" required></textarea>
 
@@ -306,12 +317,23 @@
                     <option value="" disabled selected>--Sélectionnez une option--</option>
                     <option value="Request erasure of your data">Signaler un problème</option>
                     <option value="Request copy of your data">Donner une suggestion</option>
-                    <option value="Request information about how data is collected">Question sur le stockage de donnés</option>
+                    <option value="Request information about how data is collected">Question sur le stockage de donnés
+                    </option>
                     <option value="Other">Autre</option>
                 </select>
-                
+
+                <div style="margin-top: 20px; display: flex; align-items: flex-start; gap: 10px;">
+                    <input type="checkbox" id="includeDebugData" name="includeDebugData"
+                        style="width: auto; margin-top: 3px;">
+                    <label for="includeDebugData"
+                        style="margin: 0; font-weight: normal; font-size: 0.9em; cursor: pointer;">
+                        Joindre les données techniques (Données locales + Copie brute du portail) pour aider au
+                        débogage. Ceci enverra vos notes et votre nom aux développeurs.
+                    </label>
+                </div>
+
                 <input type="submit" value="Soumettre le ticket">
-                
+
                 <div id="responseMessage"></div>
             </form>
         </div>
@@ -321,12 +343,12 @@
                 Statut du ticket
                 <span>▼</span>
             </div>
-            
+
             <div class="status-content">
                 <label for="ticketIdInput">Entrer votre Ticket ID</label>
                 <input type="text" id="ticketIdInput" placeholder="TICKET-1234567890123" required>
                 <button class="btn" id="checkStatusButton">Vérifier le Statut</button>
-                
+
                 <div id="statusResult"></div>
             </div>
         </div>
@@ -334,147 +356,171 @@
 
     <footer>
         Pour des questions, veuillez contacter:
-        <a href="mailto:notabot.chat@gmail.com" style="color: var(--primary-color); text-decoration: none;">notabot.chat@gmail.com</a>
-           
+        <a href="mailto:notabot.chat@gmail.com"
+            style="color: var(--primary-color); text-decoration: none;">notabot.chat@gmail.com</a>
+
         <br>
-        <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>
+        <a href="info/condition.html" target="_blank">Conditions d’utilisation</a> et la <a href="info/privacy.html"
+            target="_blank">Politique de confidentialité</a>
 
     </footer>
 
- <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzpiASb3xyq5Hf3b2-i8MvjYm-p0QW4-JwdyBU0IUFhFn8KlgKtAPCMFriYz0JnFOsf/exec';
-    
-    const ticketForm = document.getElementById('ticketForm');
-    const responseMessage = document.getElementById('responseMessage');
-    const ticketIdInput = document.getElementById('ticketIdInput');
-    const checkStatusButton = document.getElementById('checkStatusButton');
-    const statusResult = document.getElementById('statusResult');
-    const statusWidget = document.getElementById('statusWidget');
-    const statusHeader = document.getElementById('statusHeader');
-    const submitButton = ticketForm.querySelector('input[type="submit"]');
+    <script>
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzpiASb3xyq5Hf3b2-i8MvjYm-p0QW4-JwdyBU0IUFhFn8KlgKtAPCMFriYz0JnFOsf/exec';
 
-    // --- New Function to manage Local Storage ---
-    function saveTicketId(id) {
-        localStorage.setItem('lastTicketId', id);
-        ticketIdInput.value = id; // Also updates the input field
-    }
+        const ticketForm = document.getElementById('ticketForm');
+        const responseMessage = document.getElementById('responseMessage');
+        const ticketIdInput = document.getElementById('ticketIdInput');
+        const checkStatusButton = document.getElementById('checkStatusButton');
+        const statusResult = document.getElementById('statusResult');
+        const statusWidget = document.getElementById('statusWidget');
+        const statusHeader = document.getElementById('statusHeader');
+        const submitButton = ticketForm.querySelector('input[type="submit"]');
 
-    function removeTicketId() {
-        localStorage.removeItem('lastTicketId');
-        ticketIdInput.value = ''; // Clears the input field
-    }
-
-    // --- Check for stored ID on page load ---
-    document.addEventListener('DOMContentLoaded', () => {
-        const storedId = localStorage.getItem('lastTicketId');
-        if (storedId) {
-            ticketIdInput.value = storedId;
-            statusWidget.classList.remove('collapsed');
+        // --- New Function to manage Local Storage ---
+        function saveTicketId(id) {
+            localStorage.setItem('lastTicketId', id);
+            ticketIdInput.value = id; // Also updates the input field
         }
-    });
 
-    statusHeader.addEventListener('click', () => {
-        statusWidget.classList.toggle('collapsed');
-    });
+        function removeTicketId() {
+            localStorage.removeItem('lastTicketId');
+            ticketIdInput.value = ''; // Clears the input field
+        }
 
-    ticketForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const form = e.target;
-        const formData = new FormData(form);
-        
-        submitButton.disabled = true; 
-        submitButton.value = 'Sending...';
-        responseMessage.textContent = 'Submitting your request...';
-        responseMessage.className = 'loading';
-
-        const searchParams = new URLSearchParams(formData);
-
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            body: searchParams
-        })
-        .then(response => response.json())
-        .then(data => {
-            submitButton.disabled = false;
-            submitButton.value = 'Soumettre le ticket';
-            
-            if (data.status === 'success') {
-                responseMessage.className = 'success';
-                responseMessage.innerHTML = `✅ Succès! Votre ticket a été soumis<br><br>Your <strong>Ticket ID</strong> is: <strong>${data.ticketId}</strong><br><br>Veuillez conserver cet identifiant pour consulter l'état de votre ticket. Votre demande sera traitée dans les prochaines 24 heures. Veuillez revenir consulter l'état de votre billet dans quelques heures. Merci.`;
-                
-                // --- ADDED: Save Ticket ID to Local Storage ---
-                saveTicketId(data.ticketId);
-
-                form.reset(); 
-                statusWidget.classList.remove('collapsed'); 
-            } else {
-                responseMessage.className = 'error';
-                responseMessage.textContent = data.message || '❌ An error occurred. Please try again.';
+        // --- Check for stored ID on page load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedId = localStorage.getItem('lastTicketId');
+            if (storedId) {
+                ticketIdInput.value = storedId;
+                statusWidget.classList.remove('collapsed');
             }
-        })
-        .catch(error => {
-            submitButton.disabled = false;
-            submitButton.value = 'Soumettre le ticket';
-            console.error('Error:', error);
-            responseMessage.className = 'error';
-            responseMessage.textContent = '❌ An error occurred during submission. Please check your connection and try again.';
         });
-    });
 
-    checkStatusButton.addEventListener('click', function() {
-        const ticketId = ticketIdInput.value.trim();
-        if (!ticketId) {
-            statusResult.style.color = '#FFB74D';
-            statusResult.textContent = '⚠️ Veuillez entrer un ticket ID.';
-            return;
-        }
+        statusHeader.addEventListener('click', () => {
+            statusWidget.classList.toggle('collapsed');
+        });
 
-        statusResult.textContent = 'Votre demande est en cours de traitement...';
-        statusResult.style.color = '#B0BEC5';
+        ticketForm.addEventListener('submit', function (e) {
+            e.preventDefault();
 
-        fetch(`${WEB_APP_URL}?ticketId=${encodeURIComponent(ticketId)}`, {
-            method: 'GET'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                let color = '#fff';
-                let emoji = '';
-                
-                switch (data.statusCode) {
-                    case 'D':
-                        color = '#81C784';
-                        emoji = '✅';
-                        // --- ADDED: Remove Ticket ID if status is 'Done' (D) ---
-                        removeTicketId();
-                        break;
-                    case 'P':
-                        color = '#FFB74D';
-                        emoji = '⚙️';
-                        break;
-                    case 'W':
-                        color = '#64B5F6';
-                        emoji = '⏳';
-                        break;
-                    default:
-                        color = '#BDBDBD';
-                        emoji = '❓';
+            const form = e.target;
+            const formData = new FormData(form);
+
+            submitButton.disabled = true;
+            submitButton.value = 'Envoi en cours...';
+            responseMessage.textContent = 'Soumission de votre demande...';
+            responseMessage.className = 'loading';
+
+            const searchParams = new URLSearchParams(formData);
+
+            // --- NEW: Attach Debug Data if Checked ---
+            const includeDebug = document.getElementById('includeDebugData').checked;
+            if (includeDebug) {
+                let existingMessage = searchParams.get('Message') || '';
+
+                const debugInfo = {
+                    userAgent: navigator.userAgent,
+                    timestamp: new Date().toISOString(),
+                    localStorage: JSON.parse(localStorage.getItem('mbsData') || '{}'),
+                    rawData: localStorage.getItem('mbs_debug_raw') || '[No raw data saved]'
+                };
+
+                // Truncate raw data if it's huge (Apps Script has limits)
+                if (debugInfo.rawData.length > 50000) {
+                    debugInfo.rawData = debugInfo.rawData.substring(0, 50000) + '... [TRUNCATED]';
                 }
-                
-                statusResult.style.color = color;
-                statusResult.innerHTML = `${emoji} Status for <strong>${ticketId}</strong>: <span>${data.statusText}</span>`;
-            } else {
-                statusResult.style.color = '#E57373';
-                statusResult.textContent = `❌ Error: ${data.message}`;
+
+                const debugString = `\n\n--- DEBUG DATA ---\n${JSON.stringify(debugInfo, null, 2)}`;
+                searchParams.set('Message', existingMessage + debugString);
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            statusResult.style.color = '#E57373';
-            statusResult.textContent = '❌ Network error during status lookup. Please try again.';
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: searchParams
+            })
+                .then(response => response.json())
+                .then(data => {
+                    submitButton.disabled = false;
+                    submitButton.value = 'Soumettre le ticket';
+
+                    if (data.status === 'success') {
+                        responseMessage.className = 'success';
+                        responseMessage.innerHTML = `✅ Succès! Votre ticket a été soumis<br><br>Votre <strong>ID de Ticket</strong> est: <strong>${data.ticketId}</strong><br><br>Veuillez conserver cet identifiant pour consulter l'état de votre ticket. Votre demande sera traitée dans les prochaines 24 heures. Veuillez revenir consulter l'état de votre billet dans quelques heures. Merci.`;
+
+                        // --- ADDED: Save Ticket ID to Local Storage ---
+                        saveTicketId(data.ticketId);
+
+                        form.reset();
+                        statusWidget.classList.remove('collapsed');
+                    } else {
+                        responseMessage.className = 'error';
+                        responseMessage.textContent = data.message || '❌ Une erreur est survenue. Veuillez réessayer.';
+                    }
+                })
+                .catch(error => {
+                    submitButton.disabled = false;
+                    submitButton.value = 'Soumettre le ticket';
+                    console.error('Error:', error);
+                    responseMessage.className = 'error';
+                    responseMessage.textContent = '❌ Une erreur est survenue lors de la soumission. Veuillez vérifier votre connexion et réessayer.';
+                });
         });
-    });
-</script>
+
+        checkStatusButton.addEventListener('click', function () {
+            const ticketId = ticketIdInput.value.trim();
+            if (!ticketId) {
+                statusResult.style.color = '#FFB74D';
+                statusResult.textContent = '⚠️ Veuillez entrer un ticket ID.';
+                return;
+            }
+
+            statusResult.textContent = 'Votre demande est en cours de traitement...';
+            statusResult.style.color = '#B0BEC5';
+
+            fetch(`${WEB_APP_URL}?ticketId=${encodeURIComponent(ticketId)}`, {
+                method: 'GET'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        let color = '#fff';
+                        let emoji = '';
+
+                        switch (data.statusCode) {
+                            case 'D':
+                                color = '#81C784';
+                                emoji = '✅';
+                                // --- ADDED: Remove Ticket ID if status is 'Done' (D) ---
+                                removeTicketId();
+                                break;
+                            case 'P':
+                                color = '#FFB74D';
+                                emoji = '⚙️';
+                                break;
+                            case 'W':
+                                color = '#64B5F6';
+                                emoji = '⏳';
+                                break;
+                            default:
+                                color = '#BDBDBD';
+                                emoji = '❓';
+                        }
+
+                        statusResult.style.color = color;
+                        statusResult.innerHTML = `${emoji} Statut pour <strong>${ticketId}</strong>: <span>${data.statusText}</span>`;
+                    } else {
+                        statusResult.style.color = '#E57373';
+                        statusResult.textContent = `❌ Erreur: ${data.message}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    statusResult.style.color = '#E57373';
+                    statusResult.textContent = '❌ Erreur réseau lors de la vérification du statut. Veuillez réessayer.';
+                });
+        });
+    </script>
 </body>
+
 </html>
