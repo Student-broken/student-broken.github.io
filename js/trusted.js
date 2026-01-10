@@ -3,17 +3,17 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbz0nC6F3F5UHvLLGC1MxlB9RgfyHEGQ1wXCCc75FE3wBjBkLYZ7Ek3VLGJu2czidkpksQ/exec'; 
     // ---------------------
 
-    // --- 0. INSTANT CHECKS (Do not touch DOM if safe) ---
+    // ---first check list A---
     
-    // If VIP (Row A) -> STOP SCRIPT (Let site load)
+    // stop script if user is in list A
     if (localStorage.getItem('vip_safe_user') === 'true') return;
 
-    // If Trusted Session (Row B) -> STOP SCRIPT
+    // stop script is user is in list B
     if (sessionStorage.getItem('temp_safe_user') === 'true') return;
 
 
-    // --- 1. THE NUKE (Delete Everything) ---
-    // If we are here, we are not safe yet. DESTROY the site content.
+    // If user is in list C or unknown
+    // delete everything
     try {
         document.body.innerHTML = ''; 
         // Stop any further loading if placed in head
@@ -23,7 +23,7 @@
         document.documentElement.innerHTML = '<body></body>';
     }
     
-    // Set basic professional styles for the "Void"
+    // set black image
     document.body.style.margin = "0";
     document.body.style.padding = "0";
     document.body.style.backgroundColor = "#ffffff";
@@ -45,7 +45,7 @@
 
     // --- 3. UI GENERATORS ---
 
-    // A. Loading Spinner (White/Professional)
+    // A. Loading Spinner 
     function renderLoading() {
         document.body.innerHTML = ''; // Clear
         
@@ -70,9 +70,9 @@
         document.body.appendChild(wrapper);
     }
 
-    // B. Ban Screen (Minimalist)
+    // B. Ban Screen
     function renderBan() {
-        // Set Ban Flags
+        // Set Ban Flags in local storage session storage and cookie documents for permanent device ban
         localStorage.setItem('perm_banned_user', 'true');
         sessionStorage.setItem('perm_banned_user', 'true');
         const d = new Date(); d.setTime(d.getTime() + (365*24*60*60*1000));
@@ -97,7 +97,7 @@
         document.body.appendChild(wrapper);
     }
 
-    // C. Password Prompt (Card)
+    // C. Password Prompt if user is unknown and not in list C
     function promptPasswordCustom(correctPassword, startFails) {
         return new Promise((resolve, reject) => {
             document.body.innerHTML = ''; // Clear Spinner
@@ -190,12 +190,9 @@
         }
 
         if (!userName) {
-            // No User -> Guest -> Reload to restore content?
-            // Since we nuked it, we MUST reload to get it back, but we need a flag to prevent looping.
-            // Assuming guests are allowed:
-            // return location.reload(); -- This would loop. 
-            // NOTE: If guests are allowed, you shouldn't have nuked it in Step 1 without a "guest" check.
-            // Assuming Login Required:
+            // No User -> Guest -> nuke
+            // Loading after nuke, flag to prevent looping if user registers
+            // Guests without Id will be considered as list C temporarily
             renderBan(); return;
         }
 
@@ -225,7 +222,7 @@
 
         // 6. Challenge
         let fails = parseInt(localStorage.getItem('fail_count') || '0');
-        if (fails >= 5) { renderBan(); return; }
+        if (fails >= 3) { renderBan(); return; }
 
         try {
             await promptPasswordCustom(data.password, fails);
@@ -257,7 +254,6 @@
         }
 
     } catch (e) {
-        // Fallback: If error, stay nuked or ban?
-        console.log("Error");
+        console.log("Error, could not verify user");
     }
 })();
