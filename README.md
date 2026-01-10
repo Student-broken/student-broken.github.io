@@ -1,25 +1,37 @@
-## PROPRIETARY SOURCE - NO LICENSE GRANTED
+##  PROPRIETARY NOTICE & REVOCATION OF RIGHTS
 
-**Copyright © [2026] [StudentBroken and Coconupizza]. All Rights Reserved.**
+**Copyright © [2026] [StudentBroken, Coconutpizza]. All Rights Reserved.**
 
-### 1. STRICTLY PROHIBITED ACTS
-The contents of this repository are **proprietary and confidential**. This source code is made visible for **inspection and educational viewing purposes only**.
+### 1. ABSOLUTE OWNERSHIP
+This software and source code are the **sole and exclusive property** of the Author. The Author retains **ALL** rights, title, and interest in the code.
 
-You are **STRICTLY PROHIBITED** from:
-* Downloading, copying, or cloning this software for any purpose.
-* Compiling, running, or executing this software on any machine.
-* Modifying, adapting, or creating derivative works based on this code.
-* Using this code in any project, whether personal, commercial, or academic.
-* Distributing this code to any third party.
+**The user possesses NO rights whatsoever.**
+You are granted **ZERO** licenses to use, copy, modify, distribute, or execute this software. Your only permitted interaction is to view this specific page, at this specific moment, subject to immediate termination.
 
-**Attribution or crediting the author does NOT grant you permission to use this code.**
-
-### 2. NO REVERSE ENGINEERING
-You are expressly forbidden from decompiling, reverse engineering, disassembling, or attempting to derive the source code, logic, or algorithms from any part of this software.
-
-### 3. REVOCABILITY AND ACCESS
+### 2. REVOCABILITY AND ACCESS
 Access to view this repository is a privilege, not a right. The author reserves the absolute right to:
 * Revoke access to any individual or entity at any time.
 * Remove this repository from public view without notice.
 * Deny usage or viewing rights for any reason whatsoever, at the author's sole and absolute discretion.
+* Deny access and usage to the website provided by this code for any reason.
 
+
+**Termination of Prior Access:**
+Even if you were previously granted access, were given a copy, or downloaded this code under a prior understanding (including previous open-source licenses), the Author reserves the right to demand the immediate deletion of this software from your possession.
+
+
+### 3. STRICT NO-USE POLICY
+* **No Reverse Engineering:** You may not decompile, disassemble, or reverse engineer this code.
+* **No Usage:** You may not run this code on any machine.
+* **No Attribution Benefits:** Crediting the author does not exempt you from these restrictions.
+
+### 4. NO RIGHT OF INSPECTION / AUDIT
+You have **no right** to request access to, inspect, or audit this code or its history. The Author is under no obligation to provide transparency, documentation, or explanation of the code's function.
+
+**Exceptions for Law Enforcement Only:**
+Requests for inspection or audit will be categorically denied and ignored unless:
+1.  Strictly required by a binding court order; or
+2.  The code is formally suspected of being evidence in an active, ongoing criminal investigation by a recognized law enforcement agency.
+
+
+**THIS REPOSITORY IS PROVIDED "AS IS" WITH NO WARRANTY, BUT WITH FULL LIABILITY ON THE USER FOR UNAUTHORIZED USE.**
