@@ -1,6 +1,6 @@
 ##  PROPRIETARY NOTICE & REVOCATION OF RIGHTS
 
-**Copyright © [2026] [StudentBroken, Coconutpizza]. All Rights Reserved.**
+**Copyright © [2026]. All Rights Reserved.**
 
 ### 1. ABSOLUTE OWNERSHIP
 This software and source code are the **sole and exclusive property** of the Author. The Author retains **ALL** rights, title, and interest in the code.
