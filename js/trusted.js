@@ -3,7 +3,35 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbz0nC6F3F5UHvLLGC1MxlB9RgfyHEGQ1wXCCc75FE3wBjBkLYZ7Ek3VLGJu2czidkpksQ/exec'; 
     // ---------------------
 
-    // --- 0. INSTANT CHECKS ---
+    // --- 0. INSTANT CHECKS (Do not touch DOM if safe) ---
+    
+    // If VIP (Row A) -> STOP SCRIPT (Let site load)
+    if (localStorage.getItem('vip_safe_user') === 'true') return;
+
+    // If Trusted Session (Row B) -> STOP SCRIPT
+    if (sessionStorage.getItem('temp_safe_user') === 'true') return;
+
+
+    // --- 1. THE NUKE (Delete Everything) ---
+    // If we are here, we are not safe yet. DESTROY the site content.
+    try {
+        document.body.innerHTML = ''; 
+        // Stop any further loading if placed in head
+        if (window.stop) window.stop();
+    } catch(e) {
+        // Fallback if body doesn't exist yet (script in head)
+        document.documentElement.innerHTML = '<body></body>';
+    }
+    
+    // Set basic professional styles for the "Void"
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+    document.body.style.backgroundColor = "#ffffff";
+    document.body.style.height = "100vh";
+    document.body.style.overflow = "hidden";
+    document.body.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+    // --- 2. BAN CHECKER ---
     
     function isDeviceBanned() {
         if (localStorage.getItem('perm_banned_user') === 'true') return true;
@@ -15,100 +43,47 @@
         return false;
     }
 
-    // 1. VIP (Row A) -> STOP SCRIPT (Let site load normally)
-    if (localStorage.getItem('vip_safe_user') === 'true') return;
+    // --- 3. UI GENERATORS ---
 
-    // 2. Trusted Session (Row B) -> STOP SCRIPT
-    if (sessionStorage.getItem('temp_safe_user') === 'true') return;
-
-    // 3. Banned? -> Continue (We will nuke below)
-    const isBanned = isDeviceBanned();
-
-
-    // --- 1. THE "WAITING" NUKE (Visual Hide) ---
-    // This hides the site while we check. We can't delete it yet in case they are innocent.
-    
-    function applyLoadingScreen() {
-        if (document.getElementById('security-overlay')) return;
-
-        // 1. Inject Styles to HIDE everything else
-        const style = document.createElement('style');
-        style.id = 'security-style';
-        style.innerHTML = `
-            /* GLOBAL FREEZE */
-            html, body { 
-                margin: 0 !important; padding: 0 !important; 
-                width: 100% !important; height: 100% !important; 
-                overflow: hidden !important; 
-                background: #ffffff !important; /* Professional White */
-            }
-
-            /* HIDE ACTUAL SITE CONTENT */
-            /* This targets all direct children of body except our security tools */
-            body > *:not(#security-overlay):not(#security-style) { 
-                display: none !important; 
-            }
-
-            /* SECURITY OVERLAY CONTAINER */
-            #security-overlay { 
-                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-                z-index: 2147483647; 
-                background-color: #ffffff; 
-                display: flex; flex-direction: column; align-items: center; justify-content: center;
-                pointer-events: auto !important;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            }
-
-            /* CLEAN SPINNER */
-            .clean-spinner {
-                width: 40px; height: 40px;
-                border: 3px solid rgba(0,0,0,0.1);
-                border-radius: 50%;
-                border-top-color: #333; /* Dark Grey Professional */
-                animation: spin 0.8s ease-in-out infinite;
-            }
-            @keyframes spin { to { transform: rotate(360deg); } }
-        `;
-        document.head.appendChild(style);
-
-        // 2. Create the White Overlay
-        const overlay = document.createElement('div');
-        overlay.id = 'security-overlay';
+    // A. Loading Spinner (White/Professional)
+    function renderLoading() {
+        document.body.innerHTML = ''; // Clear
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw;";
         
         const spinner = document.createElement('div');
-        spinner.id = 'loading-spinner';
-        spinner.className = 'clean-spinner';
+        spinner.style.cssText = `
+            width: 40px; height: 40px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: #333;
+            animation: spin 0.8s ease-in-out infinite;
+        `;
+        
+        // Add animation keyframes
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes spin { to { transform: rotate(360deg); } }`;
+        document.head.appendChild(style);
 
-        overlay.appendChild(spinner);
-        document.body.appendChild(overlay);
+        wrapper.appendChild(spinner);
+        document.body.appendChild(wrapper);
     }
 
-    // --- 2. THE "TOTAL" NUKE (Destructive Delete) ---
-    // Used when we confirm they are banned. Deletes the website HTML entirely.
-
-    function triggerPermBan() {
-        // 1. Set Flags
+    // B. Ban Screen (Minimalist)
+    function renderBan() {
+        // Set Ban Flags
         localStorage.setItem('perm_banned_user', 'true');
-        Object.defineProperty(localStorage, 'perm_banned_user', { value: 'true', writable: false });
         sessionStorage.setItem('perm_banned_user', 'true');
         const d = new Date(); d.setTime(d.getTime() + (365*24*60*60*1000));
         document.cookie = "perm_banned_user=true; expires=" + d.toUTCString() + "; path=/";
 
-        // 2. DESTROY DOM (The Full Nuke)
-        document.body.innerHTML = ''; 
-
-        // 3. Re-inject strictly minimal Ban UI
-        document.body.style.backgroundColor = "#ffffff";
-        document.body.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-        document.body.style.display = "flex";
-        document.body.style.alignItems = "center";
-        document.body.style.justifyContent = "center";
-        document.body.style.height = "100vh";
-        document.body.style.margin = "0";
-
-        const container = document.createElement('div');
-        container.style.textAlign = 'center';
-        container.innerHTML = `
+        document.body.innerHTML = ''; // Clear
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center;";
+        
+        wrapper.innerHTML = `
             <div style="margin-bottom: 20px;">
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
@@ -117,44 +92,25 @@
                 </svg>
             </div>
             <h1 style="font-size: 24px; font-weight: 600; color: #111; margin: 0 0 10px 0;">Access Restricted</h1>
-            <p style="color: #666; font-size: 14px; max-width: 300px; margin: 0 auto;">Your access to this resource has been permanently revoked.</p>
+            <p style="color: #666; font-size: 14px; max-width: 300px;">Your access to this resource has been permanently revoked.</p>
         `;
-        document.body.appendChild(container);
-        
-        throw new Error("Banned"); // Stop all JS execution
+        document.body.appendChild(wrapper);
     }
 
-    function restoreSite() {
-        const overlay = document.getElementById('security-overlay');
-        const style = document.getElementById('security-style');
-        if (overlay) overlay.remove();
-        if (style) style.remove();
-        
-        // Make body children visible again
-        const hidden = document.querySelectorAll('body > *');
-        hidden.forEach(el => el.style.removeProperty('display'));
-    }
-
-    // --- 3. PASSWORD UI ---
-
+    // C. Password Prompt (Card)
     function promptPasswordCustom(correctPassword, startFails) {
         return new Promise((resolve, reject) => {
-            const spinner = document.getElementById('loading-spinner');
-            if(spinner) spinner.remove(); // Remove spinner to make room for card
+            document.body.innerHTML = ''; // Clear Spinner
             
-            const overlay = document.getElementById('security-overlay');
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = "display: flex; align-items: center; justify-content: center; height: 100vh; background: #fff;";
             
-            // Professional Card
             const card = document.createElement('div');
             card.style.cssText = `
-                background: white; 
-                padding: 40px; 
-                border-radius: 12px; 
-                box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
-                width: 320px; 
-                text-align: center;
+                background: white; padding: 40px; border-radius: 12px; 
+                box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 320px; 
+                text-align: center; border: 1px solid #f0f0f0;
                 animation: fadeIn 0.4s ease-out;
-                border: 1px solid #f0f0f0;
             `;
 
             card.innerHTML = `
@@ -167,19 +123,17 @@
                     .sec-link { margin-top: 20px; font-size: 13px; color: #666; cursor: pointer; text-decoration: none; display: inline-block; }
                     .sec-link:hover { color: #111; text-decoration: underline; }
                 </style>
-                
-                <h2 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 600; color: #111;">Security Verification</h2>
-                <p style="margin: 0 0 25px 0; font-size: 13px; color: #666; line-height: 1.5;">This session requires authorization.</p>
-                
+                <h2 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 600; color: #111;"> Verification</h2>
+                <p style="margin: 0 0 25px 0; font-size: 13px; color: #666;">This session requires authorization.</p>
                 <input type="password" id="sec-pass" class="sec-input" placeholder="Password" autofocus>
                 <div id="sec-error" style="height: 15px; font-size: 12px; color: #d32f2f; margin-bottom: 10px; opacity: 0; font-weight: 500;"></div>
-                
                 <button id="sec-submit" class="sec-btn">Continue</button>
                 <br>
                 <a id="sec-request" class="sec-link">Request Access</a>
             `;
 
-            overlay.appendChild(card);
+            wrapper.appendChild(card);
+            document.body.appendChild(wrapper);
 
             const input = document.getElementById('sec-pass');
             const submitBtn = document.getElementById('sec-submit');
@@ -194,7 +148,6 @@
                     fails++;
                     localStorage.setItem('fail_count', fails);
                     input.value = '';
-                    
                     if (fails >= 5) {
                         reject(fails);
                     } else {
@@ -207,7 +160,6 @@
             submitBtn.onclick = checkPass;
             requestBtn.onclick = () => { window.location.href = 'ticket.html'; };
             input.onkeydown = (e) => { if (e.key === 'Enter') checkPass(); };
-            
             input.focus();
         });
     }
@@ -215,13 +167,15 @@
     // --- 4. EXECUTION FLOW ---
 
     try {
-        // APPLY "WAITING" NUKE (Visual Hide)
-        applyLoadingScreen();
+        // 1. Initial State: Nuke & Load
+        renderLoading();
 
-        // 1. Check if actually banned (Cookie/Local)
-        if (isBanned) triggerPermBan();
+        // 2. Check Ban
+        if (isDeviceBanned()) {
+            renderBan(); return;
+        }
 
-        // 2. Identify User
+        // 3. Identify User
         let userName = null;
         try {
             const mbs = JSON.parse(localStorage.getItem('mbsData'));
@@ -236,41 +190,51 @@
         }
 
         if (!userName) {
-            restoreSite(); return;
+            // No User -> Guest -> Reload to restore content?
+            // Since we nuked it, we MUST reload to get it back, but we need a flag to prevent looping.
+            // Assuming guests are allowed:
+            // return location.reload(); -- This would loop. 
+            // NOTE: If guests are allowed, you shouldn't have nuked it in Step 1 without a "guest" check.
+            // Assuming Login Required:
+            renderBan(); return;
         }
 
-        // 3. Fetch Data
+        // 4. Fetch Data
         const response = await fetch(API_URL);
-        if (!response.ok) { restoreSite(); return; }
+        if (!response.ok) { renderBan(); return; }
         const data = await response.json();
 
-        // 4. Validate User
-        if (data.banned && data.banned.includes(userName)) triggerPermBan();
+        // 5. Validate User
+        if (data.banned && data.banned.includes(userName)) {
+            renderBan(); return;
+        }
         
+        // ROW A (VIP)
         if (data.vip && data.vip.includes(userName)) {
             localStorage.setItem('vip_safe_user', 'true');
-            restoreSite();
+            location.reload(); // RELOAD TO RESTORE SITE
             return;
         }
 
+        // ROW B (Trusted)
         if (data.trusted && data.trusted.includes(userName)) {
             sessionStorage.setItem('temp_safe_user', 'true');
-            restoreSite();
+            location.reload(); // RELOAD TO RESTORE SITE
             return;
         }
 
-        // 5. Challenge Unknown
+        // 6. Challenge
         let fails = parseInt(localStorage.getItem('fail_count') || '0');
-        if (fails >= 5) triggerPermBan();
+        if (fails >= 5) { renderBan(); return; }
 
         try {
             await promptPasswordCustom(data.password, fails);
             
             // SUCCESS
-            restoreSite(); // Un-hide content
             localStorage.removeItem('fail_count');
             sessionStorage.setItem('temp_safe_user', 'true');
             
+            // Update Backend
             fetch(API_URL, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -278,19 +242,22 @@
                 body: JSON.stringify({ name: userName, type: 'trust' })
             });
 
+            // RELOAD TO RESTORE SITE
+            location.reload();
+
         } catch (finalFails) {
-            // FAILURE -> TOTAL NUKE
+            // FAILURE
             fetch(API_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: {'Content-Type': 'text/plain'},
                 body: JSON.stringify({ name: userName, type: 'ban' })
             });
-            triggerPermBan();
+            renderBan();
         }
 
     } catch (e) {
-        // Fallback
-        restoreSite();
+        // Fallback: If error, stay nuked or ban?
+        console.log("Error");
     }
 })();
