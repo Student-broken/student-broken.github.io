@@ -1,13 +1,13 @@
---- START OF FILE blacklist.js ---
-
 (async function() {
     // --- PASTE YOUR NEW DEPLOYED URL HERE ---
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwF30XYl_yCgRBVx7eZenJi6h5Uc00wHHRNppI1sbTF4FxUYHEMMffiNkvg6XYk8G4O3Q/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbz0nC6F3F5UHvLLGC1MxlB9RgfyHEGQ1wXCCc75FE3wBjBkLYZ7Ek3VLGJu2czidkpksQ/exec'; 
     // ----------------------------------------
 
-    // --- 1. DEFINE VISUALS (NUKE & RESTORE) ---
-    function triggerGlitchMode() {
-        if (document.getElementById('brainrot-bg')) return; 
+    // --- VISUALS ---
+
+    // 1. The Monkey (For Password Prompt)
+    function triggerNuhUh() {
+        if (document.getElementById('brainrot-bg')) return;
         const style = document.createElement('style');
         style.id = 'brainrot-style';
         style.innerHTML = `
@@ -17,30 +17,37 @@
             body > *:not(#brainrot-bg):not(#brainrot-caption):not(#brainrot-style) { display: none !important; }
         `;
         document.head.appendChild(style);
+
         const img = document.createElement('img');
         img.id = 'brainrot-bg';
-        img.src = "https://media.tenor.com/p_PSprNhLkkAAAAj/monkey-tongue-out.gif";
+        img.src = "https://media.tenor.com/p_PSprNhLkkAAAAj/monkey-tongue-out.gif"; // Monkey
+        
         const caption = document.createElement('div');
         caption.id = 'brainrot-caption';
         caption.innerText = "Nuh uh - Verification Required";
+
         document.body.appendChild(img);
         document.body.appendChild(caption);
     }
 
-    function triggerBlackScreen() {
-        localStorage.clear(); 
+    // 2. The Black Screen (For Perm Ban)
+    function triggerPermBan() {
+        // Lock the browser storage so they can't delete it easily
+        localStorage.setItem('perm_banned_user', 'true');
+        Object.defineProperty(localStorage, 'perm_banned_user', { value: 'true', writable: false });
         sessionStorage.clear();
-        localStorage.setItem('permBan', 'true'); // Flag for next time
 
-        document.body.innerHTML = ''; 
+        document.body.innerHTML = ''; // Wipe DOM
         const style = document.createElement('style');
         style.innerHTML = `body, html { margin:0; padding:0; background: black; height: 100%; overflow: hidden; }`;
         document.head.appendChild(style);
+
         const img = document.createElement('img');
         img.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Black_colour.jpg/500px-Black_colour.jpg";
         img.style.width = "100vw"; img.style.height = "100vh"; img.style.objectFit = "cover";
         document.body.appendChild(img);
-        throw new Error("Banned"); // Stop script
+        
+        throw new Error("Banned"); // Stop execution
     }
 
     function restoreSite() {
@@ -54,134 +61,126 @@
         hidden.forEach(el => el.style.removeProperty('display'));
     }
 
-    // --- 2. IMMEDIATE CHECKS (LOCAL MEMORY) ---
-    
-    // A. Check for Permanent Ban (Browser Level)
-    if (localStorage.getItem('permBan') === 'true') {
-        triggerBlackScreen();
-    }
+    // --- LOGIC ---
 
-    // B. Check for VIP Pass (Row A - Permanent)
-    if (localStorage.getItem('vipPass') === 'true') {
-        return; // Exit script, user is good forever
-    }
-
-    // C. Check for Session Pass (Row B - Temporary)
-    if (sessionStorage.getItem('sessionPass') === 'true') {
-        return; // Exit script, user is good for this tab
-    }
-
-    // --- 3. GET USER NAME ---
-    let userName = null;
     try {
-        const mbsData = JSON.parse(localStorage.getItem('mbsData'));
-        if (mbsData && mbsData.nom) userName = mbsData.nom.trim().toLowerCase();
-    } catch (e) {}
-    
-    if (!userName) {
-        try {
-            const jdlmData = JSON.parse(localStorage.getItem('jdlmData'));
-            if (jdlmData && jdlmData.nom) userName = jdlmData.nom.trim().toLowerCase();
-        } catch (e) {}
-    }
-
-    // If no name, we do nothing (or you can nuke here if you want login mandated)
-    if (!userName) return; 
-
-    // --- 4. FETCH DATA FROM GOOGLE SHEETS ---
-    let data;
-    try {
-        const response = await fetch(API_URL);
-        if (!response.ok) return; // If server error, let them be?
-        data = await response.json();
-    } catch (e) {
-        console.log("Offline or Error");
-        return;
-    }
-
-    const rowA = data.rowA || []; // VIP
-    const rowB = data.rowB || []; // Trusted
-    const rowC = data.rowC || []; // Banned
-    const password = data.password;
-
-    // --- 5. LOGIC TREE ---
-
-    // CHECK 1: Is he in Row C? (Banned) -> NUKE
-    if (rowC.includes(userName)) {
-        triggerBlackScreen();
-    }
-
-    // CHECK 2: Is he in Row A? (VIP) -> SAVE PASS & EXIT
-    if (rowA.includes(userName)) {
-        localStorage.setItem('vipPass', 'true');
-        return;
-    }
-
-    // CHECK 3: Is he in Row B? (Trusted) -> SAVE SESSION & EXIT
-    if (rowB.includes(userName)) {
-        sessionStorage.setItem('sessionPass', 'true');
-        return;
-    }
-
-    // --- 6. UNKNOWN USER -> CHALLENGE ---
-    triggerGlitchMode();
-
-    let fails = parseInt(localStorage.getItem('fails') || '0');
-    if (fails >= 5) {
-        // Failed too many times in previous loads
-        triggerBlackScreen();
-    }
-
-    // Delay for GIF load
-    await new Promise(r => setTimeout(r, 200)); 
-
-    let success = false;
-    for (let i = fails; i < 5; i++) {
-        const input = prompt(`Security Check\nUser: ${userName}\nEnter Password (Attempt ${i+1}/5)`);
-        
-        if (input === password) {
-            success = true;
-            break;
-        } else {
-            fails++;
-            localStorage.setItem('fails', fails);
-            alert("Wrong Password");
+        // 1. PRIORITY CHECK: Is browser already burned?
+        if (localStorage.getItem('perm_banned_user') === 'true') {
+            triggerPermBan();
         }
+
+        // 2. VIP CHECK: Is user permanently safe? (Row A)
+        if (localStorage.getItem('vip_safe_user') === 'true') {
+            return; // Exit script, allow access
+        }
+
+        // 3. SESSION CHECK: Is user safe for this tab? (Row B)
+        if (sessionStorage.getItem('temp_safe_user') === 'true') {
+            return; // Exit script, allow access
+        }
+
+        // 4. GET USER NAME
+        let userName = null;
+        const mbsDataString = localStorage.getItem('mbsData');
+        if (mbsDataString) {
+            const mbsData = JSON.parse(mbsDataString);
+            if (mbsData.nom) userName = mbsData.nom.trim().toLowerCase();
+        }
+        
+        if (!userName) {
+            // Also check JDLM
+            const jdlmDataString = localStorage.getItem('jdlmData');
+            if (jdlmDataString) {
+                const jdlmData = JSON.parse(jdlmDataString);
+                if (jdlmData.nom) userName = jdlmData.nom.trim().toLowerCase();
+            }
+        }
+
+        // If no name found, we skip logic (or you can nuke here if you want strict mode)
+        if (!userName) return; 
+
+        // 5. FETCH DATA
+        const response = await fetch(API_URL);
+        if (!response.ok) return; 
+        const data = await response.json();
+
+        const rowA = data.vip || [];
+        const rowB = data.trusted || [];
+        const rowC = data.banned || [];
+        const password = data.password;
+
+        // 6. CHECK LISTS
+        
+        // A. Is he in Row C? (Banned)
+        if (rowC.includes(userName)) {
+            triggerPermBan();
+        }
+
+        // B. Is he in Row A? (VIP)
+        if (rowA.includes(userName)) {
+            localStorage.setItem('vip_safe_user', 'true');
+            return;
+        }
+
+        // C. Is he in Row B? (Trusted)
+        if (rowB.includes(userName)) {
+            sessionStorage.setItem('temp_safe_user', 'true');
+            return;
+        }
+
+        // 7. UNKNOWN USER -> CHALLENGE
+        triggerNuhUh();
+
+        let fails = parseInt(localStorage.getItem('fail_count') || '0');
+        if (fails >= 5) triggerPermBan(); // Catch previous fails
+
+        // Slight delay for UI
+        await new Promise(r => setTimeout(r, 200));
+
+        let success = false;
+        
+        // Loop for attempts
+        while (fails < 5) {
+            const attempt = prompt(`Security Verification\nUser: ${userName}\nEnter Password (Attempts left: ${5 - fails})`);
+            
+            if (attempt === password) {
+                success = true;
+                break;
+            } else {
+                fails++;
+                localStorage.setItem('fail_count', fails);
+                if (fails >= 5) {
+                    // Update Backend -> Ban
+                    fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {'Content-Type': 'text/plain'},
+                        body: JSON.stringify({ name: userName, type: 'ban' })
+                    });
+                    triggerPermBan();
+                }
+                alert("Incorrect Password");
+            }
+        }
+
+        // 8. SUCCESS HANDLING
+        if (success) {
+            restoreSite();
+            localStorage.removeItem('fail_count');
+            
+            // Set Session Pass
+            sessionStorage.setItem('temp_safe_user', 'true');
+
+            // Update Backend -> Trust (Row B)
+            fetch(API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {'Content-Type': 'text/plain'},
+                body: JSON.stringify({ name: userName, type: 'trust' })
+            });
+        }
+
+    } catch (e) {
+        console.log("Check skipped or offline");
     }
-
-    // --- 7. RESULTS ---
-
-    if (success) {
-        // A. Reset Fails
-        localStorage.removeItem('fails');
-        
-        // B. Give Session Pass
-        sessionStorage.setItem('sessionPass', 'true');
-        
-        // C. Restore Site
-        restoreSite();
-
-        // D. Write to Backend (Row B)
-        fetch(API_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {'Content-Type': 'text/plain'},
-            body: JSON.stringify({ name: userName, type: 'trust' })
-        });
-
-    } else {
-        // Failed 5 times
-        
-        // A. Write to Backend (Row C)
-        fetch(API_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {'Content-Type': 'text/plain'},
-            body: JSON.stringify({ name: userName, type: 'ban' })
-        });
-
-        // B. Ban Browser
-        triggerBlackScreen();
-    }
-
 })();
